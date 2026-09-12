@@ -2,7 +2,7 @@
 
 **Hot food, tracked to your door.** A three-sided food-delivery app: customers order, restaurants accept, riders deliver — and the rider moves on the customer's map in real time.
 
-> Status: in progress — planning and design stage. One of six portfolio projects by [Viraj Domadia](https://virajdomadia.vercel.app). Will go live at `platter.virajdomadia.com`.
+> Status: in progress — planning and design stage. One of six portfolio projects by [Viraj Domadia](https://virajdomadia.vercel.app). **Live (landing page):** https://platter-viraj.vercel.app — will move to `platter.virajdomadia.com` later.
 
 ## What it proves
 Geospatial (PostGIS) · live location streaming · order state machine across roles
