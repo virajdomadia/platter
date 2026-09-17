@@ -4,7 +4,7 @@
 **Name:** Platter · *hot food, tracked to your door*
 **URL:** https://platter.virajdomadia.com (landing live at https://platter-viraj.vercel.app until DNS)
 **Slot:** #6 · Budget ~38 h (v1 16 · v2 11 · v3 8 · v4 3) · Build last
-**Live artifacts:** [Tracker](https://claude.ai/artifact/TRACKER_URL) (plan rows with status, all docs, mockups, project facts) · [Screens](https://claude.ai/artifact/SCREENS_URL) (every v1 screen in the chosen direction) · [Direction variants](https://claude.ai/artifact/VARIANTS_URL) (A–F) · Landing: https://platter-viraj.vercel.app
+**Live artifacts:** [Tracker](https://claude.ai/artifact/TRACKER_URL) (plan rows with status, all docs, mockups, project facts) · [Screens](https://claude.ai/artifact/SCREENS_URL) (every v1 screen in the chosen direction) · [Direction variants](https://claude.ai/artifact/JAekpL7HjR4oU5c39ak7dg) (A–F) · Landing: https://platter-viraj.vercel.app
 
 ## One-liner
 A four-sided food-delivery platform for one Bengaluru neighbourhood — **customers** pin a location, order from restaurants nearby and **watch the rider move on a real map**; **restaurants** run a live order board on a tablet; **riders** get dispatched, share their GPS from a phone and mark pickup / drop; an **admin** sees every active order and rider on one map and can reassign — built on PostGIS, an order state machine guarded by role, and **live location over SSE with Postgres as the bus**. No paid map, routing, realtime or AI service: ₹0 per order.
