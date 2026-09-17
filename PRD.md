@@ -4,7 +4,7 @@
 **Name:** Platter · *hot food, tracked to your door*
 **URL:** https://platter.virajdomadia.com (landing live at https://platter-viraj.vercel.app until DNS)
 **Slot:** #6 · Budget ~38 h (v1 16 · v2 11 · v3 8 · v4 3) · Build last
-**Live artifacts:** [Tracker](https://claude.ai/artifact/TRACKER_URL) (plan rows with status, all docs, mockups, project facts) · [Screens](https://claude.ai/artifact/SCREENS_URL) (every v1 screen in the chosen direction) · [Direction variants](https://claude.ai/artifact/JAekpL7HjR4oU5c39ak7dg) (A–F) · Landing: https://platter-viraj.vercel.app
+**Live artifacts:** [Tracker](https://claude.ai/artifact/HEHpyrigHuZpBMoECDs4qG) (plan rows with status, all docs, mockups, project facts) · [Screens](https://claude.ai/artifact/GGchE2CjZ7DN5t83pzs9Cu) (every v1 screen in the chosen direction) · [Direction variants](https://claude.ai/artifact/JAekpL7HjR4oU5c39ak7dg) (A–L, L chosen) · Landing: https://platter-viraj.vercel.app
 
 ## One-liner
 A four-sided food-delivery platform for one Bengaluru neighbourhood — **customers** pin a location, order from restaurants nearby and **watch the rider move on a real map**; **restaurants** run a live order board on a tablet; **riders** get dispatched, share their GPS from a phone and mark pickup / drop; an **admin** sees every active order and rider on one map and can reassign — built on PostGIS, an order state machine guarded by role, and **live location over SSE with Postgres as the bus**. No paid map, routing, realtime or AI service: ₹0 per order.
@@ -85,7 +85,7 @@ Multi-city · real turn-by-turn navigation · paid maps, routing, realtime or AI
 - Razorpay: verify-then-webhook and webhook-then-verify → exactly one `placed`; replayed webhooks are no-ops; an unpaid order expires at 15 min and never reaches the board.
 - Lighthouse mobile ≥ 90 perf / 100 a11y / 100 SEO on home and restaurant pages (map pages excluded from the perf budget; MapLibre loaded on demand; dish photos via `next/image`, no CLS).
 - v4: a friend with the link adds an item from a second phone and it appears on the host's cart within 2 s; after payment both phones show the same rider.
-- A visible frontend signature (chosen in step 4, direction **TBD**, [docs/04-ui-mockups.md](docs/04-ui-mockups.md)): **Rider glide + Route draw** on the tracking page, the **KOT ticket print** on the restaurant board, themed browser surfaces, reduced-motion fallbacks.
+- A visible frontend signature (chosen in step 4, direction **L · Bento**, [docs/04-ui-mockups.md](docs/04-ui-mockups.md)): **Rider glide + Route draw** on the tracking page, **Tile spring** on every screen, the **ticket print** on the restaurant board, Plate slide in the cart, themed browser surfaces, reduced-motion fallbacks.
 
 ## Resolved questions
 - *Polling, SSE, or a hosted realtime service?* SSE from FastAPI with Postgres (`order_events` + `rider_positions`) as the bus; `LISTEN/NOTIFY` in v3 (Viraj, 2026-09-17, fork 1: "choose what is best").
