@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platter Screens</title>
+<meta name="description" content="Every Platter v1 screen in the chosen direction, L · Bento, with the live tracking map.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Sora:wght@500;700&family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600&family=Archivo+Black&family=Plus+Jakarta+Sans:wght@500;700;800&family=Gochi+Hand&family=Patrick+Hand&family=Rubik:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Nunito:wght@600;700;800;900&family=Bungee&display=swap">
+<style>
+:root{--bg:#F5F2EC;--bg2:#FFFFFF;--ink:#1D1B18;--ink2:#4A463F;--muted:#7C766C;--line:#DDD7CC;--acc:#E4402E;--font:"Inter",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15130F;--bg2:#1E1B16;--ink:#F2EDE4;--ink2:#CFC8BC;--muted:#8E877B;--line:#332E27;--acc:#FF6A55}}
+:root[data-theme="dark"]{--bg:#15130F;--bg2:#1E1B16;--ink:#F2EDE4;--ink2:#CFC8BC;--muted:#8E877B;--line:#332E27;--acc:#FF6A55}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1320px;margin:0 auto;padding:20px 16px 80px}
+h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}.lede{color:var(--ink2);margin:0 0 14px;max-width:900px}
+.tabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;flex-wrap:wrap;padding:10px 0;background:var(--bg);border-bottom:1px solid var(--line)}
+.tab{border:1px solid var(--line);background:var(--bg2);color:var(--ink);padding:8px 12px;border-radius:999px;cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab kbd{opacity:.55;font-weight:400;margin-right:6px}
+.dir{display:none;padding-top:18px}.dir.on{display:block}
+.dirhead{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:0 0 16px}
+.dirhead h2{margin:0 0 4px;font-size:22px}.dirhead p{margin:0;color:var(--ink2)}
+.dirhead .trade{border-left:3px solid var(--acc);padding-left:12px;font-size:14px}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin:0 0 22px}
+.cap{font-size:12px;color:var(--muted);margin:6px 0 0;text-transform:uppercase;letter-spacing:.08em}
+.cap b{color:var(--ink);font-weight:600}
+/* device frames */
+.phone{width:390px;height:844px;border-radius:44px;background:#000;padding:12px;box-shadow:0 20px 50px rgba(0,0,0,.25);position:relative;flex:none}
+.phone .scr{width:100%;height:100%;border-radius:34px;overflow:hidden;position:relative;background:#fff}
+.phone::after{content:"";position:absolute;top:20px;left:50%;transform:translateX(-50%);width:110px;height:30px;border-radius:20px;background:#000;z-index:3}
+.tablet{width:1024px;height:768px;border-radius:26px;background:#111;padding:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);flex:none}
+.tablet .scr{width:100%;height:100%;border-radius:14px;overflow:hidden;position:relative;background:#fff}
+.desk{width:1280px;height:800px;border-radius:10px;background:#1a1a1a;padding:8px 8px 8px;box-shadow:0 20px 50px rgba(0,0,0,.25);flex:none}
+.desk .scr{width:100%;height:100%;border-radius:6px;overflow:hidden;position:relative;background:#fff}
+.scale{transform-origin:top left;flex:none}
+.sb{position:absolute;top:0;left:0;right:0;height:50px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 26px 4px;font-size:13px;font-weight:600;z-index:2;pointer-events:none}
+.scr .body{position:absolute;inset:0;overflow:hidden}
+.scr .body.scrolly{overflow-y:auto;scrollbar-width:none}
+.scr .body.scrolly::-webkit-scrollbar{display:none}
+img.ph{display:block;object-fit:cover;width:100%;height:100%}
+/* map svg */
+.map{display:block;width:100%;height:100%}
+.map image{image-rendering:auto}
+.map .route{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.map .trail{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.map .rider text{font-size:11px;font-weight:700}
+@media (prefers-reduced-motion:reduce){.rd-anim{animation:none!important;transition:none!important}}
+/* motion strip */
+.motion{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px}
+.tabs .tab.new{border-color:var(--acc)}
+.mtile{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg2);min-height:230px;display:flex;flex-direction:column}
+.mtile .mdemo{flex:1;position:relative;overflow:hidden;min-height:170px}
+.mtile .mname{padding:10px 12px;font-size:13px;border-top:1px solid var(--line)}
+.mtile .mname b{display:block;font-size:13px}.mtile .mname span{color:var(--muted);font-size:12px}
+.mtile button.replay{position:absolute;right:8px;top:8px;z-index:2;border:0;background:rgba(0,0,0,.55);color:#fff;font:600 11px/1 var(--font);padding:6px 9px;border-radius:999px;cursor:pointer}
+@media (max-width:900px){.motion{grid-template-columns:repeat(2,1fr)}.dirhead{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Platter — every v1 screen · L · Bento</h1>
+<p class="lede">The chosen direction applied to the whole v1 screen index (docs/03-user-flows.md): pastel bento tiles, Nunito 900, the map as the biggest tile, tiles that spring in. The tracking maps are live — the rider glides along the real OSRM route over real Koramangala / HSR streets. Keys <kbd>1</kbd>–<kbd>0</kbd> switch screens.</p>
+<div class="tabs" role="tablist" id="tabs"></div>
+<div id="dirs"></div>
+</div>
+
+<script>
+const DIRS = {};
+const MAP = {"zoom":15,"size":[1536,1280],"origin_tile":[23446,15194],"restaurant":{"latlng":[12.9345,77.6182],"px":[763.1,651.2]},"drop":{"latlng":[12.9152,77.6396],"px":[1261.8,1112.6]},"rider_start":{"latlng":[12.9418,77.6268],"px":[963.5,476.7]},"leg1":{"distance_m":2127,"duration_s":238,"px":[[963,479],[965,480],[968,480],[978,478],[981,477],[987,476],[990,476],[990,480],[989,480],[989,482],[988,486],[988,487],[987,493],[984,493],[984,497],[970,501],[968,502],[966,503],[963,504],[956,507],[949,509],[946,510],[942,512],[941,513],[939,514],[938,516],[933,520],[933,521],[931,522],[930,523],[926,518],[919,510],[908,498],[904,494],[900,491],[872,463],[870,462],[869,460],[868,461],[862,466],[848,476],[848,477],[843,481],[839,484],[837,486],[836,486],[835,487],[821,499],[815,505],[814,507],[813,508],[812,508],[804,519],[788,541],[782,552],[774,573],[768,588],[768,589],[767,590],[762,596],[754,603],[756,604],[763,608],[782,620],[778,625],[775,635],[774,640],[772,648],[763,648]]},"leg2":{"distance_m":4962,"duration_s":417,"px":[[763,648],[772,648],[780,648],[797,648],[806,648],[809,644],[812,638],[816,631],[826,612],[827,608],[828,607],[838,614],[842,616],[850,622],[882,642],[892,648],[892,648],[894,649],[896,651],[884,677],[877,694],[866,723],[864,728],[855,753],[851,762],[848,770],[844,781],[839,793],[834,804],[831,812],[831,813],[830,815],[829,817],[831,818],[853,828],[860,830],[870,835],[884,841],[926,859],[926,859],[957,873],[969,878],[998,890],[1002,892],[1002,892],[1010,896],[1013,896],[1016,897],[1018,897],[1028,898],[1034,897],[1055,893],[1058,893],[1070,890],[1074,890],[1076,889],[1119,882],[1119,882],[1121,882],[1123,881],[1131,880],[1133,880],[1136,879],[1151,877],[1162,875],[1180,872],[1187,871],[1190,871],[1194,870],[1197,870],[1201,871],[1205,872],[1210,874],[1218,879],[1225,883],[1230,886],[1233,888],[1239,892],[1247,895],[1252,897],[1259,900],[1259,900],[1266,903],[1270,904],[1272,905],[1271,906],[1270,909],[1269,912],[1265,919],[1258,936],[1246,960],[1241,974],[1237,986],[1234,1002],[1234,1012],[1232,1046],[1231,1089],[1231,1090],[1230,1095],[1231,1099],[1231,1099],[1231,1100],[1230,1104],[1230,1106],[1230,1111],[1230,1114],[1231,1114],[1232,1114],[1240,1114],[1242,1114],[1250,1114],[1262,1114]]},"others":{"Biryani Bhatti":[970.5,809.0],"Koramangala Social":[667.6,634.5],"Momo Junction":[1124.3,990.7],"Thali Ghar":[819.1,517.3],"Chai Point":[1364.3,1210.6],"Pizza Bakery":[1154.6,713.4],"Burger Barn":[1247.8,878.3],"Idli Hut":[1084.7,574.7],"Sweet Tooth":[968.2,1086.3],"Wok This Way":[1154.6,448.0],"Green Bowl":[758.5,997.9]},"riders":[[963.5,476.7],[805.1,758.8],[1038.1,1021.8],[1247.8,567.5],[1364.3,902.2],[875.0,1177.2],[851.7,376.2],[618.7,687.1],[1131.3,806.6]]};
+const R = [ // restaurants
+ {n:"Dosa Camp",c:"South Indian · Veg",img:"dish-dosa",d:"1.2 km",eta:"22 min",fee:"₹25",r:"4.5",veg:true},
+ {n:"Biryani Bhatti",c:"Biryani · Kebabs",img:"dish-biryani",d:"1.9 km",eta:"31 min",fee:"₹25",r:"4.3"},
+ {n:"Koramangala Social",c:"Cafe · Bar food",img:"kitchen",d:"0.8 km",eta:"18 min",fee:"₹25",r:"4.1"},
+ {n:"Momo Junction",c:"Tibetan · Chinese",img:"dish-momos",d:"2.4 km",eta:"27 min",fee:"₹33",r:"4.4"},
+ {n:"Thali Ghar",c:"North Indian · Veg",img:"dish-thali",d:"0.9 km",eta:"20 min",fee:"₹25",r:"4.6",veg:true},
+ {n:"Chai Point",c:"Chai · Snacks",img:"dish-coffee",d:"3.1 km",eta:"24 min",fee:"₹41",r:"4.2"},
+ {n:"Pizza Bakery",c:"Pizza · Italian",img:"dish-pizza",d:"2.0 km",eta:"29 min",fee:"₹25",r:"4.0"},
+ {n:"Burger Barn",c:"Burgers · Fries",img:"dish-burger",d:"2.6 km",eta:"25 min",fee:"₹33",r:"3.9"},
+ {n:"Idli Hut",c:"Breakfast · Veg",img:"dish-idli",d:"1.5 km",eta:"19 min",fee:"₹25",r:"4.4",veg:true},
+ {n:"Sweet Tooth",c:"Desserts · Mithai",img:"dish-rasmalai",d:"2.2 km",eta:"21 min",fee:"₹33",r:"4.7",veg:true},
+ {n:"Punjabi Rasoi",c:"North Indian",img:"dish-chole",d:"3.4 km",eta:"34 min",fee:"₹41",r:"4.2"},
+ {n:"Pav Bhaji Corner",c:"Street food",img:"dish-pavbhaji",d:"4.1 km",eta:"30 min",fee:"₹49",r:"4.1",veg:true},
+];
+const MENU = {
+ "Dosas":[{n:"Masala Dosa",p:140,img:"dish-dosa",veg:true,best:true,d:"Crisp rice crêpe, potato masala, sambar & chutney"},{n:"Paneer Dosa",p:180,img:"dish-paneer",veg:true,d:"With spiced paneer bhurji"},{n:"Mini Thali",p:220,img:"dish-thali",veg:true,d:"Rice, two curries, roti, papad, sweet"}],
+ "Breakfast":[{n:"Idli Sambar (2)",p:80,img:"dish-idli",veg:true,d:"Steamed, soft, with coconut chutney"},{n:"Filter Coffee",p:40,img:"dish-coffee",veg:true,d:"Peaberry, frothed in a dabara"}],
+ "Sweets":[{n:"Rasmalai",p:90,img:"dish-rasmalai",veg:true,d:"Two pieces, saffron milk"}],
+};
+const ORDER = {no:"PL-1042",rest:"Dosa Camp",items:[["Masala Dosa",2,280],["Filter Coffee",2,80]],sub:360,fee:49,plat:5,total:414,dist:"5.0 km",addr:"HSR Layout · Sector 2, 17th Cross",rider:{n:"Suresh K",v:"Scooter · KA 05 MJ 4321",r:"4.8"},
+ steps:[["Placed","8:41"],["Accepted","8:42"],["Cooking","8:43"],["Ready","8:57"],["Picked up","8:58"],["Delivered",""]],cur:4};
+const TICKETS = {
+ New:[{no:"PL-1044",who:"Ananya",items:[["Mini Thali",1],["Rasmalai",1]],pay:"Paid",age:"0:10",tot:310,fresh:true},{no:"PL-1043",who:"Ravi",items:[["Masala Dosa",2],["Filter Coffee",1]],pay:"COD",age:"0:42",tot:320,note:"Extra chutney please"}],
+ Cooking:[{no:"PL-1041",who:"Priya",items:[["Idli Sambar (2)",3],["Filter Coffee",2]],pay:"Paid",age:"6:10",tot:320,rider:"Suresh · 1.3 km away"},{no:"PL-1040",who:"Deepak",items:[["Paneer Dosa",1],["Masala Dosa",1]],pay:"COD",age:"9:05",tot:320,rider:"Kiran · 400 m away"}],
+ Ready:[{no:"PL-1039",who:"Meera",items:[["Masala Dosa",2]],pay:"Paid",age:"14:22",tot:280,rider:"Kiran · at the door"}],
+ Out:[{no:"PL-1038",who:"Manoj",items:[["Mini Thali",2],["Rasmalai",2]],pay:"COD",age:"21:40",tot:620,rider:"Arjun · 6 min to drop"}],
+};
+const RIDERS = [["Suresh K","busy","PL-1042"],["Kiran M","busy","PL-1039"],["Arjun P","busy","PL-1038"],["Lakshmi","available",""],["Farhan","available",""],["Nikhil","available",""],["Basava","available",""],["Divya","offline",""],["Ravi T","busy","PL-1031"]];
+const ADMIN_ORDERS = [["PL-1044","Dosa Camp","placed","0:10","—",""],["PL-1043","Dosa Camp","placed","0:42","—",""],["PL-1042","Dosa Camp","picked_up","17:20","Suresh K",""],["PL-1041","Biryani Bhatti","accepted","3:12","—","no rider"],["PL-1039","Dosa Camp","ready","11:02","Kiran M","not picked up"],["PL-1038","Thali Ghar","picked_up","21:40","Arjun P",""],["PL-1031","Momo Junction","picked_up","28:05","Ravi T",""]];
+const INR = n => "₹" + n.toLocaleString("en-IN");
+const img = (k, cls="ph") => `<img class="${cls}" src="img/${k}.jpg" alt="">`;
+
+/* ── map ── */
+const LEG = MAP.leg2.px, LEG1 = MAP.leg1.px;
+function cum(pts){const c=[0];for(let i=1;i<pts.length;i++){const dx=pts[i][0]-pts[i-1][0],dy=pts[i][1]-pts[i-1][1];c.push(c[i-1]+Math.hypot(dx,dy));}return c;}
+const CUM = cum(LEG), LEN = CUM[CUM.length-1];
+function along(pts,c,t){const d=t*c[c.length-1];let i=1;while(i<c.length&&c[i]<d)i++;if(i>=c.length)return {x:pts[pts.length-1][0],y:pts[pts.length-1][1],a:0};const s=(d-c[i-1])/((c[i]-c[i-1])||1);const x=pts[i-1][0]+(pts[i][0]-pts[i-1][0])*s,y=pts[i-1][1]+(pts[i][1]-pts[i-1][1])*s;const a=Math.atan2(pts[i][1]-pts[i-1][1],pts[i][0]-pts[i-1][0])*180/Math.PI;return {x,y,a,i};}
+const poly = pts => pts.map(p=>p.join(",")).join(" ");
+const VIEW = {phone:"620 430 660 880", rider:"620 430 660 880", desk:"440 330 1096 950", tile:"760 560 560 500"};
+/* opts: style light|dark, view, id, routeCol, routeW, trailCol, restCol, dropCol, riderCol, riderText, others, riders, grid, rings, restLabel, dropLabel, glow */
+function mapSvg(o){
+ const v=o.view||VIEW.phone, sty=o.style||"light";
+ const others=o.others?Object.entries(MAP.others).map(([n,p])=>`<g class="oth"><circle cx="${p[0]}" cy="${p[1]}" r="9" fill="${o.othCol||'#fff'}" stroke="${o.restCol}" stroke-width="2.5"/>${o.othLabels?`<text x="${p[0]+13}" y="${p[1]+4}" font-size="11" font-weight="600" fill="${o.labelCol||'#222'}">${n}</text>`:''}</g>`).join(""):"";
+ const riders=o.riders?MAP.riders.map((p,i)=>{const st=RIDERS[i]?RIDERS[i][1]:"available";const col=st==="busy"?o.riderCol:st==="offline"?"#999":(o.availCol||"#2F7D4A");return `<g><circle cx="${p[0]}" cy="${p[1]}" r="11" fill="${col}" stroke="${o.othCol||'#fff'}" stroke-width="2.5" ${i%3===2?'stroke-dasharray="3 3"':''}/><text x="${p[0]+15}" y="${p[1]+4}" font-size="11" font-weight="600" fill="${o.labelCol||'#222'}">${RIDERS[i]?RIDERS[i][0].split(" ")[0]:''}</text></g>`;}).join(""):"";
+ const grid=o.grid?`<pattern id="g${o.id}" width="64" height="64" patternUnits="userSpaceOnUse"><path d="M64 0H0V64" fill="none" stroke="${o.gridCol||'rgba(61,240,139,.12)'}" stroke-width="1"/></pattern><rect x="0" y="0" width="1536" height="1280" fill="url(#g${o.id})"/>`:"";
+ const rings=o.rings?[120,240,360].map(r=>`<circle cx="${MAP.restaurant.px[0]}" cy="${MAP.restaurant.px[1]}" r="${r}" fill="none" stroke="${o.ringCol||'rgba(61,240,139,.25)'}" stroke-dasharray="4 6"/>`).join(""):"";
+ const rp=MAP.restaurant.px, dp=MAP.drop.px;
+ const leg1=o.leg1?`<polyline class="route" points="${poly(LEG1)}" stroke="${o.leg1Col||o.routeCol}" stroke-width="${o.routeW||6}" stroke-dasharray="2 10" opacity=".7"/>`:"";
+ return `<svg class="map" id="${o.id}" viewBox="${v}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <image href="img/map-${sty}.jpg" x="0" y="0" width="1536" height="1280" ${o.tint?`style="filter:${o.tint}"`:''}/>
+  ${grid}${rings}${o.overlay?`<rect x="0" y="0" width="1536" height="1280" fill="${o.overlay}"/>`:''}
+  ${others}${leg1}
+  ${o.glow?`<polyline class="route" points="${poly(LEG)}" stroke="${o.glow}" stroke-width="${(o.routeW||6)+10}" opacity=".35"/>`:''}
+  <polyline class="route rt" points="${poly(LEG)}" stroke="${o.routeCol}" stroke-width="${o.routeW||6}" ${o.routeDash?`stroke-dasharray="${o.routeDash}"`:''}/>
+  <polyline class="trail" points="${poly(LEG.slice(0,2))}" stroke="${o.trailCol||o.riderCol}" stroke-width="${(o.routeW||6)+2}" opacity=".9"/>
+  ${riders}
+  <g class="rest"><circle cx="${rp[0]}" cy="${rp[1]}" r="${o.pinR||13}" fill="${o.restCol}" stroke="${o.othCol||'#fff'}" stroke-width="3"/><text x="${rp[0]}" y="${rp[1]+5}" text-anchor="middle" font-size="13" font-weight="800" fill="${o.othCol||'#fff'}">R</text>${o.restLabel?`<text x="${rp[0]+18}" y="${rp[1]-12}" font-size="14" font-weight="700" fill="${o.labelCol||'#222'}">${o.restLabel}</text>`:''}</g>
+  <g class="drop"><path d="M${dp[0]} ${dp[1]} m-14 -22 a14 14 0 1 1 28 0 q0 10 -14 26 q-14 -16 -14 -26z" fill="${o.dropCol}" stroke="${o.othCol||'#fff'}" stroke-width="3"/><circle cx="${dp[0]}" cy="${dp[1]-22}" r="5" fill="${o.othCol||'#fff'}"/>${o.dropLabel?`<text x="${dp[0]+20}" y="${dp[1]-16}" font-size="14" font-weight="700" fill="${o.labelCol||'#222'}">${o.dropLabel}</text>`:''}</g>
+  <g class="rider" transform="translate(${LEG[0][0]} ${LEG[0][1]})"><g class="rot"><circle r="${o.riderR||17}" fill="${o.riderCol}" stroke="${o.othCol||'#fff'}" stroke-width="3"/><g fill="none" stroke="${o.othCol||'#fff'}" stroke-width="2.6" stroke-linecap="round"><circle cx="-7" cy="5" r="3.2"/><circle cx="7" cy="5" r="3.2"/><path d="M-7 5 L-2 -3 L4 -3 L7 5 M4 -3 L6 -7 L9 -7"/></g></g>${o.riderText?`<text class="rt-lbl" x="24" y="5" fill="${o.labelCol||'#222'}">${o.riderText}</text>`:''}</g>
+ </svg>`;
+}
+/* animate a map's rider along LEG between t0..t1 over dur ms, looping */
+const ANIMS=[];
+function animateMap(id,t0=.3,t1=.92,dur=42000,onTick){ANIMS.push({id,t0,t1,dur,onTick,start:performance.now()});}
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function tick(now){
+ for(const a of ANIMS){const el=document.getElementById(a.id);if(!el||!el.isConnected)continue;if(el.closest(".dir")&&!el.closest(".dir").classList.contains("on"))continue;
+  let f=((now-a.start)%a.dur)/a.dur; if(RM) f=Math.floor(f*14)/14;
+  const t=a.t0+(a.t1-a.t0)*f; const p=along(LEG,CUM,t);
+  const g=el.querySelector(".rider"); g.setAttribute("transform",`translate(${p.x} ${p.y})`); g.querySelector(".rot").setAttribute("transform",`rotate(${p.a+90})`);
+  const tr=el.querySelector(".trail"); const from=Math.max(0,p.i-40); tr.setAttribute("points",poly(LEG.slice(from,p.i).concat([[p.x,p.y]])));
+  if(a.onTick)a.onTick(t,el);}
+ requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+const etaMin = t => Math.max(1,Math.round((1-t)*MAP.leg2.distance_m/6.9/60));
+</script>
+
+<script>
+const sb = (dark=false) => `<div class="sb" style="color:${dark?'#fff':'#111'}"><span>9:41</span><span>●●● ⌁ ▮</span></div>`;
+const phone = (inner, cls="") => `<div class="phone ${cls}"><div class="scr">${inner}</div></div>`;
+const tablet = (inner, cls="", s=.82) => `<div class="scale" style="transform:scale(${s});width:${1052*s}px;height:${796*s}px"><div class="tablet ${cls}"><div class="scr">${inner}</div></div></div>`;
+const desk = (inner, cls="", s=.72) => `<div class="scale" style="transform:scale(${s});width:${1296*s}px;height:${816*s}px"><div class="desk ${cls}"><div class="scr">${inner}</div></div></div>`;
+const cap = (t, sub="") => `<p class="cap"><b>${t}</b> ${sub}</p>`;
+const dev = (html, c, sub) => `<div>${html}${cap(c, sub)}</div>`;
+
+</script>
+<style>
+/* ── L · Bento ── */
+.l-ph .scr,.l-tb .scr,.l-dk .scr{background:#F3F0FF;color:#1F1B2E;font-family:"Nunito","Inter",sans-serif}
+.l-tile{border-radius:24px;background:#fff;box-shadow:0 2px 0 rgba(31,27,46,.05),0 10px 24px rgba(31,27,46,.06)}
+.l-lav{background:#E6DEFF}.l-mint{background:#D9F5E3}.l-peach{background:#FFE1D1}.l-lemon{background:#FFF1B8}.l-sky{background:#D8EDFF}.l-ink{background:#1F1B2E;color:#fff}
+.l-h{font-weight:900;letter-spacing:-.02em}
+.l-emo{font-size:22px;line-height:1}
+/* tracking */
+.l-tr{position:absolute;inset:0;padding:54px 12px 12px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:330px 96px 96px 1fr;gap:10px}
+.l-tr .mp{grid-column:1/3;overflow:hidden;position:relative}
+.l-tr .mp .pill{position:absolute;top:12px;left:12px;background:#fff;border-radius:999px;padding:6px 12px;font-weight:800;font-size:12px;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.l-tr .eta{padding:12px 14px;display:flex;flex-direction:column;justify-content:center}.l-tr .eta b{font-size:40px;font-weight:900;letter-spacing:-.04em;line-height:1}.l-tr .eta small{font-size:11px;font-weight:700;opacity:.7;margin-top:4px}
+.l-tr .rider{padding:12px 14px;display:flex;align-items:center;gap:10px}.l-tr .rider .av{width:44px;height:44px;border-radius:16px;background:#1F1B2E;color:#fff;display:grid;place-items:center;font-weight:900;font-size:18px}.l-tr .rider b{display:block;font-size:13px;font-weight:900}.l-tr .rider small{font-size:11px;font-weight:700;opacity:.7}
+.l-tr .steps{grid-column:1/3;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}.l-tr .steps span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9.5px;font-weight:800;opacity:.4}.l-tr .steps span i{width:26px;height:26px;border-radius:10px;background:#E6DEFF;display:grid;place-items:center;font-style:normal;font-size:13px}.l-tr .steps span.on{opacity:1}.l-tr .steps span.on i{background:#7B5CFF;color:#fff}.l-tr .steps span.cur{opacity:1}.l-tr .steps span.cur i{background:#FF7A59;color:#fff;transform:scale(1.15)}
+.l-tr .sum{grid-column:1/3;padding:12px 14px;font-size:12px;font-weight:700}.l-tr .sum div{display:flex;justify-content:space-between;padding:2px 0}.l-tr .sum .t{font-size:15px;font-weight:900;border-top:2px dashed #E6DEFF;margin-top:4px;padding-top:6px}
+/* home */
+.l-hm{padding:54px 12px 90px}.l-hm .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.l-hm .top b{font-size:22px;font-weight:900;display:block;letter-spacing:-.02em}.l-hm .top small{font-size:12px;font-weight:700;opacity:.7}.l-hm .top .av{width:40px;height:40px;border-radius:14px;background:#FFE1D1;display:grid;place-items:center}
+.l-hm .srch{padding:13px 16px;font-weight:700;font-size:13px;color:#8d87a3;margin-bottom:12px}
+.l-grid{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:150px;gap:10px}
+.l-big{grid-column:1/3;position:relative;overflow:hidden}.l-big .t{position:absolute;left:14px;bottom:12px;background:#fff;border-radius:16px;padding:8px 12px;font-weight:900;font-size:13px;box-shadow:0 6px 16px rgba(0,0,0,.15)}.l-big .t small{display:block;font-weight:700;opacity:.7;font-size:10px}
+.l-rc{position:relative;overflow:hidden}.l-rc .ph{height:100%}.l-rc .t{position:absolute;left:10px;right:10px;bottom:10px;background:#fff;border-radius:14px;padding:6px 10px;font-weight:900;font-size:12px;box-shadow:0 6px 16px rgba(0,0,0,.15)}.l-rc .t small{display:block;font-weight:700;opacity:.7;font-size:10px}
+.l-rc .eta{position:absolute;top:10px;left:10px;background:#1F1B2E;color:#fff;border-radius:999px;padding:4px 9px;font-weight:900;font-size:11px}
+.l-stat{padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between}.l-stat b{font-size:28px;font-weight:900;letter-spacing:-.03em}.l-stat small{font-size:11px;font-weight:800;opacity:.7}
+.l-nav{position:absolute;left:12px;right:12px;bottom:12px;height:62px;display:flex;justify-content:space-around;align-items:center;font-size:11px;font-weight:800;color:#8d87a3}.l-nav .on{color:#7B5CFF}
+/* menu */
+.l-mn{padding:54px 12px 100px}.l-mn .hero{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:120px;gap:10px;margin-bottom:10px}.l-mn .hero .cv{grid-row:1/3;overflow:hidden}.l-mn .hero .cv .ph{height:100%}
+.l-mn .hero .nm{padding:12px 14px}.l-mn .hero .nm b{font-size:22px;font-weight:900;letter-spacing:-.02em;display:block;line-height:1.05}.l-mn .hero .nm small{font-weight:700;font-size:11px;opacity:.7}
+.l-mn .hero .st{padding:12px 14px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}.l-mn .hero .st span{background:#fff;border-radius:999px;padding:5px 9px;font-weight:800;font-size:11px}
+.l-mn h4{margin:14px 4px 8px;font-size:15px;font-weight:900}
+.l-mi{display:flex;gap:10px;align-items:center;padding:8px;margin-bottom:10px}.l-mi .ph{width:78px;height:78px;border-radius:18px;flex:none}.l-mi b{display:block;font-size:14px;font-weight:900}.l-mi p{margin:2px 0 4px;font-size:11px;font-weight:600;opacity:.7;line-height:1.3}.l-mi .p{font-weight:900}
+.l-mi .add{margin-left:auto;flex:none;width:40px;height:40px;border-radius:14px;background:#7B5CFF;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px}.l-mi .add.n{width:auto;padding:0 12px;font-size:13px}
+.l-cart{position:absolute;left:12px;right:12px;bottom:12px;height:62px;border-radius:22px;background:#1F1B2E;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-weight:900;font-size:14px}.l-cart span:last-child{background:#7B5CFF;border-radius:999px;padding:8px 14px}
+/* board */
+.l-bd{position:absolute;inset:0;padding:14px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:64px 1fr;gap:12px}
+.l-bh{grid-column:1/5;display:flex;align-items:center;gap:16px;padding:0 18px}.l-bh b{font-size:18px;font-weight:900}.l-bh .st{margin-left:auto;display:flex;gap:10px}.l-bh .st span{border-radius:14px;padding:6px 12px;font-size:11px;font-weight:800}.l-bh .st span b{display:block;font-size:14px}
+.l-col{padding:10px;overflow:hidden}.l-col h4{margin:2px 6px 10px;font-size:13px;font-weight:900;display:flex;justify-content:space-between}.l-col h4 i{font-style:normal;background:#1F1B2E;color:#fff;border-radius:999px;padding:0 8px;font-size:11px}
+.l-tk{background:#fff;border-radius:18px;padding:10px 12px;margin-bottom:10px;font-size:12px;font-weight:700}.l-tk.fresh{box-shadow:0 0 0 3px #FF7A59}
+.l-tk .h{display:flex;justify-content:space-between;font-weight:900;font-size:14px}.l-tk .h span{font-size:11px;color:#FF7A59}.l-tk .who{font-size:11px;opacity:.7;margin:2px 0 6px}.l-tk .it{padding:2px 0}.l-tk .note{background:#FFF1B8;border-radius:10px;padding:5px 8px;font-size:11px;margin:6px 0}.l-tk .rd{font-size:11px;margin-top:6px;color:#7B5CFF;font-weight:900}
+.l-tk .btns{display:flex;gap:6px;margin-top:8px}.l-tk .btns span{flex:1;text-align:center;padding:9px 0;border-radius:12px;font-weight:900;font-size:12px;background:#7B5CFF;color:#fff}.l-tk .btns span.x{background:#F3F0FF;color:#FF7A59;flex:0 0 64px}
+/* rider */
+.l-rd{position:absolute;inset:0;background:#1F1B2E;padding:54px 12px 12px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:400px 110px 70px 1fr;gap:10px;color:#1F1B2E}
+.l-rd .mp{grid-column:1/3;overflow:hidden;position:relative}.l-rd .mp .hud{position:absolute;top:12px;left:12px;display:flex;gap:6px}.l-rd .mp .hud span{background:#fff;border-radius:999px;padding:5px 10px;font-weight:900;font-size:11px}
+.l-rd .job{grid-column:1/3;padding:12px 14px}.l-rd .job small{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;opacity:.6}.l-rd .job b{display:block;font-size:20px;font-weight:900;letter-spacing:-.02em}.l-rd .job p{margin:2px 0 0;font-size:12px;font-weight:700;opacity:.75}
+.l-rd .tog{grid-column:1/3;padding:0 14px;display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:13px}.l-rd .tog i{width:50px;height:30px;border-radius:15px;background:#2ECC71;position:relative}.l-rd .tog i::after{content:"";position:absolute;right:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff}
+.l-rd .big{display:grid;place-items:center;font-weight:900;font-size:16px}
+/* admin */
+.l-ad{position:absolute;inset:0;padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr 460px;grid-template-rows:90px 1fr;gap:12px}
+.l-ad .k{padding:12px 16px;display:flex;flex-direction:column;justify-content:space-between}.l-ad .k b{font-size:30px;font-weight:900;letter-spacing:-.03em;line-height:1}.l-ad .k small{font-size:11px;font-weight:800;opacity:.7}
+.l-ad .mp{grid-column:1/4;overflow:hidden;position:relative}.l-ad .mp .lg{position:absolute;left:12px;bottom:12px;background:#fff;border-radius:14px;padding:8px 12px;font-size:12px;font-weight:800;display:flex;gap:12px}.l-ad .mp .lg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.l-ad .side{grid-row:1/3;padding:12px;overflow:hidden}.l-ad .side h4{margin:4px 6px 10px;font-size:15px;font-weight:900}
+.l-ad table{width:100%;border-collapse:collapse;font-size:12px;font-weight:700;table-layout:fixed}.l-ad th{text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.6;padding:6px 8px}.l-ad td{padding:8px;border-top:1px solid #F3F0FF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.l-ad .s{font-weight:900;font-size:11px;padding:3px 8px;border-radius:999px;background:#F3F0FF}.l-ad .s.pk{background:#D9F5E3}.l-ad .s.pl{background:#FFE1D1}.l-ad .stk{color:#FF7A59;font-weight:900;font-size:11px}.l-ad .re{color:#7B5CFF;font-weight:900;font-size:11px}
+</style>
+<script>
+DIRS.l = {
+ title:"Bento", blurb:"Chunky bento tiles in pastels — lavender, mint, peach, lemon, sky — with 24 px radius, Nunito 900 everywhere, emoji-scale icons and spring physics; every screen is a grid of rounded cards, the map is just the biggest tile. Blinkit / Zepto energy, friendlier.",
+ trade:"The most approachable and the quickest to feel 'finished' — cards compose every screen from one component. Risk: the closest to what the category already looks like; the motion has to do the distinguishing.",
+ m:{bg:"#F3F0FF",ink:"#1F1B2E",acc:"#FF7A59",acc2:"#7B5CFF",font:'"Nunito",sans-serif',rad:"20px",panel:"#fff",mapStyle:"light",routeCol:"#7B5CFF",riderCol:"#FF7A59",restCol:"#1F1B2E",dropCol:"#7B5CFF"},
+ tracking(){return `${sb()}<div class="l-tr"><div class="l-tile mp">${mapSvg({id:"l-track",routeCol:"#7B5CFF",riderCol:"#FF7A59",restCol:"#1F1B2E",dropCol:"#7B5CFF",restLabel:"Dosa Camp",dropLabel:"Home",riderText:"Suresh",routeW:7,riderR:18})}<span class="pill">🛵 On the way</span></div>
+  <div class="l-tile l-mint eta"><b><span id="l-eta">6</span> min</b><small>1.8 km · Sarjapur Rd</small></div>
+  <div class="l-tile l-lemon rider"><div class="av">S</div><div><b>${ORDER.rider.n}</b><small>Scooter · ★ 4.8</small></div></div>
+  <div class="l-tile steps">${[['🧾','Placed'],['✅','Accepted'],['🍳','Cooking'],['🛍️','Ready'],['🛵','Picked up'],['🏠','Delivered']].map((s,i)=>`<span class="${i<ORDER.cur?'on':i===ORDER.cur?'cur':''}"><i>${s[0]}</i>${s[1]}</span>`).join("")}</div>
+  <div class="l-tile sum">${ORDER.items.map(i=>`<div><span>${i[1]} × ${i[0]}</span><span>${INR(i[2])}</span></div>`).join("")}<div><span>Delivery + fees</span><span>₹54</span></div><div class="t"><span>Cash on delivery</span><span>${INR(ORDER.total)}</span></div></div></div>`;},
+ home(){return `${sb()}<div class="body scrolly"><div class="l-hm"><div class="top"><div><b>Hey Ananya 👋</b><small>📍 HSR Layout, Sector 2 · 9 places near you</small></div><span class="av">🍽️</span></div>
+  <div class="l-tile srch">🔍 Dosa, biryani, Chai Point…</div>
+  <div class="l-grid"><div class="l-tile l-big">${img("dish-biryani")}<div class="t">Biryani Bhatti · 31 min<small>Biryani · Kebabs · 1.9 km · ₹25</small></div></div>
+  ${R.slice(0,1).concat(R.slice(2,7)).map((r,i)=>i===2?`<div class="l-tile l-peach l-stat"><b>22′</b><small>fastest right now — Dosa Camp</small></div>`:`<div class="l-tile l-rc">${img(r.img)}<span class="eta">${r.eta}</span><div class="t">${r.n}<small>${r.c} · ${r.d}</small></div></div>`).join("")}</div></div></div>
+  <div class="l-tile l-nav"><span class="on">🏠 Home</span><span>🔍 Search</span><span>🧾 Orders</span><span>🙂 You</span></div>`;},
+ menu(){return `${sb()}<div class="body scrolly"><div class="l-mn"><div class="hero"><div class="l-tile cv">${img("dish-dosa")}</div><div class="l-tile l-lav nm"><b>Dosa Camp</b><small>South Indian · pure veg</small></div><div class="l-tile st"><span>★ 4.5</span><span>22 min</span><span>1.2 km</span><span>₹25</span></div></div>
+  ${Object.entries(MENU).map(([c,items])=>`<h4>${c}</h4>${items.map((m,i)=>`<div class="l-tile l-mi">${img(m.img)}<div><b>${m.n}</b><p>${m.d}</p><span class="p">${INR(m.p)}</span></div><span class="add ${c==='Dosas'&&i===0?'n':''}">${c==='Dosas'&&i===0?'− 2 +':'+'}</span></div>`).join("")}`).join("")}</div></div>
+  <div class="l-cart"><span>2 items · ₹280</span><span>Checkout →</span></div>`;},
+ board(){return `<div class="l-bd"><div class="l-tile l-bh"><b>🍳 Dosa Camp · kitchen</b><span style="font-size:12px;font-weight:700;opacity:.7">Koramangala 5th Block · open</span><div class="st"><span class="l-lav"><b>38</b>orders</span><span class="l-mint"><b>₹9,140</b>revenue</span><span class="l-sky"><b>1:12</b>accept</span><span class="l-peach"><b>2</b>new</span></div></div>
+  ${Object.entries(TICKETS).map(([c,ts],ci)=>`<div class="l-tile ${['l-peach','l-lemon','l-mint','l-sky'][ci]} l-col"><h4>${['🧾','🍳','🛍️','🛵'][ci]} ${c}${c==='New'?`<i>${ts.length}</i>`:''}</h4>${ts.map(t=>`<div class="l-tk ${t.fresh?'fresh':''}"><div class="h">${t.no}<span>${t.age}</span></div><div class="who">${t.who} · ${t.pay} · ${INR(t.tot)}</div>${t.items.map(i=>`<div class="it">${i[1]} × ${i[0]}</div>`).join("")}${t.note?`<div class="note">“${t.note}”</div>`:''}${t.rider?`<div class="rd">🛵 ${t.rider}</div>`:''}${c==='New'?`<div class="btns"><span class="x">Reject</span><span>Accept</span></div>`:c==='Cooking'?`<div class="btns"><span>Mark ready</span></div>`:''}</div>`).join("")}</div>`).join("")}</div>`;},
+ rider(){return `${sb(true)}<div class="l-rd"><div class="l-tile mp">${mapSvg({id:"l-rider",style:"dark",routeCol:"#FFF1B8",riderCol:"#FF7A59",restCol:"#FFF1B8",dropCol:"#fff",othCol:"#1F1B2E",labelCol:"#fff",dropLabel:"Drop · 1.8 km",riderR:20,routeW:7})}<div class="hud"><span>25 km/h</span><span>GPS ● 3 s</span><span>₹58</span></div></div>
+  <div class="l-tile l-lemon job"><small>Drop · PL-1042 · COD ₹414</small><b>HSR Layout, Sector 2</b><p>17th Cross, near BDA park · Ananya · 2 items</p></div>
+  <div class="l-tile tog">📡 Share my location <i></i></div>
+  <div class="l-tile big" style="background:#3a3552;color:#8d87a3">Picked up ✓</div><div class="l-tile l-mint big">Delivered 🎉</div></div>`;},
+ admin(){return `<div class="l-ad"><div class="l-tile l-lav k"><b>7</b><small>active orders</small></div><div class="l-tile l-mint k"><b>4</b><small>riders free</small></div><div class="l-tile l-peach k"><b>2</b><small>stuck ⚠</small></div>
+  <div class="l-tile side"><h4>🗂️ Live orders</h4><table><colgroup><col style="width:72px"><col><col style="width:84px"><col style="width:48px"><col style="width:96px"><col style="width:66px"></colgroup><tr><th>Order</th><th>Restaurant</th><th>Status</th><th>Age</th><th>Rider</th><th></th></tr>${ADMIN_ORDERS.map(o=>`<tr><td><b>${o[0]}</b></td><td>${o[1]}</td><td><span class="s ${o[2]==='picked_up'?'pk':o[2]==='placed'?'pl':''}">${o[2].replace('_',' ')}</span></td><td>${o[3]}</td><td>${o[5]?`<span class="stk">⚠ ${o[5]}</span>`:o[4]}</td><td><span class="re">${o[4]==='—'?'Assign':'Reassign'}</span></td></tr>`).join("")}</table></div>
+  <div class="l-tile mp">${mapSvg({id:"l-admin",view:VIEW.desk,routeCol:"#7B5CFF",riderCol:"#FF7A59",restCol:"#1F1B2E",dropCol:"#7B5CFF",availCol:"#2ECC71",others:true,othLabels:true,riders:true,leg1:true,restLabel:"Dosa Camp",riderText:"Suresh · PL-1042",routeW:7})}<div class="lg"><span><i style="background:#FF7A59"></i>busy</span><span><i style="background:#2ECC71"></i>available</span><span><i style="background:#bbb"></i>offline</span><span><i style="border:2px dashed #FF7A59"></i>sim</span></div></div></div>`;},
+ boot(){animateMap("l-track",.3,.95,42000,(t)=>{const e=document.getElementById("l-eta");if(e)e.textContent=etaMin(t);});animateMap("l-rider",.3,.95,42000);animateMap("l-admin",.3,.95,42000);}
+};
+</script>
+
+<style>
+/* ── extra Bento screens ── */
+.l-tile,.l-pop{animation:lpop .42s cubic-bezier(.34,1.56,.64,1) both}
+@media (prefers-reduced-motion:reduce){.l-tile,.l-pop{animation:none}}
+@keyframes lpop{from{transform:scale(.92) translateY(8px);opacity:0}to{transform:none;opacity:1}}
+.l-chip{display:inline-block;border-radius:14px;padding:5px 10px;font-weight:800;font-size:11px;background:#F3F0FF}
+.l-btn{display:inline-flex;align-items:center;justify-content:center;border-radius:16px;padding:14px 18px;font-weight:900;font-size:14px;background:#7B5CFF;color:#fff}
+.l-btn.ghost{background:#F3F0FF;color:#1F1B2E}.l-btn.coral{background:#FF7A59}
+/* desktop home */
+.l-dh{position:absolute;inset:0;padding:16px 20px;display:grid;grid-template-columns:320px 1fr 1fr 1fr;grid-template-rows:64px 200px 200px 1fr;gap:12px}
+.l-dh .nav{grid-column:1/5;display:flex;align-items:center;gap:20px;padding:0 20px}.l-dh .nav b{font-size:20px;font-weight:900}.l-dh .nav .srch{flex:1;background:#F3F0FF;border-radius:14px;padding:10px 14px;font-weight:700;font-size:13px;color:#8d87a3}.l-dh .nav .av{width:36px;height:36px;border-radius:12px;background:#FFE1D1;display:grid;place-items:center}
+.l-dh .side{grid-row:2/5;padding:14px;display:flex;flex-direction:column;gap:10px}.l-dh .side .addr b{display:block;font-size:15px;font-weight:900}.l-dh .side .addr small{font-weight:700;font-size:11px;opacity:.7}
+.l-dh .side .mp{flex:1;border-radius:18px;overflow:hidden;min-height:200px}
+.l-dh .side .f{display:flex;flex-wrap:wrap;gap:6px}
+.l-dh .rc{position:relative;overflow:hidden}.l-dh .rc .t{position:absolute;left:12px;right:12px;bottom:12px;background:#fff;border-radius:14px;padding:8px 12px;font-weight:900;font-size:13px;box-shadow:0 6px 16px rgba(0,0,0,.15)}.l-dh .rc .t small{display:block;font-weight:700;opacity:.7;font-size:10px}.l-dh .rc .eta{position:absolute;top:10px;left:10px;background:#1F1B2E;color:#fff;border-radius:999px;padding:4px 9px;font-weight:900;font-size:11px}
+.l-dh .stat{padding:14px;display:flex;flex-direction:column;justify-content:space-between}.l-dh .stat b{font-size:30px;font-weight:900;letter-spacing:-.03em}.l-dh .stat small{font-size:11px;font-weight:800;opacity:.7}
+.l-dh .list{grid-column:2/5;padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-content:start}.l-dh .list h4{grid-column:1/4;margin:2px 4px 0;font-size:14px;font-weight:900}
+.l-dh .li{display:flex;gap:10px;align-items:center;background:#F3F0FF;border-radius:16px;padding:8px}.l-dh .li .ph{width:54px;height:54px;border-radius:12px;flex:none}.l-dh .li b{display:block;font-size:13px;font-weight:900}.l-dh .li small{font-size:11px;font-weight:700;opacity:.7}
+/* cart sheet */
+.l-sheet{position:absolute;left:0;right:0;bottom:0;background:#F3F0FF;border-radius:28px 28px 0 0;padding:12px 12px 14px;box-shadow:0 -10px 40px rgba(31,27,46,.2)}
+.l-sheet::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:#E6DEFF;margin:0 auto 10px}
+.l-dim{position:absolute;inset:0;background:rgba(31,27,46,.35)}
+.l-ci{display:flex;gap:10px;align-items:center;padding:8px;margin-bottom:8px}.l-ci .ph{width:56px;height:56px;border-radius:14px;flex:none}.l-ci b{display:block;font-size:13px;font-weight:900}.l-ci small{font-weight:700;font-size:11px;opacity:.7}.l-ci .q{margin-left:auto;background:#7B5CFF;color:#fff;border-radius:12px;padding:6px 10px;font-weight:900;font-size:12px}
+.l-note{padding:10px 12px;font-weight:700;font-size:12px;color:#8d87a3}
+.l-tot{padding:10px 12px;font-weight:700;font-size:12px}.l-tot div{display:flex;justify-content:space-between;padding:2px 0}.l-tot .t{font-weight:900;font-size:15px;border-top:2px dashed #E6DEFF;margin-top:4px;padding-top:6px}
+/* checkout */
+.l-ck{padding:54px 12px 100px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.l-ck h2{grid-column:1/3;margin:0 4px 2px;font-size:22px;font-weight:900;letter-spacing:-.02em}
+.l-ck .full{grid-column:1/3}
+.l-ck .sec{padding:12px 14px}.l-ck .sec h4{margin:0 0 8px;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;opacity:.6}
+.l-ck .ad{display:flex;gap:8px;align-items:center;background:#F3F0FF;border-radius:14px;padding:8px 10px;margin-bottom:6px;font-weight:700;font-size:12px}.l-ck .ad.on{background:#E6DEFF;outline:2px solid #7B5CFF}.l-ck .ad b{display:block;font-weight:900}
+.l-ck .pay{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;text-align:center;font-weight:900;font-size:13px;padding:14px}.l-ck .pay i{font-style:normal;font-size:26px}.l-ck .pay.on{outline:3px solid #7B5CFF}.l-ck .pay small{font-weight:700;font-size:10px;opacity:.7}
+.l-ck .mpm{height:120px;border-radius:18px;overflow:hidden}
+.l-place{position:absolute;left:12px;right:12px;bottom:12px;height:64px;border-radius:22px;background:#1F1B2E;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-weight:900;font-size:14px}.l-place span:last-child{background:#2ECC71;color:#1F1B2E;border-radius:999px;padding:8px 14px}
+.l-toast{position:absolute;left:12px;right:12px;top:60px;background:#FFE1D1;border-radius:18px;padding:12px 14px;font-weight:800;font-size:12px;box-shadow:0 10px 24px rgba(31,27,46,.15);z-index:4}.l-toast b{display:block;font-weight:900;font-size:13px}
+/* desktop tracking */
+.l-dt{position:absolute;inset:0;padding:16px 20px;display:grid;grid-template-columns:1fr 1fr 380px;grid-template-rows:64px 120px 120px 1fr;gap:12px}
+.l-dt .nav{grid-column:1/4;display:flex;align-items:center;gap:20px;padding:0 20px}.l-dt .nav b{font-size:20px;font-weight:900}.l-dt .nav small{font-weight:800;font-size:12px;opacity:.7}
+.l-dt .mp{grid-column:1/3;grid-row:2/5;overflow:hidden;position:relative}.l-dt .mp .pill{position:absolute;top:14px;left:14px;background:#fff;border-radius:999px;padding:7px 14px;font-weight:900;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.l-dt .eta{padding:14px 16px;display:flex;flex-direction:column;justify-content:center}.l-dt .eta b{font-size:44px;font-weight:900;letter-spacing:-.04em;line-height:1}.l-dt .eta small{font-weight:800;font-size:12px;opacity:.7;margin-top:6px}
+.l-dt .rider{padding:14px 16px;display:flex;align-items:center;gap:12px}.l-dt .rider .av{width:48px;height:48px;border-radius:16px;background:#1F1B2E;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px}.l-dt .rider b{display:block;font-weight:900;font-size:14px}.l-dt .rider small{font-weight:700;font-size:12px;opacity:.7}.l-dt .rider .c{margin-left:auto;background:#F3F0FF;border-radius:12px;padding:8px 12px;font-weight:900;font-size:12px}
+.l-dt .steps{padding:14px 16px;display:flex;flex-direction:column;gap:8px}.l-dt .steps div{display:flex;align-items:center;gap:10px;font-weight:800;font-size:12px;opacity:.45}.l-dt .steps div i{width:28px;height:28px;border-radius:10px;background:#E6DEFF;display:grid;place-items:center;font-style:normal}.l-dt .steps div.on{opacity:1}.l-dt .steps div.on i{background:#7B5CFF;color:#fff}.l-dt .steps div.cur{opacity:1}.l-dt .steps div.cur i{background:#FF7A59;color:#fff}.l-dt .steps div span{margin-left:auto;opacity:.6}
+.l-dt .sum{padding:12px 16px;font-weight:700;font-size:12px;align-self:end}.l-dt .sum div{display:flex;justify-content:space-between;padding:2px 0}.l-dt .sum .t{font-weight:900;font-size:15px;border-top:2px dashed #E6DEFF;margin-top:4px;padding-top:6px}
+/* orders */
+.l-or{padding:54px 12px 90px}.l-or h2{margin:0 4px 10px;font-size:22px;font-weight:900;letter-spacing:-.02em}
+.l-oc{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:10px;margin-bottom:10px}.l-oc .ph{width:64px;height:64px;border-radius:16px}.l-oc b{display:block;font-size:14px;font-weight:900}.l-oc small{display:block;font-weight:700;font-size:11px;opacity:.7;margin-top:2px}.l-oc .s{border-radius:12px;padding:6px 10px;font-weight:900;font-size:11px}
+/* rider before toggle */
+.l-rd .big.off{background:#3a3552;color:#8d87a3}
+.l-rd .tog.off i{background:#3a3552}.l-rd .tog.off i::after{right:auto;left:3px}
+/* sign in */
+.l-si{padding:54px 12px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px}.l-si h2{grid-column:1/3;margin:8px 4px 2px;font-size:26px;font-weight:900;letter-spacing:-.03em}.l-si p{grid-column:1/3;margin:0 4px 6px;font-weight:700;font-size:13px;opacity:.75}
+.l-si .in{grid-column:1/3;padding:14px 16px;font-weight:700;font-size:13px;color:#8d87a3}
+.l-si .demo{padding:14px;display:flex;flex-direction:column;gap:4px;min-height:110px}.l-si .demo i{font-style:normal;font-size:26px}.l-si .demo b{font-weight:900;font-size:14px}.l-si .demo small{font-weight:700;font-size:11px;opacity:.7}
+.l-si h4{grid-column:1/3;margin:10px 4px 0;font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;opacity:.6}
+/* addresses */
+.l-adr{padding:54px 12px 90px;display:grid;grid-template-columns:1fr 1fr;gap:10px}.l-adr h2{grid-column:1/3;margin:0 4px 2px;font-size:22px;font-weight:900}
+.l-adr .mp{grid-column:1/3;height:220px;overflow:hidden;position:relative}.l-adr .mp .pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%)}
+.l-adr .a{padding:12px 14px;font-weight:700;font-size:12px}.l-adr .a i{font-style:normal;font-size:22px;display:block;margin-bottom:6px}.l-adr .a b{display:block;font-weight:900;font-size:13px}.l-adr .a.on{outline:3px solid #7B5CFF}
+/* menu availability */
+.l-av{position:absolute;inset:0;padding:14px;display:grid;grid-template-columns:260px 1fr;grid-template-rows:64px 1fr;gap:12px}
+.l-av .h{grid-column:1/3;display:flex;align-items:center;gap:14px;padding:0 18px}.l-av .h b{font-size:18px;font-weight:900}.l-av .h .tabs2{margin-left:auto;display:flex;gap:6px}.l-av .h .tabs2 span{border-radius:12px;padding:8px 12px;font-weight:900;font-size:12px;background:#F3F0FF}.l-av .h .tabs2 span.on{background:#7B5CFF;color:#fff}
+.l-av .cats{padding:12px}.l-av .cats div{padding:10px 12px;border-radius:14px;font-weight:900;font-size:13px;margin-bottom:4px}.l-av .cats div.on{background:#E6DEFF}.l-av .cats div small{float:right;font-weight:700;opacity:.6}
+.l-av .items{padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start}
+.l-av .it{display:flex;gap:10px;align-items:center;background:#F3F0FF;border-radius:18px;padding:8px}.l-av .it .ph{width:60px;height:60px;border-radius:14px;flex:none}.l-av .it b{display:block;font-size:13px;font-weight:900}.l-av .it small{font-weight:700;font-size:11px;opacity:.7}.l-av .it .sw{margin-left:auto;width:46px;height:26px;border-radius:13px;background:#2ECC71;position:relative;flex:none}.l-av .it .sw::after{content:"";position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff}.l-av .it .sw.off{background:#cfcadf}.l-av .it .sw.off::after{right:auto;left:3px}.l-av .it.off{opacity:.55}
+/* states */
+.l-st{padding:54px 12px 90px;display:grid;grid-template-columns:1fr 1fr;gap:10px}.l-st .s{padding:14px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end}.l-st .s i{font-style:normal;font-size:28px;margin-bottom:auto}.l-st .s b{font-weight:900;font-size:14px}.l-st .s small{font-weight:700;font-size:11px;opacity:.75;margin-top:2px}.l-st .s .l-chip{align-self:flex-start;margin-top:8px;background:#fff}
+</style>
+<script>
+const L = DIRS.l;
+const SCREENS = [
+ {id:"s1", title:"S1 Home", sub:"pin + restaurants · phone and desktop", build:()=>[dev(phone(L.home(),"l-ph"),"Phone"), dev(desk(homeDesk(),"l-dk",.72),"Desktop 1280")]},
+ {id:"s2", title:"S2 Restaurant", sub:"menu, plate slide into the cart bar", build:()=>[dev(phone(L.menu(),"l-ph"),"Phone")]},
+ {id:"s3", title:"S3 Cart", sub:"sheet over the menu · Order together in v4", build:()=>[dev(phone(cartSheet(),"l-ph"),"Cart sheet")]},
+ {id:"s4", title:"S4 Checkout", sub:"address · COD / Razorpay · quote", build:()=>[dev(phone(checkout(),"l-ph"),"Checkout"), dev(phone(checkout(true),"l-ph"),"Razorpay dismissed")]},
+ {id:"s5", title:"S5 Tracking — the hero", sub:"live: the marker glides along the real OSRM route", build:()=>[dev(phone(L.tracking(),"l-ph"),"Phone"), dev(desk(trackDesk(),"l-dk",.72),"Desktop 1280")]},
+ {id:"s6", title:"S6 Orders", sub:"history · reorder in v2", build:()=>[dev(phone(orders(),"l-ph"),"Orders")]},
+ {id:"s7", title:"S7 Restaurant board", sub:"tablet · New · Cooking · Ready · Out", build:()=>[dev(tablet(L.board(),"l-tb",.82),"Tablet 1024")]},
+ {id:"s8", title:"S8 Rider app", sub:"phone PWA · before and after Share my location", build:()=>[dev(phone(riderOff(),"l-ph"),"Job assigned · location off"), dev(phone(L.rider(),"l-ph"),"Sharing · to customer")]},
+ {id:"s9", title:"S9 Admin map", sub:"every order + rider · stuck flags · reassign", build:()=>[dev(desk(L.admin(),"l-dk",.72),"Desktop 1280")]},
+ {id:"s10", title:"S10 Sign in + demo", sub:"four demo cards", build:()=>[dev(phone(signin(),"l-ph"),"Sign in")]},
+ {id:"s11", title:"S11 Addresses", sub:"saved pins · add via search or drag", build:()=>[dev(phone(addresses(),"l-ph"),"Addresses")]},
+ {id:"s12", title:"S12 Restaurant menu", sub:"v1 availability toggles · full editor in v2", build:()=>[dev(tablet(availability(),"l-tb",.82),"Tablet 1024")]},
+ {id:"s16", title:"S16 States", sub:"finding a rider · closed · too far · switch cart · payment dismissed · empty · weak signal", build:()=>[dev(phone(states(),"l-ph"),"States")]},
+];
+function homeDesk(){return `<div class="l-dh"><div class="l-tile nav"><b>Platter</b><div class="srch">🔍 Dosa, biryani, Chai Point…</div><span class="l-chip">📍 HSR Layout, Sector 2</span><span class="av">🙂</span></div>
+ <div class="l-tile side"><div class="addr"><b>HSR Layout, Sector 2</b><small>17th Cross · drag the pin to change</small></div><div class="mp">${mapSvg({id:"l-dh-map",view:"960 860 600 460",routeCol:"transparent",riderCol:"transparent",restCol:"#1F1B2E",dropCol:"#7B5CFF",others:true,pinR:0})}</div><div class="f"><span class="l-chip" style="background:#E6DEFF">All</span><span class="l-chip">Veg</span><span class="l-chip">Under 25 min</span><span class="l-chip">Top rated</span><span class="l-chip">Free delivery</span></div></div>
+ <div class="l-tile rc">${img("dish-biryani")}<span class="eta">31 min</span><div class="t">Biryani Bhatti<small>Biryani · Kebabs · 1.9 km · ₹25</small></div></div>
+ <div class="l-tile rc">${img("dish-dosa")}<span class="eta">22 min</span><div class="t">Dosa Camp<small>South Indian · Veg · 1.2 km · ₹25</small></div></div>
+ <div class="l-tile l-peach stat"><b>9</b><small>restaurants can reach you in under 30 min</small></div>
+ <div class="l-tile rc">${img("kitchen")}<span class="eta">18 min</span><div class="t">Koramangala Social<small>Cafe · Bar food · 0.8 km</small></div></div>
+ <div class="l-tile rc">${img("dish-thali")}<span class="eta">20 min</span><div class="t">Thali Ghar<small>North Indian · Veg · 0.9 km</small></div></div>
+ <div class="l-tile rc">${img("dish-momos")}<span class="eta">27 min</span><div class="t">Momo Junction<small>Tibetan · 2.4 km · ₹33</small></div></div>
+ <div class="l-tile list"><h4>All 12 nearby</h4>${R.slice(5).map(r=>`<div class="li">${img(r.img)}<div><b>${r.n}</b><small>${r.c} · ${r.d} · ${r.eta} · ★ ${r.r}</small></div></div>`).join("")}</div></div>`;}
+function cartSheet(){return `${sb()}<div class="body">${L.menu().replace(sb(true),"")}</div><div class="l-dim"></div><div class="l-sheet"><div style="display:flex;justify-content:space-between;align-items:center;margin:0 4px 10px"><b style="font-size:18px;font-weight:900">Your cart · Dosa Camp</b><span class="l-chip" style="background:#fff">2 items</span></div>
+ <div class="l-tile l-ci">${img("dish-dosa")}<div><b>Masala Dosa</b><small>₹140 each</small></div><span class="q">− 2 +</span></div>
+ <div class="l-tile l-ci">${img("dish-coffee")}<div><b>Filter Coffee</b><small>₹40 each</small></div><span class="q">− 2 +</span></div>
+ <div class="l-tile l-note">📝 Note to the kitchen (extra chutney, less spicy…)</div>
+ <div class="l-tile l-tot"><div><span>Items</span><span>₹360</span></div><div><span>Delivery · 5.0 km</span><span>₹49</span></div><div><span>Platform fee</span><span>₹5</span></div><div class="t"><span>Total</span><span>₹414</span></div></div>
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><span class="l-btn ghost">👥 Order together</span><span class="l-btn">Checkout →</span></div></div>`;}
+function checkout(dismissed=false){return `${sb()}<div class="body scrolly"><div class="l-ck"><h2>Checkout</h2>
+ ${dismissed?`<div class="l-toast"><b>Payment window closed</b>Your order is saved for 15 min — try again or switch to Cash on delivery.</div>`:''}
+ <div class="l-tile full sec"><h4>Deliver to</h4><div class="ad on">🏠<div><b>Home · HSR Layout, Sector 2</b>17th Cross, near BDA park</div></div><div class="ad">💼<div><b>Office · Koramangala 4th Block</b>80 Feet Rd</div></div><div class="ad">📍<div><b>Use the pin</b>drag on the map</div></div><div class="mpm" style="margin-top:8px">${mapSvg({id:"l-ck-map"+(dismissed?'2':''),view:"1100 980 340 240",routeCol:"transparent",riderCol:"transparent",restCol:"#1F1B2E",dropCol:"#7B5CFF",pinR:0})}</div></div>
+ <div class="l-tile l-mint pay ${dismissed?'on':''}"><i>💵</i>Cash on delivery<small>pay the rider</small></div><div class="l-tile l-sky pay ${dismissed?'':'on'}"><i>💳</i>Razorpay<small>UPI · cards · test mode</small></div>
+ <div class="l-tile full l-tot"><div><span>2 × Masala Dosa · 2 × Filter Coffee</span><span>₹360</span></div><div><span>Delivery · 5.0 km (₹25 + 3 × ₹8)</span><span>₹49</span></div><div><span>Platform fee</span><span>₹5</span></div><div class="t"><span>Total</span><span>₹414</span></div></div>
+ <div class="l-tile full l-note">📝 “Extra chutney please”</div></div></div>
+ <div class="l-place"><span>₹414 · ETA 28 min</span><span>Place order →</span></div>`;}
+function trackDesk(){return `<div class="l-dt"><div class="l-tile nav"><b>Platter</b><small>Order PL-1042 · Dosa Camp → Home · COD</small><span class="l-chip" style="margin-left:auto;background:#D9F5E3">● live</span><span class="l-chip">Cancel</span></div>
+ <div class="l-tile mp">${mapSvg({id:"l-dt-map",view:VIEW.desk,routeCol:"#7B5CFF",riderCol:"#FF7A59",restCol:"#1F1B2E",dropCol:"#7B5CFF",restLabel:"Dosa Camp",dropLabel:"Home",riderText:"Suresh",routeW:7,riderR:18})}<span class="pill">🛵 Suresh is on the way</span></div>
+ <div class="l-tile l-mint eta"><b><span id="l-dt-eta">6</span> min</b><small>1.8 km · Sarjapur Road · OSRM</small></div>
+ <div class="l-tile l-lemon rider"><div class="av">S</div><div><b>Suresh K</b><small>Scooter · KA 05 MJ 4321 · ★ 4.8</small></div><span class="c">☎ Call</span></div>
+ <div class="l-tile steps">${[['🧾','Placed','8:41'],['✅','Accepted','8:42'],['🍳','Cooking','8:43'],['🛍️','Ready','8:57'],['🛵','Picked up','8:58'],['🏠','Delivered','']].map((s,i)=>`<div class="${i<4?'on':i===4?'cur':''}"><i>${s[0]}</i>${s[1]}<span>${s[2]}</span></div>`).join("")}</div>
+ <div class="l-tile sum"><div><span>2 × Masala Dosa</span><span>₹280</span></div><div><span>2 × Filter Coffee</span><span>₹80</span></div><div><span>Delivery + fees</span><span>₹54</span></div><div class="t"><span>Cash on delivery</span><span>₹414</span></div></div></div>`;}
+function orders(){const rows=[["PL-1042","Dosa Camp","2 × Masala Dosa, 2 × Filter Coffee","Today · ₹414","On the way","l-mint","dish-dosa"],["PL-1017","Biryani Bhatti","1 × Chicken Biryani","Tue · ₹420","Delivered","l-lav","dish-biryani"],["PL-0991","Momo Junction","2 × Steamed Momos","Sun · ₹260","Delivered","l-lav","dish-momos"],["PL-0972","Thali Ghar","1 × Veg Thali","Fri · ₹220","Delivered","l-lav","dish-thali"],["PL-0940","Pizza Bakery","1 × Margherita","Sep 8 · ₹380","Rejected","l-peach","dish-pizza"]];
+ return `${sb()}<div class="body scrolly"><div class="l-or"><h2>Your orders</h2>${rows.map(r=>`<div class="l-tile l-oc">${img(r[6])}<div><b>${r[1]}</b><small>${r[2]}</small><small>${r[3]}</small></div><span class="s ${r[5]}">${r[4]}</span></div>`).join("")}</div></div><div class="l-tile l-nav"><span>🏠 Home</span><span>🔍 Search</span><span class="on">🧾 Orders</span><span>🙂 You</span></div>`;}
+function riderOff(){return `${sb(true)}<div class="l-rd"><div class="l-tile mp">${mapSvg({id:"l-rd-off",style:"dark",view:"700 380 560 746",routeCol:"#FFF1B8",riderCol:"#FF7A59",restCol:"#FFF1B8",dropCol:"#fff",othCol:"#1F1B2E",labelCol:"#fff",leg1:true,leg1Col:"#FF7A59",restLabel:"Dosa Camp · pickup",riderR:20,routeW:7,routeDash:"1 14"})}<div class="hud"><span>Job 1 of today</span><span>GPS off</span></div></div>
+ <div class="l-tile l-sky job"><small>Pickup · PL-1042 · then 5.0 km to HSR</small><b>Dosa Camp</b><p>Koramangala 5th Block · 2 items · ready in ~12 min · you earn ₹58</p></div>
+ <div class="l-tile tog off">📡 Share my location <i></i></div>
+ <div class="l-tile big off">Picked up</div><div class="l-tile big off">Delivered</div></div>`;}
+function signin(){return `${sb()}<div class="body scrolly"><div class="l-si"><h2>Platter 🍽️</h2><p>Hot food, tracked to your door. Sign in, or try any side of the platform in one tap.</p>
+ <div class="l-tile in">✉️ Email</div><div class="l-tile in">🔒 Password</div><span class="l-btn" style="grid-column:1/3">Sign in →</span>
+ <h4>Try a demo login</h4>
+ <div class="l-tile l-lav demo"><i>🙂</i><b>Customer</b><small>3 saved addresses, an order on the way</small></div>
+ <div class="l-tile l-sky demo"><i>🍳</i><b>Restaurant</b><small>Dosa Camp's board with 4 tickets</small></div>
+ <div class="l-tile l-lemon demo"><i>🛵</i><b>Rider</b><small>a job assigned — walk and watch</small></div>
+ <div class="l-tile l-peach demo"><i>🗺️</i><b>Admin</b><small>every order and rider on one map</small></div>
+ <p style="margin-top:8px">New here? <b>Create an account</b></p></div></div>`;}
+function addresses(){return `${sb()}<div class="body scrolly"><div class="l-adr"><h2>Addresses</h2><div class="l-tile mp">${mapSvg({id:"l-adr-map",view:"1060 950 420 330",routeCol:"transparent",riderCol:"transparent",restCol:"#1F1B2E",dropCol:"#7B5CFF",pinR:0})}<span class="l-chip" style="position:absolute;left:12px;top:12px;background:#fff">Drag the pin · ±5 m</span></div>
+ <div class="l-tile in" style="grid-column:1/3;padding:12px 14px;font-weight:700;font-size:13px;color:#8d87a3">🔍 Search a street, a landmark…</div>
+ <div class="l-tile l-lav a on"><i>🏠</i><b>Home</b>17th Cross, HSR Layout Sector 2, near BDA park</div>
+ <div class="l-tile a"><i>💼</i><b>Office</b>80 Feet Rd, Koramangala 4th Block</div>
+ <div class="l-tile a"><i>🏫</i><b>Mom's</b>5th Main, Jakkasandra</div>
+ <div class="l-tile l-mint a" style="align-items:center;justify-content:center;text-align:center"><i>＋</i><b>Add from the pin</b></div></div></div>`;}
+function availability(){const cats=[["Dosas",3],["Breakfast",2],["Sweets",1],["Drinks",4]];const items=[["Masala Dosa",140,"dish-dosa",true],["Paneer Dosa",180,"dish-paneer",true],["Mini Thali",220,"dish-thali",false],["Idli Sambar (2)",80,"dish-idli",true],["Filter Coffee",40,"dish-coffee",true],["Rasmalai",90,"dish-rasmalai",false]];
+ return `<div class="l-av"><div class="l-tile h"><b>🍳 Dosa Camp · menu</b><span class="l-chip" style="background:#D9F5E3">● open · till 23:00</span><div class="tabs2"><span>Board</span><span class="on">Menu</span><span>Today</span></div></div>
+ <div class="l-tile cats">${cats.map((c,i)=>`<div class="${i===0?'on':''}">${c[0]}<small>${c[1]}</small></div>`).join("")}<div style="opacity:.5">＋ Category <small>v2</small></div></div>
+ <div class="l-tile items">${items.map(it=>`<div class="it ${it[3]?'':'off'}">${img(it[2])}<div><b>${it[0]}</b><small>₹${it[1]} · ${it[3]?'available':'sold out today'}</small></div><span class="sw ${it[3]?'':'off'}"></span></div>`).join("")}</div></div>`;}
+function states(){return `${sb()}<div class="body scrolly"><div class="l-st"><div class="l-tile l-lav s"><i>📡</i><b>Finding a rider…</b><small>Dosa Camp accepted. The nearest free rider takes it within a minute.</small><span class="l-chip">Radar ping</span></div>
+ <div class="l-tile l-peach s"><i>🌙</i><b>Thali Ghar is closed</b><small>Opens tomorrow at 11:00. 8 other kitchens are open now.</small></div>
+ <div class="l-tile s" style="opacity:.75"><i>🚫</i><b>Too far · 6.2 km</b><small>Punjabi Rasoi can't reach this pin. Try Koramangala.</small></div>
+ <div class="l-tile l-lemon s"><i>🧺</i><b>Start a new cart?</b><small>Your cart has 2 items from Dosa Camp. One restaurant per order.</small><span class="l-chip">Clear &amp; add</span></div>
+ <div class="l-tile l-sky s"><i>💳</i><b>Payment window closed</b><small>Saved for 15 min — try again or pay cash.</small></div>
+ <div class="l-tile s"><i>🧾</i><b>No orders yet</b><small>Your first dosa is 22 minutes away.</small><span class="l-chip">Browse</span></div>
+ <div class="l-tile l-peach s"><i>📶</i><b>Rider's signal is weak</b><small>No fix for 40 s. The map will catch up.</small></div>
+ <div class="l-tile l-ink s"><i>🛵</i><b>You're offline</b><small>Go online to get offers (v2).</small><span class="l-chip" style="color:#1F1B2E">Go online</span></div></div></div>`;}
+</script>
+
+<script>
+function render(){
+ const tabs=document.getElementById("tabs"), host=document.getElementById("dirs");
+ SCREENS.forEach((s,i)=>{
+  tabs.insertAdjacentHTML("beforeend",`<button class="tab" role="tab" data-k="${s.id}" aria-selected="${i===0}"><kbd>${i+1<10?i+1:'0'}</kbd>${s.title}</button>`);
+  host.insertAdjacentHTML("beforeend",`<section class="dir ${i===0?'on':''}" id="dir-${s.id}"><div class="dirhead"><div><h2>${s.title}</h2><p>${s.sub}</p></div></div><div class="row">${s.build().join("")}</div></section>`);
+ });
+ animateMap("l-track",.3,.95,42000,(t)=>{const e=document.getElementById("l-eta");if(e)e.textContent=etaMin(t);});
+ animateMap("l-dt-map",.3,.95,42000,(t)=>{const e=document.getElementById("l-dt-eta");if(e)e.textContent=etaMin(t);});
+ animateMap("l-rider",.3,.95,42000); animateMap("l-admin",.3,.95,42000);
+ const sel=k=>{document.querySelectorAll(".dir").forEach(s=>s.classList.toggle("on",s.id==="dir-"+k));document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.k===k));try{localStorage.setItem("platter-screen",k)}catch(e){}};
+ tabs.addEventListener("click",e=>{const t=e.target.closest(".tab");if(t)sel(t.dataset.k);});
+ addEventListener("keydown",e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const n=e.key==="0"?10:+e.key;if(n>=1&&SCREENS[n-1])sel(SCREENS[n-1].id);});
+ try{const s=localStorage.getItem("platter-screen");if(s&&SCREENS.some(x=>x.id===s))sel(s);}catch(e){}
+ const h=location.hash.replace("#","");if(SCREENS.some(x=>x.id===h))sel(h);
+}
+render();
+</script>
+</body></html>
