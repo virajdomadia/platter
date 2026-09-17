@@ -93,7 +93,7 @@ stateDiagram-v2
   to_customer --> available: progress = 1 → delivered → takes the oldest waiting order
   note right of to_restaurant
     position(now) = point along the polyline at
-    min(1, (now − started_at) / duration_s);
+    min(1, (now − started_at) / duration_s), where a sim's duration_s = distance_m ÷ its speed_kmh;
     computed in every stream tick and every order read —
     no process, idempotent under row locks
   end note
@@ -125,13 +125,13 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-  subgraph Board · S7
+  subgraph Board["Board · S7"]
     N[New · ticket prints + chime] -->|Accept| CK[Cooking]
     N -->|Reject + reason| X[gone]
     CK -->|Ready| RD[Ready · rider name + distance]
     RD -->|rider picked up| OD[Out for delivery]
   end
-  subgraph Rider · S8
+  subgraph Rider["Rider · S8"]
     J[Job card · to restaurant] -->|arrive| WT[Waiting for ready]
     WT -->|Picked up| TC[To customer · dark map · route]
     TC -->|Delivered| NX[Next job / idle]
@@ -143,10 +143,10 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  A[S3 Cart · Order together] -->|POST /groups| L[/o/CODE · shared cart]
+  A[S3 Cart · Order together] -->|POST /groups| L["/o/CODE · shared cart"]
   L -->|friend opens on phone B · name once| L2[adds items under their name]
   L2 -->|group_events over SSE| L
-  L -->|host checks out · one order with group_id| T[/o/CODE = S5 Tracking for everyone]
+  L -->|host checks out · one order with group_id| T["/o/CODE = S5 Tracking for everyone"]
   T -->|your items highlighted per phone| T
   T -->|24 h after delivered| E[link expired]
 ```

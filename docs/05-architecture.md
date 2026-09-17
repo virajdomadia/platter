@@ -7,16 +7,16 @@
 ```mermaid
 flowchart LR
   subgraph Browsers
-    CU[Customer · phone / laptop<br/>pin · menu · checkout · tracking (EventSource)]
-    RB[Restaurant board · tablet<br/>tickets · accept / ready (EventSource)]
-    RD[Rider · phone PWA<br/>watchPosition → POST · job · buttons (EventSource)]
-    AD[Admin · desktop<br/>live map · reassign (EventSource)]
+    CU["Customer · phone / laptop<br/>pin · menu · checkout · tracking (EventSource)"]
+    RB["Restaurant board · tablet<br/>tickets · accept / ready (EventSource)"]
+    RD["Rider · phone PWA<br/>watchPosition → POST · job · buttons (EventSource)"]
+    AD["Admin · desktop<br/>live map · reassign (EventSource)"]
   end
   subgraph Vercel
     WEB[web · platter<br/>Next.js: pages · MapLibre · rewrites /api/* →]
     API[api · platter-api<br/>FastAPI bom1 · maxDuration 300<br/>REST · state machine · dispatch · sim · stream loop · webhooks]
   end
-  PG[(Neon Postgres + PostGIS<br/>users · restaurants · menu · orders · order_events (bus)<br/>riders · rider_positions · rider_track · rider_legs)]
+  PG[("Neon Postgres + PostGIS<br/>users · restaurants · menu · orders · order_events (bus)<br/>riders · rider_positions · rider_track · rider_legs")]
   BL[Vercel Blob<br/>dish photos · covers]
   OFM[OpenFreeMap tiles]
   OSRM[OSRM public router]
@@ -111,7 +111,7 @@ web/src/
 
 ## 6. Request paths worth drawing
 **Order:** pin at Koramangala 5th Block → `GET /api/restaurants?lat&lng` (PostGIS, 9 within 5 km) → `/r/dosa-camp` → cart → `POST /api/orders/quote` → `POST /api/orders { cod }` → `placed` + event → `/orders/PL-1042` opens `EventSource` → prime `status` → the board's stream ticks and prints the ticket.
-**Accept → rider:** board `POST /api/orders/{id}/transition { to: accepted }` → `transition()` → `assign_rider()` KNN → sim rider 4 (`busy`), OSRM leg 1.3 km / 4 min → events `accepted`, `rider_assigned`, `route` → the customer stream draws the route and the marker starts gliding; the rider stream (a real rider) shows the job card.
+**Accept → rider:** board `POST /api/restaurant/orders/{id}/transition { to: accepted }` → `transition()` → `assign_rider()` KNN → sim rider 4 (`busy`), OSRM leg 1.3 km / 4 min → events `accepted`, `rider_assigned`, `route` → the customer stream draws the route and the marker starts gliding; the rider stream (a real rider) shows the job card.
 **Ready → delivered (sim):** board marks `ready`; the sim is already waiting (`arrived_at`) → `picked_up` + leg *to_customer* (2.1 km / 7 min) → each tick computes the position, ETA falls → at progress 1 → `delivered` → rider `available` → `on_rider_available` finds nothing → idle at the drop.
 **Real rider:** phone toggles *Share my location* → `watchPosition` → `POST /api/rider/position` every 3 s → upsert + track → the customer's next tick (≤ 1 s) emits `rider` → the marker interpolates to it over the next fixes' gap.
 **Reconnect:** the stream closes at 280 s → the browser reconnects with `Last-Event-ID: 4312:1758112233000` → the loop replays events > 4312 and positions > that ms → nothing missed.

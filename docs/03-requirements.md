@@ -21,8 +21,8 @@ Actors: **Customer** (signed in to order; browsing is public), **Restaurant** (o
 
 ### R3. Cart & checkout
 - Cart per restaurant in `localStorage` (switching restaurant asks to clear). `/checkout`: items, address (saved or the current pin with a line typed), payment `cod | razorpay`, note to restaurant; totals from `POST /orders/quote` (subtotal, delivery fee, platform fee ₹5, total).
-- `POST /orders` prices everything server-side: current item prices, availability, restaurant open, address within 5 km (route distance from OSRM else straight line × 1.3), fee ₹25 up to 2 km + ₹8 per started km. COD → `placed`; Razorpay → `pending_payment` + Razorpay order → modal → `POST /orders/{id}/verify` or webhook → **`mark_paid()`** → `placed`. Unpaid orders `expired` lazily after 15 min. Order number `PL-####`.
-- **Accept (tests):** the total equals the quote for the same payload; a tampered client price is ignored; verify-then-webhook and webhook-then-verify → exactly one `placed` event; replay is a no-op; an address at 6 km → 422 `out_of_range`.
+- `POST /orders` prices everything server-side: current item prices, availability, restaurant open, address within 5 km **straight-line** (the same `ST_DWithin` rule as the list, so an orderable restaurant never fails at checkout), fee ₹25 up to 2 km + ₹8 per started km of the **route** distance (OSRM, else straight line × 1.3). COD → `placed`; Razorpay → `pending_payment` + Razorpay order → modal → `POST /orders/{id}/verify` or webhook → **`mark_paid()`** → `placed`. Unpaid orders `expired` lazily after 15 min. Order number `PL-####`.
+- **Accept (tests):** the total equals the quote for the same payload; a tampered client price is ignored; verify-then-webhook and webhook-then-verify → exactly one `placed` event; replay is a no-op; an address at 6 km straight-line → 422 `out_of_range`, while 4.9 km straight / 6.2 km by road is accepted with the road-based fee.
 
 ### R4. The order state machine
 - `status ∈ {pending_payment, placed, accepted, preparing, ready, picked_up, delivered, rejected, cancelled, expired}`. Transitions and who may make them:

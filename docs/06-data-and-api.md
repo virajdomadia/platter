@@ -31,7 +31,9 @@ menu_items       (id uuid pk, restaurant_id fk, category_id fk, name text, descr
 riders           (id uuid pk, user_id uuid fk unique, name text, phone text, vehicle text,               -- 'scooter' | 'cycle'
                   is_sim bool default false, status rider_status default 'available', speed_kmh numeric(4,1) default 22.0, created_at)
                   index (status)
-rider_positions  (rider_id uuid pk fk, loc geography(point,4326), heading smallint null, speed_mps numeric(5,2) null, recorded_at timestamptz)
+rider_positions  (rider_id uuid pk fk, loc geography(point,4326), heading smallint null, speed_mps numeric(5,2) null,
+                  recorded_at timestamptz,                        -- server now(): the cursors and staleness checks use this
+                  client_at timestamptz null)                     -- the phone's own clock, only to drop out-of-order fixes
                   index gist (loc)
 rider_track      (id bigserial pk, order_id uuid fk, rider_id fk, at timestamptz, loc geography(point,4326))   index (order_id, at)
 
@@ -43,7 +45,7 @@ orders           (id uuid pk, number text unique,                     -- 'PL-104
                   distance_m int, route_method route_method, eta_s int null, note text null,
                   razorpay_order_id text unique null, razorpay_payment_id text null,
                   created_at, placed_at null, accepted_at null, preparing_at null, ready_at null,
-                  picked_up_at null, delivered_at null, closed_at null, reject_reason text null,
+                  picked_up_at null, delivered_at null, rejected_at null, cancelled_at null, expired_at null, reject_reason text null,
                   group_id uuid null (v4), stack_seq smallint null (v3))
                   index (user_id, created_at desc) · index (restaurant_id, status) · index (rider_id) where rider_id is not null ·
                   index (status, accepted_at) where rider_id is null
@@ -56,7 +58,7 @@ rider_legs       (id uuid pk, order_id fk, rider_id fk, kind leg_kind, polyline 
 webhook_events   (id text pk, event text, received_at)
 ```
 
-`order_events` is append-only and is the bus: `kind ∈ placed | accepted | rejected | cancelled | preparing | ready | picked_up | delivered | expired | rider_assigned | rider_reassigned | route | note` (v2 adds `offer_sent | offer_declined | offer_expired | refunded`, v3 `stacked`); `payload` carries what the event needs (`route`: polyline + distance + duration + kind; `rider_assigned`: name + vehicle). `rider_positions` holds one row per rider (latest); `rider_track` is the trail for the order's map and the case study, pruned 7 days after `delivered`. `orders.drop_loc` and `address_line` are snapshots. Every `*_at` is set by its transition. Money is integer paise; `distance_m` is the OSRM (or straight × 1.3) restaurant → drop distance at quote time.
+`order_events` is append-only and is the bus; its `seq` is **commit-ordered** because every insert takes `pg_advisory_xact_lock(1)` first (04 §3), so a stream cursor `seq > $last` never skips an event. `kind ∈ placed | accepted | rejected | cancelled | preparing | ready | picked_up | delivered | expired | rider_assigned | rider_reassigned | route | note` (v2 adds `offer_sent | offer_declined | offer_expired | refunded`, v3 `stacked`); `payload` carries what the event needs (`route`: polyline + distance + duration + kind; `rider_assigned`: name + vehicle). `rider_positions` holds one row per rider (latest); `rider_track` is the trail for the order's map and the case study, pruned 7 days after `delivered`. `orders.drop_loc` and `address_line` are snapshots. Every `*_at` is set by its transition. Money is integer paise; `distance_m` is the OSRM (or straight × 1.3) restaurant → drop distance at quote time.
 
 **transition recipe** (every actor, every edge):
 ```sql
@@ -64,6 +66,7 @@ begin;
   select * from orders where id = $1 for update;
   -- TRANSITIONS[(status, $to)] → roles + guard; not allowed → rollback, 409 illegal_transition {from, to}
   update orders set status = $to, <to>_at = now() where id = $1;
+  select pg_advisory_xact_lock(1);                                          -- commit-ordered seq (taken after every row lock)
   insert into order_events (order_id, kind, actor_role, actor_id, payload) values ($1, $to, $role, $actor, $payload);
   -- side effects in the same transaction: accepted → assign_rider · ready → sim pickup if arrived ·
   -- picked_up → new leg · delivered → release_rider + on_rider_available (+ ledger v2)
@@ -148,7 +151,7 @@ Error envelope everywhere: `{ "error": { "code": "illegal_transition", "message"
 | Method | Path | Body → Returns |
 |---|---|---|
 | GET | `/rider/me` | `RiderMe { rider, job?: Job { order, leg, restaurant, drop, items_count, pay_preview_paise }, today: { deliveries, pay_paise } }` |
-| POST | `/rider/position` | `{ lat, lng, heading?, speed_mps?, at }` → 204 (stale / jump → 204 ignored, `X-Ignored: stale|jump`) |
+| POST | `/rider/position` | `{ lat, lng, heading?, speed_mps?, at }` → 204; `recorded_at` is server time, `at` only orders fixes from the same phone (older `at` → 204 `X-Ignored: stale`; > 200 m within 3 s → 204 `X-Ignored: jump`, dropped) |
 | POST | `/rider/orders/{id}/transition` | `{ to: 'picked_up' \| 'delivered' }` → `Job \| null` · 409 |
 | GET 📡 | `/rider/events` | SSE — `assigned`, `status`, `route`, `offer` (v2) |
 
