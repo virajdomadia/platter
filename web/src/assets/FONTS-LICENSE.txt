@@ -1,0 +1,5 @@
+BricolageGrotesque-ExtraBold.ttf and BricolageGrotesque-Medium.ttf are static weight instances (800, 500) of Bricolage Grotesque,
+downloaded once from Google Fonts and used only by src/app/opengraph-image.tsx.
+
+Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
+Licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org
