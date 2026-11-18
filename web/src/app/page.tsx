@@ -4,18 +4,20 @@ import { Near } from "@/components/landing/Near";
 import { Sides } from "@/components/landing/Sides";
 import { Flow } from "@/components/landing/Flow";
 import { Cta } from "@/components/landing/Cta";
+import { EarlyAccess } from "@/components/landing/EarlyAccess";
 import { Footer } from "@/components/landing/Footer";
 
 export default function Home() {
   return (
     <>
       <Header />
-      <main>
+      <main id="main" tabIndex={-1}>
         <Hero />
         <Near />
         <Sides />
         <Flow />
         <Cta />
+        <EarlyAccess />
       </main>
       <Footer />
     </>
