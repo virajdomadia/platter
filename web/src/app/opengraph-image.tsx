@@ -1,26 +1,21 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
 export const alt = "Platter — watch your dinner ride over";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Bricolage Grotesque, the site's typeface. Google serves TTF to non-browser user agents, which
-// Satori needs. If the fetch fails (offline build), the image renders with the built-in font.
-async function bricolage(weight: number): Promise<ArrayBuffer | null> {
-  try {
-    const css = await (await fetch(`https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@${weight}`)).text();
-    const src = css.match(/src: url\((.+?)\) format\('(?:opentype|truetype)'\)/)?.[1];
-    return src ? await (await fetch(src)).arrayBuffer() : null;
-  } catch {
-    return null;
-  }
-}
-
 export default async function Image() {
-  const [bold, medium] = await Promise.all([bricolage(800), bricolage(500)]);
+  // Bricolage Grotesque, the site's typeface, committed under src/assets (SIL OFL 1.1) so the build never fetches fonts.
+  const dir = join(process.cwd(), "src/assets");
+  const [bold, medium] = await Promise.all([
+    readFile(join(dir, "BricolageGrotesque-ExtraBold.ttf")),
+    readFile(join(dir, "BricolageGrotesque-Medium.ttf")),
+  ]);
   const fonts = [
-    ...(bold ? [{ name: "Bricolage", data: bold, weight: 800 as const, style: "normal" as const }] : []),
-    ...(medium ? [{ name: "Bricolage", data: medium, weight: 500 as const, style: "normal" as const }] : []),
+    { name: "Bricolage", data: bold, weight: 800 as const, style: "normal" as const },
+    { name: "Bricolage", data: medium, weight: 500 as const, style: "normal" as const },
   ];
 
   return new ImageResponse(
