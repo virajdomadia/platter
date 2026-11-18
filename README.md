@@ -2,7 +2,7 @@
 
 **Hot food, tracked to your door.** A four-sided food-delivery platform: customers order, restaurants accept, riders deliver, an admin dispatches — and the rider moves on the customer's map in real time.
 
-> Status: **lifecycle steps 1–7 complete (2026-09-17)** — PRD v1, docs 03–07, direction L · Bento, every v1 screen mocked. Next: step 8 Project Setup (milestone 1.0), last in the build order. One of six portfolio projects by [Viraj Domadia](https://virajdomadia.vercel.app). **Live (landing page):** https://platter-viraj.vercel.app — will move to `platter.virajdomadia.com` later.
+> Status: **lifecycle steps 1–7 complete (2026-09-17)** — PRD v1, docs 03–07, direction L · Bento, every v1 screen mocked. Next: step 8 Project Setup (milestone 1.0), last in the build order. One of six portfolio projects by [Viraj Domadia](https://virajdomadia.com). **Live (landing page):** https://platter.virajdomadia.com
 
 ## What it proves
 Geospatial (PostGIS) · live location streaming · order state machine across roles
