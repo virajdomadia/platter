@@ -8,7 +8,7 @@
 Geospatial (PostGIS) · live location streaming · order state machine across roles
 
 ## Stack
-Next.js 15 (App Router) · TypeScript · Tailwind 4 · MapLibre GL + OpenFreeMap · FastAPI (Python) · Neon Postgres + PostGIS · SSE (Postgres as the bus) · OSRM · Photon · Razorpay · Vercel
+Next.js 15 (App Router) · TypeScript · Tailwind 4 · MapLibre GL + OpenFreeMap · FastAPI (Python) · Neon Postgres + PostGIS · SSE (Postgres as the bus) · OSRM · Photon · Razorpay · Vercel · Expo (v3 rider app)
 
 ## In this repo
 ```
@@ -38,4 +38,4 @@ pnpm dev
 - [Direction variants](https://claude.ai/artifact/JAekpL7HjR4oU5c39ak7dg) — twelve directions, L chosen
 
 ## Roadmap
-v1 Kitchen (16 h) → v2 Rush (11 h) → v3 Fleet (8 h) → v4 Order together (3 h) — see [docs/07-plan.md](docs/07-plan.md). Build starts at milestone 1.0 after the other five projects.
+v1 Kitchen (16 h) → v2 Rush (11 h) → v3 Fleet (16 h, incl. the native Expo rider app) → v4 Order together (6 h) = ≈ 49 h — see [docs/07-plan.md](docs/07-plan.md). Build starts at milestone 1.0 after the other five projects.

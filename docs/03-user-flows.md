@@ -53,7 +53,7 @@ sequenceDiagram
   CU->>API: GET /orders/{id}/events (EventSource, Last-Event-ID?)
   API->>PG: order + legs + events since seq · position since pos_ms
   API-->>CU: event: route {polyline} · event: status · event: rider {lat,lng,heading} · event: eta
-  loop every 1 s until 280 s (v3: on NOTIFY)
+  loop every 1 s until 280 s (v3: woken by NOTIFY, still reads by seq)
     API->>PG: advance_simulation() · events > seq · position > pos_ms
     API-->>CU: rider / status / eta events (id: seq:pos_ms) · ping every 15 s
   end
@@ -162,12 +162,12 @@ flowchart LR
 | S5 | **Tracking** | `/orders/[id]` | customer | v1 · rating in v2 · ETA band in v3 · group view in v4 | **The hero:** map with route, rider marker gliding, trail, ETA, status rail, order summary, cancel while placed |
 | S6 | Orders | `/orders` | customer | v1 · reorder in v2 | History with status chips |
 | S7 | **Restaurant board** | `/restaurant` | restaurant | v1 | Tablet columns New · Cooking · Ready · Out; ticket entrance; accept / reject / preparing / ready; today's totals |
-| S8 | **Rider app** | `/rider` | rider | v1 · offers + online toggle in v2 · busy-area hint in v3 | Phone PWA: job card, dark map with route, Share my location, Picked up / Delivered |
-| S9 | **Admin map** | `/admin` | admin | v1 · heatmap in v3 | Live map of orders + riders, stuck flags, reassign picker, today's numbers |
+| S8 | **Rider app** | `/rider` | rider | v1 · offers + online toggle in v2 · native Expo app in v3 (PWA stays as fallback) | Phone PWA (v3: also the native app): job card, dark map with route, Share my location, Picked up / Delivered |
+| S9 | **Admin map** | `/admin` | admin | v1 · sim / PWA / native badges in v3 | Live map of orders + riders, stuck flags, reassign picker, today's numbers |
 | S10 | Sign in / up + demo | `/sign-in`, `/sign-up` | all | v1 | Four demo cards: customer · restaurant · rider · admin |
 | S11 | Addresses | `/addresses` | customer | v1 | Saved addresses with pins; add via search / drag |
 | S12 | Restaurant menu | `/restaurant/menu` | restaurant | v1 (availability) · full editor in v2 | Availability toggles; v2 categories, items, photos, hours |
 | S13 | Earnings + payouts | `/restaurant/earnings`, `/rider/earnings`, `/admin/payouts` | restaurant / rider / admin | v2 | Balances, entries, mark paid |
-| S14 | Heatmap | `/admin/heatmap` | admin | v3 | Hex grid, hour slider |
+| S14 | Heatmap | `/admin/heatmap` | admin | add-on I (moved from v3, 2026-11-19) | Hex grid, hour slider |
 | S15 | Order together | `/o/[code]` | anyone with the link | v4 | Shared cart with names → the tracking page after checkout |
 | S16 | States | various | all | v1 | Finding a rider, restaurant closed, too far, cart from another restaurant, payment dismissed, empty history, offline rider |
