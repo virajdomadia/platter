@@ -2,7 +2,7 @@
 
 **Lifecycle step:** 3 of 17 · **Locked:** 2026-09-17 · **Source:** [PRD.md](../PRD.md) locked decisions. Flows and screen index: [03-user-flows.md](03-user-flows.md).
 
-Actors: **Customer** (signed in to order; browsing is public), **Restaurant** (one owner per restaurant, `/restaurant`), **Rider** (`/rider`, a phone), **Admin** (`/admin`), **Sim** (the lazy simulation, runs inside API requests). Each requirement ends with **Accept:** — the check that closes it. Ids: R = v1, R2 = v2, R3 = v3, R4 = v4. Money in ₹, integer paise in the DB; distances in metres; times in seconds.
+Actors: **Customer** (signed in to order; browsing is public), **Restaurant** (one owner per restaurant, `/restaurant`), **Rider** (`/rider`, a phone PWA; v3 adds the native Expo rider app), **Admin** (`/admin`), **Sim** (the lazy simulation, runs inside API requests). Each requirement ends with **Accept:** — the check that closes it. Ids: R = v1, R2 = v2, R3 = v3, R4 = v4. Money in ₹, integer paise in the DB; distances in metres; times in seconds.
 
 ---
 
@@ -76,8 +76,8 @@ Actors: **Customer** (signed in to order; browsing is public), **Restaurant** (o
 ## v2 — Rush (mid, ≈ 11 h)
 
 ### R2-1. Offers
-- `riders.status ∈ {offline, available, busy}` with an online toggle on the rider app. On `accepted`: `offers(order, rider, expires_at = now + 30 s)` to the nearest available rider not already offered this order; `GET /rider/events` pushes `offer` with a countdown; **Accept** → assigned (as v1); **Decline** or expiry → the next nearest, up to 5 riders; then the order waits and the admin sees it flagged. Expiry is lazy (checked in the tick).
-- **Accept (tests):** decline → the next rider is offered within one tick; an expired offer cannot be accepted (409); accepting from two phones at once yields one assignment.
+- `riders.status ∈ {offline, available, busy}` with an online toggle on the rider app. On `accepted`: `offers(order, rider, expires_at = now + 30 s)` to the nearest available rider not already offered this order; `GET /rider/events` pushes `offer` with a countdown; **Accept** → assigned (as v1); **Decline** or expiry → the next nearest, up to 5 riders; then the order waits and the admin sees it flagged. Expiry is lazy (checked in the tick). Every offer state change (accept, decline, expire) is one conditional `update offers set state = … where id = $1 and state = 'sent'` under the offer's row lock; only the call that changes the row runs side effects.
+- **Accept (tests):** decline → the next rider is offered within one tick; an expired offer cannot be accepted (409); accepting from two phones at once yields one assignment; **timeout race** (Viraj, 2026-11-19): a rider's accept and the timeout processor's expiry of the same offer run concurrently at the expiry boundary → exactly one transition wins (the conditional update / row lock on the offer state decides); the loser makes no assignment and triggers no side effects — no push, no next offer, no `order_event`.
 
 ### R2-2. Web Push
 - VAPID keys (generated once, free); `push_subscriptions(user, endpoint, keys)` from `pushManager.subscribe` in the customer, board and rider PWAs; `pywebpush` sends: customer → accepted / picked up / delivered / rejected; restaurant → new order; rider → new offer / assignment. Stale endpoints (410) deleted.
@@ -97,34 +97,53 @@ Actors: **Customer** (signed in to order; browsing is public), **Restaurant** (o
 
 ---
 
-## v3 — Fleet (advanced, ≈ 8 h)
+## v3 — Fleet (advanced, ≈ 16 h)
+
+Re-cut (Viraj, 2026-11-19): the native rider app (R3-4) moves in; the demand heatmap + "where to wait" hint move to add-ons.
 
 ### R3-1. Batching
 - When a rider is assigned to or heading for restaurant R and another order from R becomes `accepted` whose drop is ≤ 1.5 km from any point of the first order's *to_customer* route (`ST_DWithin` on the route line) and the first is not yet `picked_up`, the second is **stacked** on the same rider (max 2). Pickup covers both; the *to_customer* leg becomes a multi-stop OSRM route (nearest drop first); each order's ETA is its own stop; `delivered` per order. The customer sees "Your rider has one more drop before yours" when second.
 - **Accept (tests):** two eligible orders → one rider, one 3-waypoint leg, two correct ETAs; a drop 3 km off the route is not stacked; a third order is not stacked.
 
-### R3-2. Smart ETA
-- `prep_model`: per restaurant, the median and p80 of `accepted → ready` over the last 20 orders (fallback: the restaurant's declared prep time); rider speed = the median of the rider's last 10 legs (fallback 22 km/h). ETA = remaining prep (median) + travel at the rider's speed; the band = [median, p80] shown as "18–24 min". Accuracy logged per delivered order (`eta_error_s`) and shown on the admin.
+### R3-2. Measured ETA
+- Measured from our own history — not learned, not a predictive model: `prep_stats` per restaurant = the **average** (and standard deviation) of `accepted → ready` over its last 20 orders (fallback: the restaurant's declared prep time, ± 3 min); rider speed = the rider's own recent speed, the median of their last 10 legs (fallback 22 km/h). ETA = remaining prep (average) + travel at the rider's speed; the band = prep average ± 1 SD (lower bound floored at 0) + travel, shown as "18–24 min" with the note "based on this restaurant's last 20 orders" — a descriptive range from history, **not** a statistical confidence interval, and never called one in the UI or case study. Accuracy logged per delivered order (`eta_error_s`) and shown on the admin.
 - **Accept:** on the seeded history the mean absolute ETA error at `accepted` is ≤ 4 min; the band never inverts.
 
 ### R3-3. LISTEN / NOTIFY
-- `order_events` and `rider_positions` writes `NOTIFY platter, '{order_id}'` via a trigger; the stream loop holds a direct (non-pooled) asyncpg connection with `LISTEN platter` and wakes on notification instead of sleeping 1 s (a 5-s safety poll stays). Latency (`rider POST → customer event`) is measured by a script on 50 fixes and published in the README.
+- `order_events` and `rider_positions` writes `NOTIFY platter, '{order_id}'` via a trigger; the stream loop holds a direct (non-pooled) asyncpg connection with `LISTEN platter` and wakes on notification instead of sleeping 1 s (a 5-s safety poll stays). `NOTIFY` is only the wake-up signal: `order_events` stays the durable log, every wake-up still reads `seq > $last` from it, and a reconnect replays missed events by seq — a lost notification delays an event, never drops it. Latency (`rider POST → customer event`) is measured by a script on 50 fixes and published in the README.
 - **Accept:** p50 ≤ 300 ms, p95 ≤ 1 s on the measured run; falling back to polling if `LISTEN` fails is automatic and logged.
 
-### R3-4. Heatmap & where to wait
-- `/admin/heatmap`: PostGIS hex grid (`ST_HexagonGrid`, 250 m) over the last 7 days of order drops and pickups, coloured by count, with an hour-of-day slider. The rider app shows a "busy area" hint (the top hex for this hour) when idle.
-- **Accept:** hex counts match a SQL check; the hint changes with the hour.
+### R3-4. Native rider app (Viraj, 2026-11-19)
+- **Why:** a PWA stops sending GPS when the screen locks (`watchPosition` is foreground-only). `rider-app/` — Expo (React Native, TypeScript) against the same API (session as `Authorization: Bearer`, kept in `expo-secure-store`). The v1 PWA at `/rider` stays and remains the fallback; simulated riders stay.
+- **Background location:** an `expo-task-manager` task via `Location.startLocationUpdatesAsync` with an Android foreground service (persistent "Sharing your location for a delivery" notification); started on going online / taking a job, stopped when offline with no job.
+- **Battery-aware sampling:** send when moved ≥ 5 m or every 3 s while moving; every 15 s when stationary (speed < 0.5 m/s for 30 s); fixes are not backfilled after an outage — only the latest is sent.
+- **Job + map:** native map (`react-native-maps`) with the route from `route` events, job card, Picked up / Delivered, online toggle, offer card; `GET /rider/events` via `react-native-sse`.
+- **Push for offers:** Expo push token at `POST /push/expo`; a new offer or assignment → Expo push (no key); dead tokens (`DeviceNotRegistered`) deleted.
+- **Offline queue:** picked up / delivered taps queue locally with a client `Idempotency-Key` (uuid) and flush in order on reconnect; the server stores the key with its response in the transition's transaction → a replay returns the stored result, never a second transition or event; a tap made stale (e.g. reassigned meanwhile) → 409, shown once, dropped.
+- **Source:** every fix carries `source` — `pwa` or `native` from clients, `sim` written only by the server (a client claiming `sim` → 422); stored on `rider_positions` and `rider_track`, carried on `rider` events; the admin map shows sim (dotted ring), PWA and native distinctly.
+- **Ship:** Android APK (EAS build, sideloaded) + Expo Go for a quick look (Expo Go runs the foreground path only); no store listing — as Frontrow's v4.
+- **Accept:** phone locked 5 min on a job → fixes keep arriving on the customer's map (`source = native`); stationary 1 min → ≤ 1 fix per 15 s; picked up + delivered tapped in airplane mode sync on reconnect in order, exactly once (flushing the queue twice adds no `order_events`; test `rider_ops`); an offer push arrives with the app closed and accepting it assigns; the admin map tells sim / PWA / native apart; with the native app uninstalled the PWA still completes a delivery with no server change. **Device test matrix (on the APK, not Expo Go — Expo Go runs the foreground path only):** screen locked · app backgrounded · network lost for 2 min then restored (latest fix sent, queue flushes) · location permission revoked mid-job (the app says so, the job shows "location paused" on the customer's map, no crash) · Android battery optimisation on (foreground service keeps sending; documented if an OEM kills it).
 
 ---
 
-## v4 — Order together (unique, free, ≈ 3 h)
+## v4 — Order together (unique, free, ≈ 6 h)
 
 ### R4-1. The link
 - On the cart, **Order together** → `POST /groups { restaurant_id, address }` → `groups(code, host_user, restaurant, status open|checked_out)` and `/o/{code}`. Anyone opening the link (no account needed; a display name asked once, kept in `localStorage`) sees the same menu and the shared cart; `POST /groups/{code}/items` adds under their name; `DELETE` their own; the host may remove anything. Live over `GET /groups/{code}/events` (the same stream loop over `group_events`). The host checks out (COD or Razorpay) → one `orders` row with `group_id`, items tagged by member; the group becomes `checked_out`.
 - After checkout `/o/{code}` shows the **tracking page** (R5) to every member — the map, the status rail, the rider — with "your items" highlighted for the phone that added them; the host's `/orders/[id]` is the same page. The link expires 24 h after delivery.
 - **Accept:** an item added on phone B appears on phone A ≤ 2 s; only the host can check out (403); after checkout both phones stream the same rider; a fresh phone with the link after checkout sees the tracking page read-only.
 
+### R4-2. Many phones at once (Viraj, 2026-11-19)
+| Concern | Rule | Accept (test `group`) |
+|---|---|---|
+| Concurrent edits | Cart lines are rows unique on `(group_id, member_id, menu_item_id)`; adds / qty changes are one atomic `insert … on conflict do update set qty = qty + $d` (never read-modify-write of a cart blob); each change appends a `group_events` row and phones render server state | Two phones each add the same dish 10× concurrently → qty 20, 20 events, both carts identical ≤ 2 s |
+| Availability mid-session | An item toggled off on the board (or the restaurant closing) appends `item_unavailable` / `restaurant_closed` to every open group of that restaurant; the line stays, struck through, for everyone; new adds → 422 | Toggled off while two phones are open → struck on both ≤ 2 s; checkout → 409 `items_unavailable { ids }` until the host removes them; the order never contains it |
+| Cart expiry | An open group expires 1 h after its last change or 3 h after creation, whichever first (lazy, checked on every read / write); expired → read-only "This group cart expired", writes → 410 | Fake clock: 61 min idle → add → 410; both phones show `expired` |
+| Host-only checkout | Only the host's session checks out or cancels (403 otherwise); checkout takes the group row `for update` and flips `open → checked_out` conditionally; adds take it `for share` and require `open` | Member checkout → 403; two host taps → one order; an add racing checkout is either in the order or 409 `checked_out`, never orphaned |
+| Unguessable token | `code` = 128 bits from `secrets.token_urlsafe(16)`; unknown / revoked → the same 404; lookups rate-limited per IP; the host can **Stop sharing** (revokes the link) | 1 000 random codes → 1 000 × 404 and the limiter trips; a revoked link → 404 |
+| Shared-tracking permissions | Joining sets a signed member cookie (`pl_grp`, member id) — edits are scoped to the member's own lines by id, not by display name; after checkout members see status, rider marker, ETA and the items (theirs highlighted), never the payment, the host's or rider's contact details, or cancel; access ends 24 h after delivered | Member removes another's line → 403; member stream / view payloads carry no payment or contact fields (schema test); member cancel → 403; delivered + 24 h → "expired" |
+
 ---
 
 ## Out of scope (all versions)
-Multi-city · turn-by-turn navigation · paid maps / routing / realtime / AI · KYC · GST invoices · native apps · multi-restaurant carts · real money · surge pricing · shifts · support tooling · multiple admins · scheduled deliveries (add-on) · tips (add-on) · chat (add-on).
+Multi-city · turn-by-turn navigation · paid maps / routing / realtime / AI · KYC · GST invoices · native customer / restaurant apps (the rider app goes native in v3) · multi-restaurant carts · real money · surge pricing · shifts · support tooling · multiple admins · scheduled deliveries (add-on) · tips (add-on) · chat (add-on) · demand heatmap + where to wait (add-on, moved from v3).

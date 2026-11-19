@@ -2,9 +2,9 @@
 
 **Lifecycle step:** 7 of 17 · **Written:** 2026-09-17 · **Inputs:** [03-requirements.md](03-requirements.md), [04-technical-design.md](04-technical-design.md), [06-data-and-api.md](06-data-and-api.md).
 **Tracker:** row status lives at https://claude.ai/artifact/HEHpyrigHuZpBMoECDs4qG (updated per milestone; rebuild the page with `python mockups/tracker-build.py`).
-**Budget:** v1 ≈ 16 h · v2 ≈ 11 h · v3 ≈ 8 h · v4 ≈ 3 h. v1 runs the whole engine — PostGIS, the state machine, dispatch, the simulation and the SSE bus — from milestone 1.0, so v2 adds humans and money, v3 intelligence, v4 a surface; never a second engine. **Cadence:** evenings/weekends; each row = one branch + one PR, squash-merged, and **every PR shows something in the browser**. Milestones end deployed. **Build last** (order 1 → 2 → 4 → 5 → 3 → 6).
+**Budget:** v1 ≈ 16 h · v2 ≈ 11 h · v3 ≈ 16 h · v4 ≈ 6 h = **≈ 49 h** (re-cut Viraj, 2026-11-19: native rider app into v3, heatmap to add-ons, v4 hardened). v1 runs the whole engine — PostGIS, the state machine, dispatch, the simulation and the SSE bus — from milestone 1.0, so v2 adds humans and money, v3 intelligence and the native rider app, v4 a surface; never a second engine. **Cadence:** evenings/weekends; each row = one branch + one PR, squash-merged, and **every PR shows something in the browser**. Milestones end deployed. **Build last** (order 1 → 2 → 3 → 4 → 5 → 6).
 
-**Lean rules in force** (2026-09-15): setup is the minimum to deploy both apps with plain CI; no observability, contract gates, e2e workflows or tracker updates per PR; review findings fixed on the same branch; tests only from 04 §12. Hours saved go to the tracking page, the board's ticket moment and the seed. **Accounts and keys are created just-in-time** — in the row that first needs them, never in a setup batch: **Neon (+ PostGIS) and Vercel Blob in S2; Razorpay in F3; VAPID keys in L2.** OpenFreeMap, OSRM and Photon need no account. Dish photos are CC from Wikimedia Commons, fetched by script in S2.
+**Lean rules in force** (2026-09-15): setup is the minimum to deploy both apps with plain CI; no observability, contract gates, e2e workflows or tracker updates per PR; review findings fixed on the same branch; tests only from 04 §12. Hours saved go to the tracking page, the board's ticket moment and the seed. **Accounts and keys are created just-in-time** — in the row that first needs them, never in a setup batch: **Neon (+ PostGIS) and Vercel Blob in S2; Razorpay in F3; VAPID keys in L2; an Expo account (free; EAS build + push) in N1.** OpenFreeMap, OSRM and Photon need no account. Dish photos are CC from Wikimedia Commons, fetched by script in S2.
 
 How the lifecycle maps: step 8 = milestone 1.0; steps 9–11 and 14–15 cycle inside every row; step 12 is one checklist row at the end of v1; step 13 is the CI file in 1.0; step 16 is skipped unless something breaks; step 17 is a short doc after v3.
 
@@ -46,7 +46,7 @@ Goal: both apps deployed, PostGIS answering, a seeded order moving with a simula
 ### Milestone 2.0 — Humans in the loop (≈ 4 h) 🔵🟢🟠
 | # | Part | web/ | api/ | Est. | Done when |
 |---|---|---|---|---|---|
-| L1 | **Rider offers + online toggle** | S8 `OfferCard` (30-s countdown ring, Accept / Decline), online / offline toggle; S9 `no_rider` flag; S5 "Finding a rider" now shows attempts | `offers`; `POST /rider/status`; `dispatch.offer()` chain (≤ 5, lazy expiry in the tick, sims auto-accept 3–8 s); `/rider/offers/{id}/accept` · `/decline`; stream `offer`; **test:** `offers` | 2.5 h | Decline on the phone → the next rider is offered within a tick; an expired offer cannot be accepted; two phones accepting → one assignment |
+| L1 | **Rider offers + online toggle** | S8 `OfferCard` (30-s countdown ring, Accept / Decline), online / offline toggle; S9 `no_rider` flag; S5 "Finding a rider" now shows attempts | `offers`; `POST /rider/status`; `dispatch.offer()` chain (≤ 5, lazy expiry in the tick, sims auto-accept 3–8 s; every offer state change is one conditional `update … where state = 'sent'` and only the winner runs side effects); `/rider/offers/{id}/accept` · `/decline`; stream `offer`; **test:** `offers` | 2.5 h | Decline on the phone → the next rider is offered within a tick; an expired offer cannot be accepted; two phones accepting → one assignment; **race test** (Viraj, 2026-11-19): an accept and the timeout expiry of the same offer run concurrently at the boundary → exactly one transition wins; the loser makes no assignment, no push, no next offer, no `order_event` |
 | L2 | **Web Push** | `pushManager.subscribe` in customer, board and rider PWAs (`sw.js` `push` + `notificationclick` → the right page); opt-in prompts at the right moment (after first order / on the board / on going online) | **VAPID keys generated here** (`scripts/gen_vapid.py`); `push_subscriptions`; `services/push.py` (`pywebpush`, 410 cleanup); sends after commit on accepted / picked_up / delivered / rejected (customer), placed (restaurant), offer / assigned (rider); `GET /push/key`, `POST/DELETE /push/subscribe` | 1.5 h | With the tab closed on a phone, `picked_up` notifies within 5 s and the tap opens the tracking page; a dead endpoint is removed |
 
 ### Milestone 2.1 — Menus, money, memory (≈ 7 h) 🟠🟢🟣
@@ -60,31 +60,42 @@ Goal: both apps deployed, PostGIS answering, a seeded order moving with a simula
 
 ---
 
-## v3 — Fleet (≈ 8 h)
+## v3 — Fleet (≈ 16 h)
 
-### Milestone 3.0 — Smarter dispatch, true push (≈ 8 h) ⚪🟣🔵🟢
+Re-cut (Viraj, 2026-11-19): the **native rider app** moves in — the v1 PWA stops sending GPS when the screen locks, and background location needs a native app; the demand heatmap + "where to wait" hint move to add-on I. Hours from the rows: 3.0 = 3 + 2 + 1.5 = 6.5 h; 3.1 = 2.5 + 3 + 1 + 1.5 + 1.5 = 9.5 h; **v3 = 16 h**.
+
+### Milestone 3.0 — Smarter dispatch, true push (≈ 6.5 h) ⚪🟣🟢
 | # | Part | web/ | api/ | Est. | Done when |
 |---|---|---|---|---|---|
 | A1 | **Batching** | S5 "one more drop before yours" + stop order; S8 job card with two drops; S9 stacked orders drawn as one leg | `dispatch.try_stack()` (same restaurant, drop ≤ 1.5 km off the route via `ST_DWithin` on the line, not yet picked up, max 2), multi-stop OSRM leg, `rider_legs.stops`, `orders.stack_seq`, event `stacked`; pickup marks both; per-order delivered; **test:** `batching` | 3 h | Two eligible orders → one rider, one 3-waypoint route, two correct ETAs; a far drop is not stacked; a third is not stacked |
-| A2 | **Smart ETA** | S5 `EtaBadge` with the band ("18–24 min"); S9 ETA error column | `prep_stats` (median / p80 of the last 20 `accepted → ready`), `riders.median_speed_mps` (last 10 legs), `eta_log` per phase with `actual_s` on delivery; `eta` events gain `band`; seed history feeds it; **test:** `prep_model` | 2 h | Mean absolute ETA error at `accepted` on the seeded history ≤ 4 min; the band never inverts |
-| A3 | **LISTEN / NOTIFY** | — | `notify_platter` trigger on `order_events` + `rider_positions`; `db.py` direct engine (`DATABASE_DIRECT_URL`); `stream.py` waits on the notification with a 5-s safety poll, automatic fallback to polling; `scripts/measure_latency.py` (50 fixes, p50 / p95) → README | 1.5 h | Measured p50 ≤ 300 ms, p95 ≤ 1 s rider POST → customer event; unplugging the direct URL falls back to polling with one log line |
-| A4 | **Heatmap + where to wait + v3 close** | S14 `/admin/heatmap` (MapLibre fill layer over hex GeoJSON, hour slider); S8 `BusyAreaHint` when idle | `ST_HexagonGrid(250 m)` over 7 days of pickups + drops; `GET /admin/heatmap?hour=`, `GET /rider/hint`; `docs/17-post-launch.md` (½ page); case study | 1.5 h | Hex counts match a SQL check; the hint changes with the hour; v3 tagged; case study live |
+| A2 | **Measured ETA** | S5 `EtaBadge` with the band ("18–24 min"); S9 ETA error column | `prep_stats` (average ± SD of the restaurant's last 20 `accepted → ready` — measured from our own history, no model), `riders.median_speed_mps` (the rider's own last 10 legs), `eta_log` per phase with `actual_s` on delivery; `eta` events gain `band`; seed history feeds it; **test:** `measured_eta` | 2 h | Mean absolute ETA error at `accepted` on the seeded history ≤ 4 min; the band never inverts |
+| A3 | **LISTEN / NOTIFY** | — | `notify_platter` trigger on `order_events` + `rider_positions`; `db.py` direct engine (`DATABASE_DIRECT_URL`); `stream.py` waits on the notification with a 5-s safety poll, automatic fallback to polling — `NOTIFY` only wakes the loop, which still reads `order_events where seq > $last` (the durable log; reconnects replay by seq); `scripts/measure_latency.py` (50 fixes, p50 / p95) → README | 1.5 h | Measured p50 ≤ 300 ms, p95 ≤ 1 s rider POST → customer event; unplugging the direct URL falls back to polling with one log line; a dropped notification loses no event |
 
-**v3 total ≈ 8 h**
+### Milestone 3.1 — Native rider app (≈ 9.5 h) 🔵🟣
+| # | Part | rider-app/ · web/ | api/ | Est. | Done when |
+|---|---|---|---|---|---|
+| N1 | **Expo shell + job + native map** | `rider-app/` (Expo SDK, TypeScript, expo-router): sign-in (demo rider), `JobCard`, `react-native-maps` with the route from `route` events, Picked up / Delivered, online toggle, offer card; `/rider/events` via `react-native-sse`; **Expo account created here** | Bearer session beside the cookie (`Authorization: Bearer`, token in `expo-secure-store`) — same routes, no fork | 2.5 h | On an Android phone in Expo Go: sign in as the demo rider, see the job and route, accept an offer, mark picked up — same API |
+| N2 | **Background location + source** | `expo-task-manager` task + `Location.startLocationUpdatesAsync` with an Android foreground service; battery-aware sampler (≥ 5 m or 3 s moving, 15 s stationary); permission flow (foreground → background); S9 admin map badges sim / PWA / native | `position_source` (`sim \| pwa \| native`) on `rider_positions` + `rider_track`; server writes `sim`, clients may send only `pwa` / `native` (else 422); `rider` / `riders` events carry `source` | 3 h | Phone locked 5 min on a job → the customer's marker keeps moving (`source = native`); stationary 1 min → ≤ 1 fix / 15 s; the admin map shows the three kinds distinctly |
+| N3 | **Expo push for offers** | `expo-notifications` token → `POST /push/expo`; tapping opens the offer | `expo_push_tokens`; `services/push.py` sends offer / assignment via Expo's push API (no key) beside Web Push; `DeviceNotRegistered` → token deleted | 1 h | With the app closed an offer notifies within 5 s; accepting from it assigns; a dead token is removed |
+| N4 | **Offline status queue** | queued taps in AsyncStorage `{ idempotency_key, order_id, to, tapped_at }`, flushed in order on reconnect (NetInfo); "2 waiting to sync" chip | `Idempotency-Key` on `POST /rider/orders/{id}/transition` → `rider_ops` row in the transition's transaction; same key → stored response, no second transition / event; **test:** `rider_ops` | 1.5 h | Picked up + Delivered tapped in airplane mode sync once on reconnect, in order; flushing twice adds no `order_events`; a tap made stale by a reassign → 409 shown once and dropped |
+| N5 | **APK + v3 close** | EAS build → Android APK (sideloaded, no store listing) + an Expo Go link; README "PWA in v1 → native in v3"; `docs/17-post-launch.md` (½ page); case study with the locked-screen recording | — | 1.5 h | The APK runs the locked-screen demo; the PWA still completes a delivery as the fallback; v3 tagged; case study live |
+
+**v3 total ≈ 16 h**
 
 ---
 
-## v4 — Order together (≈ 3 h) — the unique free feature 🟢
+## v4 — Order together (≈ 6 h) — the unique free feature 🟢
 
-### Milestone 4.0 — One link, many phones (≈ 3 h)
-Same core, a new place: the order leaves one phone. ₹0 per use (Viraj, 2026-09-17).
+### Milestone 4.0 — One link, many phones (≈ 6 h)
+Same core, a new place: the order leaves one phone. ₹0 per use (Viraj, 2026-09-17). Re-estimated 3 → 6 h for many phones editing at once — the R4-2 rules (Viraj, 2026-11-19).
 
 | # | Part | web/ | api/ | Est. | Done when |
 |---|---|---|---|---|---|
-| U1 | **Group cart** | S3 **Order together** → share sheet (`navigator.share` / copy); S15 `/o/[code]`: the restaurant menu + shared cart with member names, "add as *name*" (name in `localStorage`), remove own, host controls; `useGroupStream` | `groups`, `group_items`, `group_events`; `POST /groups`, `GET /groups/{code}`, `POST/DELETE /groups/{code}/items`, `GET /groups/{code}/events` (stream scope: group); **test:** `group` | 2 h | An item added on phone B appears on phone A ≤ 2 s with B's name; a stranger without the code cannot guess it; only the host sees Checkout |
-| U2 | **Shared tracking + v4 close** | S15 after checkout = the S5 tracking view for every member with "your items" highlighted; `GroupMembers` on the host's `/orders/[id]`; README "one link, many phones"; `docs/17-post-launch.md` (½ page); case study | `POST /groups/{code}/checkout` (host only → one order with `group_id`, `order_items.member_name`); the group stream hands over to the order's events after checkout; links expire 24 h after delivered; add after checkout → 409 | 1 h | Both phones show the same rider gliding; phone B's items are highlighted on B only; a fresh phone with the link after delivery + 24 h sees "expired"; v4 tagged; case study live |
+| U1 | **Group cart + secure link** | S3 **Order together** → share sheet (`navigator.share` / copy); S15 `/o/[code]`: the restaurant menu + shared cart with member names, join once with a name, remove own, host controls; `useGroupStream` | `groups` (`code` = 128-bit `token_urlsafe(16)`), `group_members` (signed `pl_grp` cookie), `group_items` unique (group, member, item), `group_events`; `POST /groups`, `POST /groups/{code}/join`, `GET /groups/{code}`, `POST/DELETE /groups/{code}/items`, `GET /groups/{code}/events` (stream scope: group); per-IP lookup limit; **test:** `group` | 2 h | An item added on phone B appears on phone A ≤ 2 s with B's name; 1 000 random codes → 404 and the limiter trips; B cannot remove A's line (403); only the host sees Checkout |
+| U2 | **Concurrency, availability, expiry** | Struck-through unavailable lines with Remove; "This group cart expired"; host **Stop sharing** | atomic `insert … on conflict do update set qty = qty + $d`; board toggle / restaurant close → `item_unavailable` / `restaurant_closed` to open groups; lazy expiry (1 h idle / 3 h) → 410; revoke → 404 | 2 h | Two phones adding the same dish 10× at once → qty 20, identical carts; an item toggled off mid-session is struck on both ≤ 2 s and checkout → 409 until removed; 61 min idle (fake clock) → 410 |
+| U3 | **Host checkout + shared tracking + v4 close** | S15 after checkout = the S5 tracking view for every member with "your items" highlighted; `GroupMembers` on the host's `/orders/[id]`; README "one link, many phones"; `docs/17-post-launch.md` (½ page); case study | `POST /groups/{code}/checkout` (host only; group row `for update`, `open → checked_out` conditional; adds hold it `for share`) → one order with `group_id`, `order_items.member_name`; member-scoped view (no payment, contact or cancel); the group stream hands over to the order's events; links expire 24 h after delivered | 2 h | Member checkout → 403; two host taps → one order; an add racing checkout is in the order or 409, never orphaned; both phones show the same rider gliding; member payloads carry no payment / contact fields; delivered + 24 h → "expired"; v4 tagged; case study live |
 
-**v4 total ≈ 3 h** · **Project total ≈ 38 h**
+**v4 total ≈ 6 h** · **Project total ≈ 49 h**
 
 ---
 
@@ -93,9 +104,9 @@ Same core, a new place: the order leaves one phone. ₹0 per use (Viraj, 2026-09
 |---|---|---|---|
 | v1 Kitchen | 1.0 – 1.2 | 16 | 16 |
 | v2 Rush | 2.0 – 2.1 | 11 | 27 |
-| v3 Fleet | 3.0 | 8 | 35 |
-| v4 Order together | 4.0 | 3 | 38 |
-| Add-ons (in priority order) | A storefront + embed (3) · B scheduled orders (2) · C tips (1) · D promo codes (2) · E chat (3) · F proof of delivery (2) · G Telegram bot (2) · H restaurant analytics (2) | up to 17 | up to 55 |
+| v3 Fleet | 3.0 – 3.1 | 16 | 43 |
+| v4 Order together | 4.0 | 6 | 49 |
+| Add-ons (in priority order) | A storefront + embed (3) · B scheduled orders (2) · C tips (1) · D promo codes (2) · E chat (3) · F proof of delivery (2) · G Telegram bot (2) · H restaurant analytics (2) · I demand heatmap + where to wait (1.5) | up to 18.5 | up to 67.5 |
 
 ## Add-ons (only from time saved)
 **Nice-to-have, not priority** (Viraj, 2026-09-17): considered only after v4 is fully done (docs and case study included), in this order, from time saved — and skipping all of them is a fine outcome. None is a version; none changes the engine. All free to run.
@@ -110,3 +121,4 @@ Same core, a new place: the order leaves one phone. ₹0 per use (Viraj, 2026-09
 | F | **Proof of delivery** | The rider takes a photo at the drop (Blob client token, ≤ 2 MB); shown on the tracking page and the admin | v1 | 2 |
 | G | **Telegram status bot** | Link a chat once; status changes arrive as Telegram messages with the tracking link (Bot API, free) | v2 | 2 |
 | H | **Restaurant analytics** | Orders per hour, top items, accept time, rating trend for the last 30 days on the board | v2 | 2 |
+| I | **Demand heatmap + where to wait** | `/admin/heatmap`: PostGIS `ST_HexagonGrid(250 m)` over 7 days of pickups + drops, hour slider; an idle rider sees a "busy area" hint (the top hex for this hour) — moved from v3 (Viraj, 2026-11-19) | v3 | 1.5 |

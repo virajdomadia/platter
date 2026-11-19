@@ -1,6 +1,6 @@
 # Platter — Database + API Design
 
-**Lifecycle step:** 6 of 17 · **Locked:** 2026-09-17 · Behaviour in [04-technical-design.md](04-technical-design.md). Alembic `0001_v1` creates everything under **A** (after `create extension if not exists postgis`); v2 / v3 / v4 tables get their own migrations.
+**Lifecycle step:** 6 of 17 · **Locked:** 2026-09-17 (v3 / v4 additions revised 2026-11-19) · Behaviour in [04-technical-design.md](04-technical-design.md). Alembic `0001_v1` creates everything under **A** (after `create extension if not exists postgis`); v2 / v3 / v4 tables get their own migrations.
 
 ## A. Postgres schema (v1)
 
@@ -97,8 +97,8 @@ select loc, heading, speed_mps, recorded_at from rider_positions where rider_id 
 ```
 
 **v2 additions:** `offers (id, order_id fk, rider_id fk, state text sent|accepted|declined|expired, expires_at, created_at)` unique (order_id, rider_id) · index (rider_id, state); `push_subscriptions (id, user_id fk, endpoint text unique, p256dh text, auth text, created_at)`; `ratings (id, order_id fk unique, restaurant_stars smallint, rider_stars smallint, line text null, created_at)`; `refunds (id, order_id fk unique, razorpay_refund_id text, amount_paise int, created_at)`; `ledger_entries (id, account text — 'platform' | 'restaurant:{id}' | 'rider:{id}', kind text sale|fee|delivery|delivery_margin|payout, amount_paise int signed, order_id fk null, payout_id uuid null, created_at)` index (account, created_at); `payouts (id, account text, amount_paise int, reference text, paid_by fk, paid_at)`; `restaurants.search tsvector` (name A, cuisines B, item names C via trigger) + GIN; `riders.online_since`.
-**v3 additions:** `prep_stats (restaurant_id pk, median_s int, p80_s int, sample int, updated_at)`; `riders.median_speed_mps`; `eta_log (order_id fk, at, eta_s, actual_s null, method, phase text)`; `orders.stack_seq`; `rider_legs.stops`; trigger `notify_platter` on `order_events` and `rider_positions` → `pg_notify('platter', order_id / rider_id)`.
-**v4 additions:** `groups (id, code text unique, host_user_id fk, restaurant_id fk, address_line, drop_loc, status text open|checked_out, order_id fk null, created_at, expires_at)`; `group_items (id, group_id fk, menu_item_id fk, member_name text, qty int, created_at)` index (group_id); `group_events (seq bigserial, group_id fk, kind text item_added|item_removed|checked_out, payload jsonb, at)` index (group_id, seq).
+**v3 additions:** `prep_stats (restaurant_id pk, avg_s int, sd_s int, sample int, updated_at)` — measured from the last 20 `accepted → ready`; `riders.median_speed_mps`; `eta_log (order_id fk, at, eta_s, actual_s null, method, phase text)`; `orders.stack_seq`; `rider_legs.stops`; enum `position_source ('sim','pwa','native')` + `rider_positions.source` and `rider_track.source` (backfill: sims `sim`, others `pwa`; only the server writes `sim`); `rider_ops (idempotency_key uuid pk, rider_id fk, order_id fk, to_status order_status, status_code smallint, response jsonb, at)` — written in the transition's transaction; `expo_push_tokens (id, user_id fk, token text unique, created_at)`; trigger `notify_platter` on `order_events` and `rider_positions` → `pg_notify('platter', order_id / rider_id)` — a wake-up only; streams still read `order_events` by seq and reconnects replay by seq.
+**v4 additions:** `groups (id, code text unique — 128-bit token_urlsafe(16), host_user_id fk, restaurant_id fk, address_line, drop_loc, status text open|checked_out|expired, order_id fk null, created_at, last_change_at, expires_at, revoked_at null)`; `group_members (id, group_id fk, name text, created_at)` — identified by the signed `pl_grp` cookie; `group_items (id, group_id fk, member_id fk, menu_item_id fk, member_name text, qty int, created_at)` unique (group_id, member_id, menu_item_id); `group_events (seq bigserial, group_id fk, kind text item_added|item_qty|item_removed|item_unavailable|restaurant_closed|expired|revoked|checked_out, payload jsonb, at)` index (group_id, seq).
 
 ## B. Blob keys
 | Prefix | Written by | Deleted when |
@@ -173,7 +173,7 @@ Error envelope everywhere: `{ "error": { "code": "illegal_transition", "message"
 ### v2
 | Method | Path | Notes |
 |---|---|---|
-| 🛵 | `POST /rider/status { status: 'available' \| 'offline' }` · `POST /rider/offers/{id}/accept` · `/decline` | offers; 409 `offer_expired` / `offer_taken` |
+| 🛵 | `POST /rider/status { status: 'available' \| 'offline' }` · `POST /rider/offers/{id}/accept` · `/decline` | offers; 409 `offer_expired` / `offer_taken`; accept and the tick's expiry race on one conditional `update … where state = 'sent'` — the loser is a 409 / no-op with no side effects |
 | 🔒 | `POST /push/subscribe { endpoint, keys }` · `DELETE /push/subscribe` | VAPID public key at `GET /push/key` |
 | 🍽 | `POST/PATCH/DELETE /restaurant/categories*` · `/restaurant/items*` · `POST /restaurant/items/{id}/photo/token` · `PATCH /restaurant` (hours, is_open, prep_min, cover) | menu editor; Blob client-upload protocol |
 | 🔒 | `POST /orders/{id}/rating { restaurant_stars, rider_stars, line? }` · `POST /orders/{id}/reorder` → `{ cart, dropped: string[] }` | once per order |
@@ -181,21 +181,21 @@ Error envelope everywhere: `{ "error": { "code": "illegal_transition", "message"
 | 👑 | `GET /admin/payouts` (balances by account) · `POST /admin/payouts { account, amount_paise, reference }` · `POST /admin/orders/{id}/refund` | |
 
 ### v3
-`GET 👑 /admin/heatmap?hour=` → `{ hexes: [{ geojson, count }] }` · `GET 🛵 /rider/hint` → `{ area, centre, count }` · order `eta` events gain `band: [lo, hi]` and `stack: { seq, of }` · `scripts/measure_latency.py` (rider POST → customer event, 50 fixes).
+Order `eta` events gain `band: [lo, hi]` and `stack: { seq, of }` · `POST 🛵 /rider/position` gains `source: 'pwa' | 'native'` (`sim` → 422) · `POST 🛵 /rider/orders/{id}/transition` accepts `Idempotency-Key: <uuid>` (replay → the stored response, no new event) · `POST 🛵 /push/expo { token }` · `DELETE /push/expo` · every 🔒/🛵 route also accepts `Authorization: Bearer <session>` (native app) · `rider` / `riders` events carry `source` · `scripts/measure_latency.py` (rider POST → customer event, 50 fixes). (Heatmap + hint moved to add-on I.)
 
 ### v4
-`POST 🔒 /groups { restaurant_id, address_line, lat, lng }` → `Group { code, url }` · `GET /groups/{code}` → `GroupView { restaurant, items: GroupItem[] (member_name), totals, status, order_id? }` · `POST /groups/{code}/items { menu_item_id, qty, member_name }` · `DELETE /groups/{code}/items/{id}` (own or host) · `POST 🔒 /groups/{code}/checkout { payment, note? }` (host only → `OrderStart`) · `GET 📡 /groups/{code}/events` (group events, then the order's events after checkout).
+`POST 🔒 /groups { restaurant_id, address_line, lat, lng }` → `Group { code, url }` · `GET /groups/{code}` → `GroupView { restaurant, items: GroupItem[] (member_name), totals, status, order_id? }` · `POST /groups/{code}/join { name }` → sets `pl_grp` · `POST /groups/{code}/items { menu_item_id, qty_delta }` (member from the cookie; 422 unavailable, 410 expired, 409 checked_out) · `DELETE /groups/{code}/items/{id}` (own or host; else 403) · `DELETE 🔒 /groups/{code}` (host: stop sharing → 404 afterwards) · `POST 🔒 /groups/{code}/checkout { payment, note? }` (host only → `OrderStart`; 409 `items_unavailable { ids }`) · unknown / revoked codes → 404, per-IP limited · `GET 📡 /groups/{code}/events` (group events, then the order's events after checkout).
 
 ## D. Stream events and payload shapes
 ```ts
 // SSE frames: id: "{seq}:{pos_ms}" · event: <kind> · data: <json>. retry: 1000. ": ping" every 15 s. "event: reconnect" at 280 s.
 type StatusEvent   = { order_id: string; status: OrderStatus; at: string; reason?: string; rider?: { name: string; vehicle: string } };
 type RouteEvent    = { order_id: string; kind: 'to_restaurant' | 'to_customer'; polyline: string; distance_m: number; duration_s: number; method: 'osrm' | 'line'; stops?: { order_id: string; eta_s: number }[] };
-type RiderEvent    = { order_id?: string; rider_id: string; lat: number; lng: number; heading: number | null; speed_mps: number | null; at: string; is_sim?: boolean };
+type RiderEvent    = { order_id?: string; rider_id: string; lat: number; lng: number; heading: number | null; speed_mps: number | null; at: string; is_sim?: boolean; source?: 'sim' | 'pwa' | 'native' /* v3 */ };
 type EtaEvent      = { order_id: string; eta_s: number; method: 'osrm' | 'line'; band?: [number, number]; phase: 'cooking' | 'to_restaurant' | 'to_customer' };
 type OfferEvent    = { offer_id: string; order: Job; expires_at: string };                    // v2, rider stream
 type RidersEvent   = { riders: AdminRider[] };                                                // admin stream, every 2 s
-type GroupEvent    = { kind: 'item_added' | 'item_removed' | 'checked_out'; item?: GroupItem; order_id?: string }; // v4
+type GroupEvent    = { kind: 'item_added' | 'item_qty' | 'item_removed' | 'item_unavailable' | 'restaurant_closed' | 'expired' | 'revoked' | 'checked_out'; item?: GroupItem; order_id?: string }; // v4
 
 type RestaurantCard = { id: string; slug: string; name: string; area: string; cuisines: string[]; is_veg: boolean; cover: { url: string; width: number; height: number } | null;
                         rating: number | null; prep_min: number; distance_m: number; eta_s: number; delivery_fee_paise: number; orderable: boolean; reason?: 'too_far' | 'closed' };
@@ -209,6 +209,6 @@ type Ticket      = { id: string; number: string; status: OrderStatus; placed_at:
                      items: { name: string; qty: number; is_veg: boolean }[]; total_paise: number; rider?: { name: string; distance_m: number; eta_s: number } };
 type Job         = { order: Order; leg: RouteEvent; phase: 'to_restaurant' | 'waiting' | 'to_customer'; pay_preview_paise: number };
 type AdminOrder  = Order & { stuck?: 'unaccepted' | 'no_rider' | 'not_picked_up'; rider_id?: string };
-type AdminRider  = { id: string; name: string; status: 'offline' | 'available' | 'busy'; is_sim: boolean; lat: number; lng: number; heading: number | null; current_order?: string; last_fix_s: number };
+type AdminRider  = { id: string; name: string; status: 'offline' | 'available' | 'busy'; is_sim: boolean; source?: 'sim' | 'pwa' | 'native'; lat: number; lng: number; heading: number | null; current_order?: string; last_fix_s: number };
 type Me          = { id: string; name: string; email: string; role: 'customer' | 'restaurant' | 'rider' | 'admin'; restaurant?: { id: string; slug: string; name: string }; rider?: { id: string; name: string; status: string } };
 ```
