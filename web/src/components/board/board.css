@@ -1,0 +1,454 @@
+/* Restaurant side — S7 kitchen board + S12 menu availability (direction L · Bento).
+   Signature motion: Ticket print (a new KOT feeds out of a slot at the top of the New column). */
+
+/* ── Board / Menu tabs ── */
+.bd-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--bg);
+}
+.bd-tabs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--ink2);
+}
+.bd-tabs a:hover {
+  background: var(--lav);
+}
+.bd-tabs a[aria-current="page"] {
+  background: var(--violet);
+  color: #fff;
+}
+.bd-chip-btn {
+  min-height: 44px;
+  cursor: pointer;
+}
+
+/* ── stats ── */
+.bd-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 10px 0;
+}
+.bd-stat b {
+  display: block;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+.bd-bell {
+  display: inline-block;
+  transform-origin: 50% 8%;
+}
+.bd-bell.swing {
+  animation: bd-swing 0.9s ease-in-out;
+}
+@keyframes bd-swing {
+  15% {
+    transform: rotate(18deg);
+  }
+  35% {
+    transform: rotate(-14deg);
+  }
+  55% {
+    transform: rotate(9deg);
+  }
+  75% {
+    transform: rotate(-5deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+.bd-count {
+  display: inline-block;
+}
+.bd-count.pop {
+  animation: bd-pop 0.45s var(--spring);
+}
+@keyframes bd-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ── columns ── */
+.bd-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .bd-cols {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .bd-col {
+    min-height: 62vh;
+  }
+}
+.bd-col {
+  position: relative;
+  padding: 10px;
+  --col: var(--bg);
+}
+.bd-col.peach {
+  --col: var(--peach);
+}
+.bd-col.lemon {
+  --col: var(--lemon);
+}
+.bd-col.mint {
+  --col: var(--mint);
+}
+.bd-col.sky {
+  --col: var(--sky);
+}
+.bd-col > h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 6px 12px;
+  font-size: 15px;
+}
+.bd-col > h2 .n {
+  margin-left: auto;
+  min-width: 26px;
+  text-align: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+}
+.bd-col .steam {
+  margin-top: 6px;
+}
+.bd-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bd-empty {
+  padding: 18px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink2);
+  opacity: 0.8;
+}
+/* the New column pulses peach once when a ticket prints */
+.bd-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: bd-pulse 0.9s ease-out both;
+}
+@keyframes bd-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 122, 89, 0.55);
+    background: rgba(255, 122, 89, 0.18);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(255, 122, 89, 0);
+    background: rgba(255, 122, 89, 0);
+  }
+}
+
+/* ── the KOT ticket ── */
+.bd-slot {
+  /* the "slot": while printing only the top edge clips, so the ticket emerges from it */
+  animation: bd-slot 0.7s linear both;
+}
+@keyframes bd-slot {
+  0%,
+  99% {
+    clip-path: inset(0 -16px -16px -16px);
+  }
+  100% {
+    clip-path: none;
+  }
+}
+.bd-slot .bd-tk {
+  animation: bd-print 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes bd-print {
+  from {
+    transform: translateY(-110%);
+  }
+  to {
+    transform: none;
+  }
+}
+.bd-tk {
+  position: relative;
+  background: #fff;
+  border-radius: 6px 6px 18px 18px;
+  padding: 16px 12px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: box-shadow 0.4s ease;
+}
+.bd-tk::before {
+  /* perforated top edge: half-circles punched in the column colour */
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 7px;
+  background: radial-gradient(circle at 6px 0, var(--col) 4px, transparent 4.5px) 0 0 / 12px 7px repeat-x;
+}
+.bd-tk.fresh {
+  box-shadow: 0 0 0 3px var(--coral);
+}
+.bd-tk .h {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 900;
+  font-size: 16px;
+}
+.bd-tk .age {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink2);
+}
+.bd-tk .age.late {
+  background: var(--peach);
+  color: var(--coral-deep);
+}
+.bd-tk .who {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 2px 0 8px;
+}
+.bd-tk ul {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  border-top: 2px dashed var(--bg);
+  border-bottom: 2px dashed var(--bg);
+  display: grid;
+  gap: 3px;
+}
+.bd-tk li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.bd-tk .note {
+  background: var(--lemon);
+  border-radius: 10px;
+  padding: 6px 9px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.bd-tk .rd {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--violet-deep);
+}
+.bd-tk .rd.wait {
+  color: var(--muted);
+}
+.bd-tk .btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.bd-tk .btns .btn {
+  flex: 1;
+  padding-inline: 10px;
+}
+.bd-tk .btn.reject {
+  flex: 0 0 auto;
+  background: var(--bg);
+  color: var(--coral-deep);
+}
+.bd-tk .btn.reject:hover:not(:disabled) {
+  background: var(--peach);
+}
+.bd-reasons {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  background: var(--bg);
+  display: grid;
+  gap: 8px;
+}
+.bd-reasons legend {
+  padding: 0;
+  margin-bottom: 4px;
+}
+.bd-reasons fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bd-reasons .chip {
+  min-height: 44px;
+  cursor: pointer;
+  background: #fff;
+}
+.bd-reasons .chip[aria-pressed="true"] {
+  background: var(--peach);
+  color: var(--coral-deep);
+}
+.bd-reasons .input {
+  background: #fff;
+}
+
+/* ── S12 availability ── */
+.av-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 10px;
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .av-grid {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+  .av-cats {
+    position: sticky;
+    top: 12px;
+  }
+}
+.av-cats ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.av-cats button {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  font-weight: 900;
+  font-size: 14px;
+  text-align: left;
+}
+.av-cats button:hover {
+  background: var(--bg);
+}
+.av-cats button[aria-current="true"] {
+  background: var(--lav);
+}
+.av-cats small {
+  font-weight: 700;
+  color: var(--muted);
+}
+.av-section + .av-section {
+  margin-top: 18px;
+}
+.av-section h2 {
+  font-size: 17px;
+  margin: 4px 4px 10px;
+  scroll-margin-top: 16px;
+}
+.av-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.av-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 18px;
+  background: var(--bg);
+}
+.av-item img,
+.av-item .ph {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  object-fit: cover;
+  flex: none;
+}
+.av-item .ph {
+  display: grid;
+  place-items: center;
+  background: var(--lav);
+  font-size: 24px;
+}
+.av-item.off img,
+.av-item.off .ph,
+.av-item.off .txt {
+  opacity: 0.55;
+}
+.av-item .txt {
+  min-width: 0;
+  flex: 1;
+}
+.av-item .txt b {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 900;
+}
+.av-item .txt small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.av-item .txt small.so {
+  color: var(--coral-deep);
+}
+.av-item .switch::before {
+  /* 44px+ hit area around the 52×30 switch */
+  content: "";
+  position: absolute;
+  inset: -8px -4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bd-slot,
+  .bd-slot .bd-tk,
+  .bd-pulse,
+  .bd-bell.swing,
+  .bd-count.pop {
+    animation: none !important;
+  }
+  .bd-pulse {
+    display: none;
+  }
+}
