@@ -1,9 +1,11 @@
 # Build on GitHub's runner and upload the finished output to Vercel, so Vercel spends no build minutes.
-# The project is connected to this repo with Root Directory `web`; web/vercel.json and the project
-# setting skip Vercel's own Git builds, so this workflow is the only production deploy.
-# Needs repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
-# The api (project platter-api, Root Directory `api`, secret VERCEL_PROJECT_ID_API) is created and
-# skips Vercel builds too; add an `api` job here, before `web`, once api/ has code (see frontrow).
+# Both projects are connected to this repo with Root Directory set (api → platter-api, web → platter);
+# each folder's vercel.json and the project setting skip Vercel's own Git builds, so this workflow is the
+# only production deploy. Order: after CI passes on main, the api goes live first, so a new web build
+# never calls an api that isn't deployed yet. Migrations are NOT run here — run them by hand first
+# (README "Deploy"), so a schema change is always a deliberate step.
+# Needs repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (web), VERCEL_PROJECT_ID_API.
+# Optional repo variable: PLATTER_API_URL (e.g. https://platter-api.vercel.app) for the api smoke test.
 name: vercel
 on:
   workflow_run:
@@ -17,14 +19,40 @@ permissions: { contents: read }
 env:
   SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   NEXT_TELEMETRY_DISABLED: '1'
+  # retries any failure, incl. a brief 404 while the domain switches to the new deployment
+  SMOKE: curl --fail --silent --show-error --max-time 30 --retry 6 --retry-delay 5 --retry-all-errors -o /dev/null
 
 jobs:
-  web:
+  api:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
+      API_URL: ${{ vars.PLATTER_API_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ env.SHA }}' }
+      - uses: actions/setup-python@v5
+        with: { python-version-file: api/.python-version }
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm install --global vercel@52.2.1
+      - run: vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
+      - run: vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
+      - run: vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}"
+      - name: Smoke test (api + PostGIS)
+        run: |
+          if [ -n "$API_URL" ]; then $SMOKE "$API_URL/health/ready"; else echo "PLATTER_API_URL not set; skipping"; fi
+
+  web:
+    needs: api
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
         with: { ref: '${{ env.SHA }}' }
@@ -37,5 +65,4 @@ jobs:
       - run: vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
       - run: vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}"
       - name: Smoke test
-        # retries any failure, incl. a brief 404 while the domain switches to the new deployment
-        run: curl --fail --silent --show-error --max-time 30 --retry 6 --retry-delay 5 --retry-all-errors -o /dev/null https://platter.virajdomadia.com/
+        run: $SMOKE https://platter.virajdomadia.com/

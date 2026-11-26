@@ -16,6 +16,7 @@ env:
   NEXT_TELEMETRY_DISABLED: '1'
 
 jobs:
+  # web/ — lint → typecheck → unit tests → build
   web:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -33,5 +34,51 @@ jobs:
           cache: pnpm
           cache-dependency-path: web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
       - run: pnpm exec tsc --noEmit
+      - run: pnpm test
       - run: pnpm build
+
+  # api/ — ruff → pytest against a throwaway PostGIS → migrate + seed twice (idempotent)
+  api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: platter
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: platter_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U platter"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://platter@localhost:5432/platter_test
+      # A missing TEST_DATABASE_URL fails the run instead of silently skipping the db tests.
+      REQUIRE_DB_TESTS: '1'
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: api/uv.lock
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest
+      - name: Migrate + seed twice (no duplicates)
+        env:
+          SEED_URL: postgresql+asyncpg://platter@localhost:5432/platter_seed
+        run: |
+          psql -h localhost -U platter -d platter_test -c 'create database platter_seed'
+          ALEMBIC_URL="$SEED_URL" uv run alembic upgrade head
+          uv run python -m app.seed.seed --database-url "$SEED_URL" --offline
+          uv run python -m app.seed.seed --database-url "$SEED_URL" --offline | tee second.txt
+          grep -q "0 new past, 0 new live" second.txt
