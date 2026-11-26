@@ -182,3 +182,23 @@ async def test_two_streams_advancing_at_once_move_a_sim_once(world, factory):
     statuses = [k for k in kinds if k not in ("route", "rider_assigned")]
     assert statuses == ["placed", "accepted", "preparing", "ready", "picked_up", "delivered"]
     assert kinds.count("route") == 2
+
+
+async def test_catching_up_stamps_each_step_when_it_really_happened(world):
+    """Nobody looked for two hours: one advance replays the whole order with its true times."""
+    db = world
+    order = await place(db)
+    placed = order.placed_at
+    clock.advance(2 * 3600)
+    for _ in range(6):  # each look moves it at least one step
+        await sim.advance(db, order_ids=[order.id])
+        await db.commit()
+    order = await db.get(Order, order.id, populate_existing=True)
+    assert order.status == S.delivered
+    r = await db.get(Restaurant, order.restaurant_id)
+    assert (order.accepted_at - placed).total_seconds() == sim.AUTO_ACCEPT_S
+    assert (order.ready_at - order.accepted_at).total_seconds() == r.prep_min * 60
+    assert order.picked_up_at >= order.ready_at
+    # delivered when the rider reached the door — not two hours later when someone looked
+    assert (order.delivered_at - placed).total_seconds() < 60 * 60
+    assert order.delivered_at < clock.now()

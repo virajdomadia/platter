@@ -83,6 +83,7 @@ async def open_leg(
     kind: LegKind,
     start: tuple[float, float],
     end: tuple[float, float],
+    started_at: dt.datetime | None = None,
 ) -> RiderLeg:
     """One OSRM route per leg (straight line × 1.3 if OSRM fails), cached on the row. A sim
     rider's duration is its own speed over the route distance (04 §4)."""
@@ -98,11 +99,11 @@ async def open_leg(
         distance_m=found.distance_m,
         duration_s=duration,
         method=found.method,
-        started_at=clock.now(),
+        started_at=started_at or clock.now(),
     )
     db.add(leg)
     await db.flush()
-    await events.append(db, order.id, "route", events.SYSTEM, route_payload(leg))
+    await events.append(db, order.id, "route", events.SYSTEM, route_payload(leg), at=leg.started_at)
     return leg
 
 
@@ -119,7 +120,12 @@ def route_payload(leg: RiderLeg) -> dict:
 
 
 async def _attach(
-    db: AsyncSession, order: Order, rider: Rider, kind: str, extra: dict | None = None
+    db: AsyncSession,
+    order: Order,
+    rider: Rider,
+    kind: str,
+    extra: dict | None = None,
+    started_at: dt.datetime | None = None,
 ) -> RiderLeg:
     rider.status = RiderStatus.busy
     order.rider_id = rider.id
@@ -129,17 +135,23 @@ async def _attach(
     )
     start = await position_of(db, rider.id) or await restaurant_point(db, order.restaurant_id)
     end = await restaurant_point(db, order.restaurant_id)
-    return await open_leg(db, order, rider, LegKind.to_restaurant, start, end)
+    return await open_leg(db, order, rider, LegKind.to_restaurant, start, end, started_at)
 
 
-async def assign_rider(db: AsyncSession, order: Order, rider: Rider | None = None) -> Rider | None:
-    """Inside the caller's transaction, with `order` already locked."""
+async def assign_rider(
+    db: AsyncSession,
+    order: Order,
+    rider: Rider | None = None,
+    started_at: dt.datetime | None = None,
+) -> Rider | None:
+    """Inside the caller's transaction, with `order` already locked. `started_at`: the moment the
+    accept happened when the simulation is catching up (the rider set off then)."""
     if order.rider_id is not None:
         return None
     rider = rider or await nearest_available_rider(db, order.restaurant_id)
     if rider is None:
         return None
-    await _attach(db, order, rider, "rider_assigned")
+    await _attach(db, order, rider, "rider_assigned", started_at=started_at)
     return rider
 
 

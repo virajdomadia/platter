@@ -121,26 +121,21 @@ async def run_kitchens(
         await db.execute(_scoped(q, order_ids, restaurant_id))
     ).all():
         to: OrderStatus | None = None
-        if status == S.placed and placed_at and (now - placed_at).total_seconds() >= AUTO_ACCEPT_S:
-            to = S.accepted
-        elif (
-            status == S.accepted
-            and accepted_at
-            and (now - accepted_at).total_seconds() >= AUTO_PREPARING_S
-        ):
-            to = S.preparing
-        elif (
-            status == S.preparing
-            and accepted_at
-            and (now - accepted_at).total_seconds() >= prep_min * 60
-        ):
-            to = S.ready
+        when: dt.datetime | None = None
+        if status == S.placed and placed_at:
+            to, when = S.accepted, placed_at + dt.timedelta(seconds=AUTO_ACCEPT_S)
+        elif status == S.accepted and accepted_at:
+            to, when = S.preparing, accepted_at + dt.timedelta(seconds=AUTO_PREPARING_S)
+        elif status == S.preparing and accepted_at:
+            to, when = S.ready, accepted_at + dt.timedelta(minutes=prep_min)
+        if when is not None and when > now:
+            to = None
         if to is None:
             continue
         locked = await _try_lock_order(db, oid)
         # Another stream may have moved it between the read and the lock: act only on what we read.
         if locked is not None and locked.status == status:
-            await orders.transition(db, oid, to, SYSTEM)
+            await orders.transition(db, oid, to, SYSTEM, at=when)
 
 
 async def run_riders(
@@ -192,10 +187,13 @@ async def _advance_leg(db: AsyncSession, order: Order, leg: RiderLeg, rider: Rid
             await upsert_position(db, rider.id, p, heading, 0.0, order_id=order.id)
             await db.flush()
         if order.status == S.ready:
-            await orders.transition(db, order.id, S.picked_up, actor)
+            arrived = leg.arrived_at or now
+            picked = max(arrived, order.ready_at or arrived)
+            await orders.transition(db, order.id, S.picked_up, actor, at=picked)
     else:
         await upsert_position(db, rider.id, p, heading, 0.0, order_id=order.id)
-        await orders.transition(db, order.id, S.delivered, actor)
+        arrived = leg.started_at + dt.timedelta(seconds=leg.duration_s)
+        await orders.transition(db, order.id, S.delivered, actor, at=arrived)
 
 
 async def run_waiting(

@@ -301,15 +301,18 @@ async def transition(
     *,
     reason: str | None = None,
     rider: Rider | None = None,
+    at: dt.datetime | None = None,
 ) -> Order:
-    """`rider`: on `accepted`, dispatch to this rider instead of the nearest (demo staging)."""
+    """`rider`: on `accepted`, dispatch to this rider instead of the nearest (demo staging).
+    `at`: when it happened, if earlier than now — the lazy simulation catching up stamps each
+    step with the moment it really happened (a sim's arrival = leg start + duration)."""
     order = await lock(db, order_id)
     if order is None:
         raise ApiError(404, "not_found", "No such order")
     rule = TRANSITIONS.get((order.status, to))
     if rule is None or actor.role not in rule.roles or not rule.guard(order, actor):
         raise illegal(order, to)
-    now = clock.now()
+    now = min(at, clock.now()) if at else clock.now()
     order.status = to
     setattr(order, f"{to}_at", now)
     payload: dict = {"status": str(to)}
@@ -317,7 +320,7 @@ async def transition(
         order.reject_reason = (reason or "The kitchen couldn't take this order").strip()[:200]
         payload["reason"] = order.reject_reason
     await db.flush()
-    await events.append(db, order.id, str(to), actor, payload)
+    await events.append(db, order.id, str(to), actor, payload, at=now)
     await _side_effects(db, order, to, rider)
     return order
 
@@ -336,13 +339,15 @@ async def _side_effects(
     db: AsyncSession, order: Order, to: OrderStatus, chosen: Rider | None = None
 ) -> None:
     if to == S.accepted:
-        await dispatch.assign_rider(db, order, chosen)
+        await dispatch.assign_rider(db, order, chosen, started_at=order.accepted_at)
     elif to == S.ready and order.rider_id is not None:
         # A sim rider already waiting at the counter picks up at once.
         rider = await db.get(Rider, order.rider_id)
         leg = await _open_leg_of(db, order)
         if rider and rider.is_sim and leg and leg.kind == LegKind.to_restaurant and leg.arrived_at:
-            await transition(db, order.id, S.picked_up, Actor("system", rider_id=rider.id))
+            await transition(
+                db, order.id, S.picked_up, Actor("system", rider_id=rider.id), at=order.ready_at
+            )
     elif to == S.picked_up:
         rider = await db.get(Rider, order.rider_id)
         assert rider is not None  # noqa: S101 - guarded
@@ -354,7 +359,13 @@ async def _side_effects(
             restaurant if rider.is_sim else (await dispatch.position_of(db, rider.id) or restaurant)
         )
         await dispatch.open_leg(
-            db, order, rider, LegKind.to_customer, start, latlng(order.drop_loc)
+            db,
+            order,
+            rider,
+            LegKind.to_customer,
+            start,
+            latlng(order.drop_loc),
+            order.picked_up_at,
         )
     elif to == S.delivered:
         rider = await db.get(Rider, order.rider_id)

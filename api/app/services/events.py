@@ -6,6 +6,7 @@ event with a lower seq can become visible after a stream has read a higher one, 
 `seq > $last` never skips. Streams read this table; nothing else carries an event.
 """
 
+import datetime as dt
 import uuid
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -54,6 +55,7 @@ async def append(
     kind: str,
     actor: Actor,
     payload: dict[str, Any] | None = None,
+    at: dt.datetime | None = None,
 ) -> OrderEvent:
     await db.execute(text("select pg_advisory_xact_lock(1)"))
     event = OrderEvent(
@@ -62,7 +64,7 @@ async def append(
         actor_role=actor.role,
         actor_id=actor.id,
         payload=payload or {},
-        at=clock.now(),
+        at=at or clock.now(),
     )
     db.add(event)
     await db.flush()
