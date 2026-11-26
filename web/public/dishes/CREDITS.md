@@ -1,0 +1,89 @@
+# Dish photo credits
+
+Photos from Wikimedia Commons under the licence listed (CC0 / public domain / CC BY / CC BY-SA), served as 480-px thumbnails. Fetched by `api/app/seed/fetch_photos.py`.
+
+- `badam-milk.jpg` — [Badam milk spilled.jpg](https://commons.wikimedia.org/wiki/File:Badam_milk_spilled.jpg) · DEEPAN RAJA .M · CC BY-SA 4.0
+- `bhel.jpg` — [Bhel puri chat, photographed in West Bengal, India, September 24, 2024.jpg](https://commons.wikimedia.org/wiki/File:Bhel_puri_chat,_photographed_in_West_Bengal,_India,_September_24,_2024.jpg) · Billjones94 · CC0
+- `biryani.jpg` — [A home made plate of mutton biryani served with chicken kassa cooked in the bengali style.jpg](https://commons.wikimedia.org/wiki/File:A_home_made_plate_of_mutton_biryani_served_with_chicken_kassa_cooked_in_the_bengali_style.jpg) · Subhrajyoti07 · CC BY-SA 4.0
+- `brownie.jpg` — [Chocolate-brownie-hachatw.jpg](https://commons.wikimedia.org/wiki/File:Chocolate-brownie-hachatw.jpg) · JefferySAC · CC BY-SA 4.0
+- `bun-maska.jpg` — [Bun Maska Pav.jpg](https://commons.wikimedia.org/wiki/File:Bun_Maska_Pav.jpg) · Sanket Oswal · CC BY-SA 4.0
+- `buns.jpg` — [Mangalore Bun + Pickle (4307171460).jpg](https://commons.wikimedia.org/wiki/File:Mangalore_Bun_%2B_Pickle_(4307171460).jpg) · Manish Chauhan from Bangalore, India · CC BY 2.0
+- `burger.jpg` — [Fancy Veggie Burger and Fries - Joe's Burger House 2024-07-07.jpg](https://commons.wikimedia.org/wiki/File:Fancy_Veggie_Burger_and_Fries_-_Joe%27s_Burger_House_2024-07-07.jpg) · Andy Li · CC0
+- `butter-chicken.jpg` — [Chicken makhani.jpg](https://commons.wikimedia.org/wiki/File:Chicken_makhani.jpg) · stu_spivack · CC BY-SA 2.0
+- `chai.jpg` — [Masala Chai.jpg](https://commons.wikimedia.org/wiki/File:Masala_Chai.jpg) · Ganesh Mohan T · CC BY-SA 4.0
+- `cheese-pavbhaji.jpg` — [Yummy Cheese Pav Bhajji and Medu Wada.jpg](https://commons.wikimedia.org/wiki/File:Yummy_Cheese_Pav_Bhajji_and_Medu_Wada.jpg) · Wrunmay · CC BY-SA 4.0
+- `chicken-burger.jpg` — [Chicken-burger-combo (1).jpg](https://commons.wikimedia.org/wiki/File:Chicken-burger-combo_(1).jpg) · Chikex · CC BY-SA 4.0
+- `chilli-chicken.jpg` — [Chicken Chilli 1.jpg](https://commons.wikimedia.org/wiki/File:Chicken_Chilli_1.jpg) · Gaurav Dhwaj Khadka · CC BY-SA 4.0
+- `chole.jpg` — [Chole Bhature 6.jpg](https://commons.wikimedia.org/wiki/File:Chole_Bhature_6.jpg) · Gannu03 · CC BY-SA 4.0
+- `coffee.jpg` — [Dabara set with coffee.jpg](https://commons.wikimedia.org/wiki/File:Dabara_set_with_coffee.jpg) · DEEPAN RAJA .M · CC BY-SA 4.0
+- `cold-coffee.jpg` — [Iced coffee (Eiskaffee).jpg](https://commons.wikimedia.org/wiki/File:Iced_coffee_(Eiskaffee).jpg) · Anke Klitzing · CC BY-SA 4.0
+- `dahi-puri.jpg` — [Odia Style Dahi bara Puri Odisha-IMG 953.jpg](https://commons.wikimedia.org/wiki/File:Odia_Style_Dahi_bara_Puri_Odisha-IMG_953.jpg) · Subhransuphotography · CC BY-SA 4.0
+- `dal-makhani.jpg` — [Dal Makhani.jpg](https://commons.wikimedia.org/wiki/File:Dal_Makhani.jpg) · Charles Haynes · CC BY-SA 2.0
+- `dosa.jpg` — [Masala dosa 01.jpg](https://commons.wikimedia.org/wiki/File:Masala_dosa_01.jpg) · Marajozkee · CC BY-SA 4.0
+- `double-ka-meetha.jpg` — [Double Ka Meetha.JPG](https://commons.wikimedia.org/wiki/File:Double_Ka_Meetha.JPG) · Miansari66 · CC0
+- `egg-biryani.jpg` — [Egg Biryani in a restaurant.jpg](https://commons.wikimedia.org/wiki/File:Egg_Biryani_in_a_restaurant.jpg) · Medhi jyoti · CC BY-SA 4.0
+- `falooda.jpg` — [ঘরে তৈরি ফালুদা.JPG](https://commons.wikimedia.org/wiki/File:%E0%A6%98%E0%A6%B0%E0%A7%87_%E0%A6%A4%E0%A7%88%E0%A6%B0%E0%A6%BF_%E0%A6%AB%E0%A6%BE%E0%A6%B2%E0%A7%81%E0%A6%A6%E0%A6%BE.JPG) · Kanchana Bose · CC BY-SA 4.0
+- `fried-momos.jpg` — [Fried momos of Salem.jpg](https://commons.wikimedia.org/wiki/File:Fried_momos_of_Salem.jpg) · Thamizhpparithi Maari · CC BY-SA 4.0
+- `fries.jpg` — [Frituur fries frikandel mayo curry ketchup (cropped).jpg](https://commons.wikimedia.org/wiki/File:Frituur_fries_frikandel_mayo_curry_ketchup_(cropped).jpg) · Jon Åslund, cropped by User:Oreo Priest · CC BY 2.0
+- `garlic-bread.jpg` — [Garlic bread baguettes 2.jpg](https://commons.wikimedia.org/wiki/File:Garlic_bread_baguettes_2.jpg) · Infrogmation · CC BY-SA 4.0
+- `ghee-roast.jpg` — [Ghee roast dosa on a plate at Indira Gandhi International Airport - July 2026.jpg](https://commons.wikimedia.org/wiki/File:Ghee_roast_dosa_on_a_plate_at_Indira_Gandhi_International_Airport_-_July_2026.jpg) · Dev Jadiya · CC BY-SA 4.0
+- `gola.jpg` — [Ice Gola - The Colorful Flavoured ice sticks.jpg](https://commons.wikimedia.org/wiki/File:Ice_Gola_-_The_Colorful_Flavoured_ice_sticks.jpg) · Abinandhan Sundararajan · CC BY-SA 4.0
+- `gujarati-thali.jpg` — [Gujarati Thali - Ahmedabad.jpg](https://commons.wikimedia.org/wiki/File:Gujarati_Thali_-_Ahmedabad.jpg) · Nittu Gogoi · CC BY-SA 4.0
+- `gulab-jamun.jpg` — [Two Gulab Jamun in a plate 01.jpg](https://commons.wikimedia.org/wiki/File:Two_Gulab_Jamun_in_a_plate_01.jpg) · Suyash.dwivedi · CC BY-SA 4.0
+- `halwa.jpg` — [Delicious Gajar Ka Halwa.jpg](https://commons.wikimedia.org/wiki/File:Delicious_Gajar_Ka_Halwa.jpg) · Sharvarism · CC BY-SA 4.0
+- `iced-tea.jpg` — [Iced lemon tea - Rawlab Juice & Tea.jpg](https://commons.wikimedia.org/wiki/File:Iced_lemon_tea_-_Rawlab_Juice_%26_Tea.jpg) · Andy Li · CC0
+- `idli.jpg` — [Idli Sambar-Noida-UP-SP004.jpg](https://commons.wikimedia.org/wiki/File:Idli_Sambar-Noida-UP-SP004.jpg) · Sutapa Pal · CC BY-SA 4.0
+- `jhol-momo.jpg` — [Steamed Momos - KOLKATA.jpg](https://commons.wikimedia.org/wiki/File:Steamed_Momos_-_KOLKATA.jpg) · TAPAS KUMAR HALDER · CC BY-SA 4.0
+- `kaju-katli.jpg` — [Kaju katli dessert - side view.jpg](https://commons.wikimedia.org/wiki/File:Kaju_katli_dessert_-_side_view.jpg) · Unknomics · CC BY-SA 3.0
+- `kesari.jpg` — [Kesari bhath.jpg](https://commons.wikimedia.org/wiki/File:Kesari_bhath.jpg) · AntanO · CC BY-SA 4.0
+- `kitchen.jpg` — [File:RTW2009-1088Delhi (4325216633).jpg](https://commons.wikimedia.org/wiki/File:RTW2009-1088Delhi_(4325216633).jpg) · plusgood · cc by 2.0
+- `kulcha.jpg` — [Amritsari Kulcha served with chhole.jpg](https://commons.wikimedia.org/wiki/File:Amritsari_Kulcha_served_with_chhole.jpg) · Ravi Dwivedi · CC BY-SA 4.0
+- `lamb-burger.jpg` — [Cheeseburger with onions at Hatfield Heath Festival 2017.jpg](https://commons.wikimedia.org/wiki/File:Cheeseburger_with_onions_at_Hatfield_Heath_Festival_2017.jpg) · Acabashi · CC BY-SA 4.0
+- `lassi.jpg` — [Lassi 1.jpg](https://commons.wikimedia.org/wiki/File:Lassi_1.jpg) · Gaurav Dhwaj Khadka · CC BY-SA 4.0
+- `lime-soda.jpg` — [Koh Mak, Thailand, Lime juice with ice, Lemonade, Limeade.jpg](https://commons.wikimedia.org/wiki/File:Koh_Mak,_Thailand,_Lime_juice_with_ice,_Lemonade,_Limeade.jpg) · Vyacheslav Argenberg · CC BY 4.0
+- `mango-lassi.jpg` — [Mango Lassi and Butter Milk - Vel South Indian Kitchen + Bar.jpg](https://commons.wikimedia.org/wiki/File:Mango_Lassi_and_Butter_Milk_-_Vel_South_Indian_Kitchen_%2B_Bar.jpg) · Andy Li · CC0
+- `masala-pav.jpg` — [Masala Pav Jodi.jpg](https://commons.wikimedia.org/wiki/File:Masala_Pav_Jodi.jpg) · Fatfoodie · CC BY-SA 4.0
+- `milkshake.jpg` — [San Vicente, Milkshake, Palawan, Philippines.jpg](https://commons.wikimedia.org/wiki/File:San_Vicente,_Milkshake,_Palawan,_Philippines.jpg) · Vyacheslav Argenberg · CC BY 4.0
+- `momos.jpg` — [Steamed Momos - KOLKATA.jpg](https://commons.wikimedia.org/wiki/File:Steamed_Momos_-_KOLKATA.jpg) · TAPAS KUMAR HALDER · CC BY-SA 4.0
+- `mutton-biryani.jpg` — [A home made plate of mutton biryani served with chicken kassa cooked in the bengali style.jpg](https://commons.wikimedia.org/wiki/File:A_home_made_plate_of_mutton_biryani_served_with_chicken_kassa_cooked_in_the_bengali_style.jpg) · Subhrajyoti07 · CC BY-SA 4.0
+- `mysore-pak.jpg` — [Ghee Mysore Pak.jpg](https://commons.wikimedia.org/wiki/File:Ghee_Mysore_Pak.jpg) · Vaidehi Pujary · CC BY-SA 4.0
+- `naan.jpg` — [Naan Flatbread inside Tandoor 01.jpg](https://commons.wikimedia.org/wiki/File:Naan_Flatbread_inside_Tandoor_01.jpg) · Ravi Dwivedi · CC BY-SA 4.0
+- `nachos.jpg` — [Papalaya Nachos 2.jpg](https://commons.wikimedia.org/wiki/File:Papalaya_Nachos_2.jpg) · Psycharpax · CC BY-SA 4.0
+- `noodles.jpg` — [Tasty hakka noodles image.jpg](https://commons.wikimedia.org/wiki/File:Tasty_hakka_noodles_image.jpg) · SGUae · CC BY 4.0
+- `onion-rings.jpg` — [Onion rings served in Fort William.jpg](https://commons.wikimedia.org/wiki/File:Onion_rings_served_in_Fort_William.jpg) · Grendelkhan · CC BY-SA 4.0
+- `paneer.jpg` — [Paneer Butter Masala 3.jpg](https://commons.wikimedia.org/wiki/File:Paneer_Butter_Masala_3.jpg) · Gannu03 · CC BY-SA 4.0
+- `paneer-burger.jpg` — [Aloo tikki burger (homemade).jpg](https://commons.wikimedia.org/wiki/File:Aloo_tikki_burger_(homemade).jpg) · Neeraja foodie · CC BY-SA 4.0
+- `paneer-dosa.jpg` — [PANEER MASALA DOSA - Mini MADRAS 2026-05-03.jpg](https://commons.wikimedia.org/wiki/File:PANEER_MASALA_DOSA_-_Mini_MADRAS_2026-05-03.jpg) · Andy Li · CC0
+- `paneer-pizza.jpg` — [Vegetarian Pizza.jpg](https://commons.wikimedia.org/wiki/File:Vegetarian_Pizza.jpg) · Petar Milošević · CC BY-SA 4.0
+- `paneer-tikka.jpg` — [Malai Paneer Tikka, PK 007.jpg](https://commons.wikimedia.org/wiki/File:Malai_Paneer_Tikka,_PK_007.jpg) · PallaviKhale · CC BY-SA 4.0
+- `pani-puri.jpg` — [Crispy Pani Puri.jpg](https://commons.wikimedia.org/wiki/File:Crispy_Pani_Puri.jpg) · Teena Sometimes · CC BY-SA 4.0
+- `paratha.jpg` — [Aloo Paratha (96238).jpg](https://commons.wikimedia.org/wiki/File:Aloo_Paratha_(96238).jpg) · Gannu03 · CC BY-SA 4.0
+- `pasta.jpg` — [Penne Arrabbiata.jpg](https://commons.wikimedia.org/wiki/File:Penne_Arrabbiata.jpg) · Petar Milošević · CC BY-SA 4.0
+- `pavbhaji.jpg` — [Pav bhaji SWW.jpg](https://commons.wikimedia.org/wiki/File:Pav_bhaji_SWW.jpg) · Solowomanwalks · CC BY-SA 3.0
+- `pepperoni.jpg` — [Vegetarian Pizza.jpg](https://commons.wikimedia.org/wiki/File:Vegetarian_Pizza.jpg) · Petar Milošević · CC BY-SA 4.0
+- `pizza.jpg` — [Margherita Originale.JPG](https://commons.wikimedia.org/wiki/File:Margherita_Originale.JPG) · Mario56 · CC BY-SA 3.0
+- `podi-idli.jpg` — [Idli Podi.jpg](https://commons.wikimedia.org/wiki/File:Idli_Podi.jpg) · Booradleyp1 · CC BY-SA 4.0
+- `poha.jpg` — [Poha with tomato sause.jpg](https://commons.wikimedia.org/wiki/File:Poha_with_tomato_sause.jpg) · Mrsagar105 · CC BY-SA 4.0
+- `pongal.jpg` — [Ven Pongal & sakkarai pongal with vada & bonda.jpg](https://commons.wikimedia.org/wiki/File:Ven_Pongal_%26_sakkarai_pongal_with_vada_%26_bonda.jpg) · Raamsanjay · CC BY-SA 4.0
+- `rajasthani-thali.jpg` — [Rajasthani Thali at Rajdhani.jpg](https://commons.wikimedia.org/wiki/File:Rajasthani_Thali_at_Rajdhani.jpg) · Manasi nafde · CC BY-SA 4.0
+- `rajma.jpg` — [Rajma Chawal Thali.jpg](https://commons.wikimedia.org/wiki/File:Rajma_Chawal_Thali.jpg) · Medhi jyoti · CC BY-SA 4.0
+- `rasmalai.jpg` — [Rasmalai with carrot.jpg](https://commons.wikimedia.org/wiki/File:Rasmalai_with_carrot.jpg) · Shreya13jain · CC BY-SA 4.0
+- `rava-dosa.jpg` — [Rava Mysore Dosa.jpg](https://commons.wikimedia.org/wiki/File:Rava_Mysore_Dosa.jpg) · Oleg Yunakov · CC BY-SA 4.0
+- `rava-idli.jpg` — [MTR Rava Idli.jpg](https://commons.wikimedia.org/wiki/File:MTR_Rava_Idli.jpg) · Maharana7573 · CC BY-SA 4.0
+- `saag.jpg` — [Sarson da saag.JPG](https://commons.wikimedia.org/wiki/File:Sarson_da_saag.JPG) · SwingingUvula · CC BY-SA 4.0
+- `salad.jpg` — [Caesar Salad - Purezza 2023-11-22.jpg](https://commons.wikimedia.org/wiki/File:Caesar_Salad_-_Purezza_2023-11-22.jpg) · Andy Li · CC0
+- `salan.jpg` — [Mirchi ka salan and Dahi chutney.jpg](https://commons.wikimedia.org/wiki/File:Mirchi_ka_salan_and_Dahi_chutney.jpg) · Randhirreddy at English Wikipedia · CC BY-SA 3.0
+- `samosa.jpg` — [Samosa 4.jpg](https://commons.wikimedia.org/wiki/File:Samosa_4.jpg) · Gaurav Dhwaj Khadka · CC BY-SA 4.0
+- `seekh.jpg` — [Seekh Kebab.JPG](https://commons.wikimedia.org/wiki/File:Seekh_Kebab.JPG) · raasiel · CC BY 2.0
+- `south-thali.jpg` — [South indian meals 24.jpg](https://commons.wikimedia.org/wiki/File:South_indian_meals_24.jpg) · Swathi sri srinivasa raghavan · CC0
+- `tandoori.jpg` — [Tandoori chicken Indian.jpg](https://commons.wikimedia.org/wiki/File:Tandoori_chicken_Indian.jpg) · pelican · CC BY-SA 2.0
+- `thali.jpg` — [Assamese Veg Thali.jpg](https://commons.wikimedia.org/wiki/File:Assamese_Veg_Thali.jpg) · পল্লৱ কুমাৰ নাথ · CC BY-SA 4.0
+- `thukpa.jpg` — [Thukpa, Tibetan noodle in Osaka, Japan.jpg](https://commons.wikimedia.org/wiki/File:Thukpa,_Tibetan_noodle_in_Osaka,_Japan.jpg) · m-louis from Osaka · CC BY-SA 2.0
+- `tiramisu.jpg` — [Dolce Tiramisù monoporzione.jpg](https://commons.wikimedia.org/wiki/File:Dolce_Tiramis%C3%B9_monoporzione.jpg) · Anna.Massini · CC BY 4.0
+- `upma.jpg` — [Upma South India.JPG](https://commons.wikimedia.org/wiki/File:Upma_South_India.JPG) · Intodustin · CC BY-SA 4.0
+- `vada.jpg` — [ഉഴുന്നുവടകൾ.JPG](https://commons.wikimedia.org/wiki/File:%E0%B4%89%E0%B4%B4%E0%B5%81%E0%B4%A8%E0%B5%8D%E0%B4%A8%E0%B5%81%E0%B4%B5%E0%B4%9F%E0%B4%95%E0%B5%BE.JPG) · Sugeesh at ml.wikipedia · CC BY-SA 3.0
+- `vada-pav.jpg` — [Crunchy Crispy Vada pav.jpg](https://commons.wikimedia.org/wiki/File:Crunchy_Crispy_Vada_pav.jpg) · Sharvarism · CC BY-SA 4.0
+- `veg-biryani.jpg` — [Vegetable Biryani IMG 001.jpg](https://commons.wikimedia.org/wiki/File:Vegetable_Biryani_IMG_001.jpg) · Phadke09 · CC BY-SA 4.0
+- `veg-momos.jpg` — [Steamed Momos - KOLKATA.jpg](https://commons.wikimedia.org/wiki/File:Steamed_Momos_-_KOLKATA.jpg) · TAPAS KUMAR HALDER · CC BY-SA 4.0
+- `veg-pizza.jpg` — [Vegetarian Pizza.jpg](https://commons.wikimedia.org/wiki/File:Vegetarian_Pizza.jpg) · Petar Milošević · CC BY-SA 4.0
+- `wings.jpg` — [Buffalo Burgers Buffalo Chicken Wings (36082467922).jpg](https://commons.wikimedia.org/wiki/File:Buffalo_Burgers_Buffalo_Chicken_Wings_(36082467922).jpg) · Willis Lam · CC BY-SA 2.0
