@@ -1,0 +1,14 @@
+{
+  "name": "Platter",
+  "short_name": "Platter",
+  "description": "Platter rider app — jobs, the route and live GPS sharing.",
+  "start_url": "/rider",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F3F0FF",
+  "theme_color": "#1F1B2E",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/apple-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}
