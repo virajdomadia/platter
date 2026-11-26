@@ -67,7 +67,7 @@ export function RestaurantScreen({ restaurant: r }: { restaurant: RestaurantOut 
         </div>
         <div className="tile lav spring">
           <h1 style={{ fontSize: 26 }}>
-            {r.is_veg && <span className="veg" style={{ marginRight: 8, verticalAlign: 3 }} aria-label="Pure veg" />}
+            {r.is_veg && <span role="img" className="veg" style={{ marginRight: 8, verticalAlign: 3 }} aria-label="Pure veg" />}
             {r.name}
           </h1>
           <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 4 }}>
@@ -185,7 +185,7 @@ function DishRow({
       )}
       <div style={{ minWidth: 0 }}>
         <b>
-          <span className={`veg ${item.is_veg ? "" : "non"}`} aria-label={item.is_veg ? "Veg" : "Non-veg"} /> {item.name}
+          <span role="img" className={`veg ${item.is_veg ? "" : "non"}`} aria-label={item.is_veg ? "Veg" : "Non-veg"} /> {item.name}
         </b>
         {item.description && <p>{item.description}</p>}
         <span className="num" style={{ fontWeight: 900 }}>{inr(item.price_paise)}</span>

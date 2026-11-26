@@ -37,6 +37,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Metadata in <head> for every client (not streamed into <body>), so link previews and
+  // crawlers always see the title and description.
+  htmlLimitedBots: /.*/,
   // Dish photos are pre-sized 480-px thumbnails committed under public/dishes; the optimizer stays
   // off so no request can spend Vercel Hobby's monthly image transformations.
   images: { unoptimized: true },

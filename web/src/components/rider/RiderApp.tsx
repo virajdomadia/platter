@@ -229,7 +229,7 @@ function ItemList({ job }: { job: Job }) {
       <ul>
         {job.items.map((it, i) => (
           <li key={`${it.name}-${i}`}>
-            <span className={`veg ${it.is_veg ? "" : "non"}`} aria-label={it.is_veg ? "Veg" : "Non-veg"} />
+            <span role="img" className={`veg ${it.is_veg ? "" : "non"}`} aria-label={it.is_veg ? "Veg" : "Non-veg"} />
             <span className="num">{it.qty} ×</span> {it.name}
           </li>
         ))}

@@ -11,7 +11,6 @@ export function RestaurantCard({ r, big }: { r: Card; big?: boolean }) {
       href={`/r/${r.slug}`}
       className="tile flush spring rcard"
       style={{ position: "relative", display: "block", textDecoration: "none", gridColumn: big ? "1 / -1" : undefined, opacity: off ? 0.7 : 1, aspectRatio: big ? "5 / 2" : "4 / 3.4" }}
-      aria-label={`${r.name}, ${r.cuisines.join(", ")}, ${km(r.distance_m)} away, ${badge}`}
     >
       {r.cover && (
         <Image
@@ -35,7 +34,7 @@ export function RestaurantCard({ r, big }: { r: Card; big?: boolean }) {
         style={{ position: "absolute", left: 10, right: 10, bottom: 10, background: "#fff", borderRadius: 14, padding: "7px 11px", boxShadow: "var(--shadow-pop)", display: "grid" }}
       >
         <b style={{ fontWeight: 900, fontSize: 14 }}>
-          {r.is_veg && <span className="veg" style={{ marginRight: 6, verticalAlign: -1 }} aria-label="Pure veg" />}
+          {r.is_veg && <span role="img" className="veg" style={{ marginRight: 6, verticalAlign: -1 }} aria-label="Pure veg" />}
           {r.name}
         </b>
         <small style={{ fontWeight: 700, fontSize: 11, color: "var(--ink2)" }}>
