@@ -1,7 +1,7 @@
-"""v2 L1 (06 §C v2, 07 L1): rider offers. The nearest free rider gets 30 s to accept; decline or
-timeout → the next nearest, up to 5; sims accept on their own after 3–8 s. Every offer state change
-is one conditional `update … where state = 'sent'`, so an accept racing the expiry of the same
-offer — or two phones accepting it — has exactly one winner, and the loser does nothing at all."""
+﻿"""v2 L1 (06 Â§C v2, 07 L1): rider offers. The nearest free rider gets 30 s to accept; decline or
+timeout â†’ the next nearest, up to 5; sims accept on their own after 3â€“8 s. Every offer state change
+is one conditional `update â€¦ where state = 'sent'`, so an accept racing the expiry of the same
+offer â€” or two phones accepting it â€” has exactly one winner, and the loser does nothing at all."""
 
 import asyncio
 import datetime as dt
@@ -311,3 +311,45 @@ async def test_the_offer_reaches_the_rider_stream_and_the_customer_sees_attempts
     frames = await frames_until(factory, st.Scope("order", order.id), None, 1)
     assert frames[0]["data"]["offer_attempts"] == 1
     assert "rider_id" not in str([f for f in frames if f["event"] == "offer"])
+
+
+async def test_going_offline_while_the_offer_is_accepted_never_deadlocks(world, app):
+    """Review: the status switch used to lock the rider before the order (the reverse of every
+    other path). Both requests racing now finish: one wins, nothing 500s."""
+    db = world
+    for _ in range(5):
+        await db.execute(text("update offers set state = 'expired' where state = 'sent'"))
+        await db.commit()
+        await only_the_demo_phone_is_free(db)
+        order = await accept_at_kitchen(db)
+        [offer] = [f for f in await offers_of(db, order.id) if f.state == "sent"]
+        async with await make_client(app) as a, await make_client(app) as b:
+            await login(a, db, DEMO_RIDER)
+            await login(b, db, DEMO_RIDER)
+            ra, rb = await asyncio.gather(
+                a.post(f"/rider/offers/{offer.id}/accept"),
+                b.post("/rider/status", json={"status": "offline"}),
+            )
+        assert ra.status_code in (200, 409) and rb.status_code in (200, 409), (ra.text, rb.text)
+        await db.execute(text("update riders set status = 'available'"))
+        await db.execute(text("update orders set rider_id = null"))
+        await db.commit()
+
+
+async def test_a_rider_never_holds_two_open_offers(world, factory):
+    """Review: two orders offering at once can both read the rider as free; the partial unique
+    index makes the second insert lose cleanly (no rider), never a second open offer."""
+    db = world
+    await only_the_demo_phone_is_free(db)
+    a = await place(db, slug="bandstand-kitchen")
+    b = await place(db, slug="bandstand-kitchen", email="priya.sharma@customers.platter.demo")
+    kitchen = Actor("restaurant", restaurant_id=a.restaurant_id)
+
+    async def accept(order_id):  # type: ignore[no-untyped-def]
+        async with factory() as s:
+            await orders.transition(s, order_id, S.accepted, kitchen)
+            await s.commit()
+
+    await asyncio.gather(accept(a.id), accept(b.id))
+    sent = select(func.count()).select_from(Offer).where(Offer.state == "sent")
+    assert (await db.execute(sent)).scalar_one() == 1

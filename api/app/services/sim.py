@@ -209,8 +209,9 @@ async def run_waiting(
 ) -> None:
     q = dispatch.waiting_for_offer().with_for_update(skip_locked=True)
     for order in (await db.execute(_scoped(q, order_ids, restaurant_id))).scalars().all():
-        if await dispatch.offer(db, order) is None:
-            break  # nobody free: the rest wait too
+        # No `break` on None: this order may have asked everyone free (or be a real order with
+        # only the demo phone free) while a younger one can still be offered.
+        await dispatch.offer(db, order)
 
 
 async def advance(

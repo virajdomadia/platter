@@ -16,6 +16,7 @@ import datetime as dt
 import uuid
 
 from sqlalchemy import func, select, text, true, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import clock
@@ -221,8 +222,12 @@ async def offer(db: AsyncSession, order: Order, at: dt.datetime | None = None) -
         created_at=now,
         expires_at=now + dt.timedelta(seconds=OFFER_S),
     )
-    db.add(f)
-    await db.flush()
+    try:
+        async with db.begin_nested():  # a rider holds one open offer, an order one (0003 indexes)
+            db.add(f)
+            await db.flush()
+    except IntegrityError:
+        return None  # a concurrent offer took this rider between our read and our lock
     await events.append(
         db, order.id, "offer_sent", events.SYSTEM, _offer_payload(f, tried + 1), at=now
     )
@@ -363,8 +368,27 @@ async def run_offers(
                 await expire(db, f.id)
 
 
-async def set_status(db: AsyncSession, rider: Rider, status: RiderStatus) -> None:
-    """The rider's online / offline switch. Going offline declines an offer on screen."""
+async def set_status(db: AsyncSession, rider_id: uuid.UUID, status: RiderStatus) -> Rider:
+    """The rider's online / offline switch. Going offline declines an offer on screen. Locks the
+    offered orders before the rider (order → rider, as everywhere), so it can't deadlock with an
+    accept or the tick resolving the same offer."""
+    offered = (
+        await db.execute(
+            select(Offer.order_id)
+            .where(Offer.rider_id == rider_id, Offer.state == "sent")
+            .order_by(Offer.order_id)
+        )
+    ).scalars()
+    for order_id in list(offered):
+        await _lock_order(db, order_id)
+    rider = (
+        await db.execute(
+            select(Rider)
+            .where(Rider.id == rider_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+    ).scalar_one()
     if rider.status == RiderStatus.busy:
         raise ApiError(409, "rider_busy", "Finish your current job before going offline")
     rider.status = status
@@ -381,6 +405,7 @@ async def set_status(db: AsyncSession, rider: Rider, status: RiderStatus) -> Non
                 await answer(db, offer_id, rider.id, "declined", actor)
             except ApiError:
                 continue
+    return rider
 
 
 async def release_rider(db: AsyncSession, rider: Rider) -> None:

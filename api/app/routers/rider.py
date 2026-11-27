@@ -115,10 +115,7 @@ async def set_status(
 ) -> s.RiderMe:
     """Online (`available`) / offline. Offline riders get no offers; finish the job first."""
     await _limit(request, db, settings)
-    rider = (
-        await db.execute(select(Rider).where(Rider.id == who.rider.id).with_for_update())
-    ).scalar_one()
-    await dispatch.set_status(db, rider, RiderStatus(body.status))
+    rider = await dispatch.set_status(db, who.rider.id, RiderStatus(body.status))
     await db.commit()
     return await rider_me(db, rider)
 

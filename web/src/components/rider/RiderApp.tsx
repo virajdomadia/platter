@@ -77,8 +77,25 @@ export function RiderApp() {
 
   const live = stream.connected && !stream.stale;
 
+  // An offer that leaves the screen (timed out, taken, or answered) says so, and focus lands on
+  // the page instead of falling to <body> with the unmounted card.
+  const [offerNote, setOfferNote] = useState("");
+  const shownOffer = useRef<string | null>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const id = me?.offer?.id ?? null;
+    if (shownOffer.current && !id) {
+      setOfferNote(job ? "Offer accepted. Your job is below." : "The offer has gone to the next rider.");
+      if (document.activeElement === document.body) mainRef.current?.focus();
+    } else if (id) setOfferNote("");
+    shownOffer.current = id;
+  }, [me?.offer?.id, job]);
+
   return (
-    <main id="main" className="rd">
+    <main id="main" className="rd" ref={mainRef} tabIndex={-1}>
+      <p className="sr-only" role="status">
+        {offerNote}
+      </p>
       <RoleBar
         title={me?.rider.name ?? "Rider"}
         subtitle={me ? me.rider.vehicle : undefined}
@@ -343,10 +360,10 @@ function OfferCard({
       {/* announced once at 10 s left, not every second */}
       <p className="sr-only" aria-live="assertive">{left === 10 ? "10 seconds left to accept" : ""}</p>
       <div className="rd-offer-actions">
-        <button type="button" className="btn rd-touch rd-accept" disabled={busy !== null || left === 0} onClick={() => void answer("accept")}>
+        <button type="button" className="btn rd-touch rd-accept" disabled={busy !== null} onClick={() => void answer("accept")}>
           {busy === "accept" ? "Accepting…" : "Accept"}
         </button>
-        <button type="button" className="btn ghost rd-touch" disabled={busy !== null || left === 0} onClick={() => void answer("decline")}>
+        <button type="button" className="btn ghost rd-touch" disabled={busy !== null} onClick={() => void answer("decline")}>
           {busy === "decline" ? "Passing…" : "Decline"}
         </button>
       </div>

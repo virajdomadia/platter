@@ -24,7 +24,9 @@ create table offers (
   unique (order_id, rider_id)
 );
 create index offers_rider_state_idx on offers (rider_id, state);
-create index offers_sent_idx on offers (expires_at) where state = 'sent'
+create index offers_sent_idx on offers (expires_at) where state = 'sent';
+create unique index offers_one_open_per_rider on offers (rider_id) where state = 'sent';
+create unique index offers_one_open_per_order on offers (order_id) where state = 'sent'
 """
 
 DOWNGRADE = """

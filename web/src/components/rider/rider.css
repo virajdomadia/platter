@@ -283,3 +283,8 @@
 .rd .rd-switch:disabled {
   opacity: 0.55;
 }
+
+/* focus parks on <main> when an offer card leaves; it isn't a control */
+.rd:focus {
+  outline: none;
+}
