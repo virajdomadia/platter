@@ -212,7 +212,15 @@ async def today(db: AsyncSession) -> s.AdminToday:
 
 
 async def restaurants(db: AsyncSession) -> list[s.RestaurantCard]:
-    rows = (await db.execute(select(Restaurant).order_by(Restaurant.name))).scalars().all()
+    rows = (
+        (
+            await db.execute(
+                select(Restaurant).where(Restaurant.is_sandbox.is_(False)).order_by(Restaurant.name)
+            )
+        )
+        .scalars()
+        .all()
+    )
     return [views.restaurant_card(r, distance_m=0) for r in rows]
 
 

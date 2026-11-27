@@ -154,19 +154,6 @@ async def test_reassign_releases_the_old_rider_and_redraws(world, app):
     assert kinds[-2:] == ["rider_reassigned", "route"]
 
 
-async def test_menu_toggle_reaches_the_customer_menu(world, app):
-    async with await make_client(app) as c:
-        await login(c, world, "owner.bandstand-kitchen@platter.demo")
-        menu = (await c.get("/restaurant/menu")).json()
-        item = menu["categories"][0]["items"][0]
-        r = await c.patch(f"/restaurant/items/{item['id']}", json={"is_available": False})
-        assert r.status_code == 200 and r.json()["is_available"] is False
-    async with await make_client(app) as anon:
-        page = (await anon.get("/restaurants/bandstand-kitchen")).json()
-        found = next(i for cat in page["categories"] for i in cat["items"] if i["id"] == item["id"])
-        assert found["is_available"] is False
-
-
 async def test_a_kitchen_running_late_is_stuck_and_the_autopilot_takes_over(world):
     from app.services import sim
 

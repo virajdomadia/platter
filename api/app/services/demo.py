@@ -30,7 +30,7 @@ from app.models import (
     RiderStatus,
     User,
 )
-from app.services import events, orders, sim
+from app.services import events, menu, orders, sim
 from app.services.events import SYSTEM, Actor
 
 S = OrderStatus
@@ -88,7 +88,7 @@ async def open_restaurants_near(
         (
             await db.execute(
                 text(
-                    "select id from restaurants where ST_DWithin(loc,"
+                    "select id from restaurants where not is_sandbox and ST_DWithin(loc,"
                     " ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography, :r)"
                     " order by loc <-> ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography"
                 ),
@@ -318,10 +318,12 @@ async def ensure_customer_scene(db: AsyncSession, user: User) -> None:
 async def ensure_restaurant_scene(db: AsyncSession, restaurant: Restaurant) -> None:
     await sim.advance(db, restaurant_id=restaurant.id)
     restaurant.board_seen_at = clock.now()
-    # A visitor may have switched every dish off; the next visitor gets a working kitchen.
+    # A visitor may have switched every dish off; the next visitor gets a working kitchen, and the
+    # menu editor's private copy starts again from the live menu.
     await db.execute(
         update(MenuItem).where(MenuItem.restaurant_id == restaurant.id).values(is_available=True)
     )
+    await menu.reset_sandbox(db, restaurant)
     active = await _active(db, Order.restaurant_id == restaurant.id)
     customers = await sim_customers(db)
     random.shuffle(customers)

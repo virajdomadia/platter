@@ -104,7 +104,7 @@ async def quote(
     lng: float,
 ) -> Quote:
     restaurant = await db.get(Restaurant, restaurant_id)
-    if restaurant is None:
+    if restaurant is None or restaurant.is_sandbox:  # the demo editor's copy takes no orders
         raise ApiError(404, "not_found", "No such restaurant")
     if not items:
         raise ApiError(422, "empty_cart", "Your cart is empty")

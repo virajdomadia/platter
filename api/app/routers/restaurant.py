@@ -15,11 +15,12 @@ from app import schemas as s
 from app.core import clock
 from app.core.config import Settings, current_settings
 from app.core.db import get_session
-from app.core.errors import not_found
+from app.core.errors import ApiError, not_found
 from app.models import MenuCategory, MenuItem, Order, OrderStatus, Restaurant
 from app.routers import sse
 from app.routers.discovery import menu_item
-from app.services import auth, demo, hours, orders, sim, views
+from app.services import auth, demo, hours, limits, orders, sim, views
+from app.services import menu as menu_service
 from app.services import stream as stream_service
 from app.services.events import Actor
 
@@ -116,18 +117,13 @@ async def transition(
     return await views.ticket(db, order)
 
 
-@router.get("/menu", response_model=s.MenuOut)
-async def menu(
-    owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
-    db: AsyncSession = Depends(get_session),
-) -> s.MenuOut:
-    r = owner.restaurant
+async def _menu_out(db: AsyncSession, r: Restaurant) -> s.MenuOut:
     categories = (
         (
             await db.execute(
                 select(MenuCategory)
                 .where(MenuCategory.restaurant_id == r.id)
-                .order_by(MenuCategory.sort)
+                .order_by(MenuCategory.sort, MenuCategory.name)
             )
         )
         .scalars()
@@ -136,7 +132,9 @@ async def menu(
     items = (
         (
             await db.execute(
-                select(MenuItem).where(MenuItem.restaurant_id == r.id).order_by(MenuItem.sort)
+                select(MenuItem)
+                .where(MenuItem.restaurant_id == r.id)
+                .order_by(MenuItem.sort, MenuItem.name)
             )
         )
         .scalars()
@@ -152,7 +150,53 @@ async def menu(
             )
             for c in categories
         ],
+        details=s.RestaurantDetails(
+            hours=r.hours, is_open=r.is_open, prep_min=r.prep_min, cover=views.photo(r.cover_url)
+        ),
+        sandbox=r.is_sandbox,
     )
+
+
+async def _editing(owner: auth.RestaurantOwner, db: AsyncSession) -> Restaurant:
+    return await menu_service.editable(db, owner.user, owner.restaurant)
+
+
+async def _limit(request: Request, db: AsyncSession, settings: Settings) -> None:
+    await limits.hit(db, f"menu:{limits.client_ip(request, settings)}", 120)
+
+
+async def _saved(db: AsyncSession, settings: Settings, r: Restaurant) -> s.MenuOut:
+    """Commit, drop the public page cache (the live restaurant only), answer the whole menu."""
+    await db.commit()
+    if not r.is_sandbox:
+        await revalidate(settings, r.slug)
+    return await _menu_out(db, r)
+
+
+def _uuid(value: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(value)
+    except ValueError as exc:
+        raise not_found("No such category") from exc
+
+
+@router.get("/menu", response_model=s.MenuOut)
+async def menu(
+    owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
+    db: AsyncSession = Depends(get_session),
+) -> s.MenuOut:
+    r = await _editing(owner, db)
+    await db.commit()  # the demo kitchen's sandbox is made on first use
+    return await _menu_out(db, r)
+
+
+@router.get("/photos", response_model=list[str])
+async def photos(
+    _: auth.RestaurantOwner = Depends(auth.require_restaurant),
+    db: AsyncSession = Depends(get_session),
+) -> list[str]:
+    """The photo library a dish or cover can use."""
+    return await menu_service.library(db)
 
 
 async def revalidate(settings: Settings, slug: str) -> None:
@@ -173,20 +217,179 @@ async def revalidate(settings: Settings, slug: str) -> None:
 
 
 @router.patch("/items/{item_id}", response_model=s.MenuItemOut)
-async def set_availability(
+async def update_item(
     item_id: uuid.UUID,
     body: s.AvailabilityIn,
+    request: Request,
     owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
     db: AsyncSession = Depends(get_session),
     settings: Settings = Depends(current_settings),
 ) -> s.MenuItemOut:
-    item = await db.get(MenuItem, item_id)
-    if item is None or item.restaurant_id != owner.restaurant.id:
-        raise not_found("No such item")
-    item.is_available = body.is_available
+    """Switch a dish on / off, or edit it. Off → gone from the customer menu, refused at order."""
+    await _limit(request, db, settings)
+    r = await _editing(owner, db)
+    item = await menu_service.item_of(db, r, item_id)
+    patch = body.model_dump(exclude_unset=True)
+    if "photo_url" in patch:
+        await menu_service.check_photo(db, body.photo_url)
+    if body.category_id is not None:
+        item.category_id = (await menu_service.category_of(db, r, _uuid(body.category_id))).id
+    for field in ("is_available", "name", "description", "price_paise", "is_veg", "photo_url"):
+        if field in patch and (patch[field] is not None or field in ("description", "photo_url")):
+            value = patch[field]
+            setattr(item, field, value.strip() if isinstance(value, str) else value)
+    item.description = item.description or None
     await db.commit()
-    await revalidate(settings, owner.restaurant.slug)
+    if not r.is_sandbox:
+        await revalidate(settings, r.slug)
     return menu_item(item)
+
+
+@router.post("/items", response_model=s.MenuOut, status_code=201)
+async def add_item(
+    body: s.ItemIn,
+    request: Request,
+    owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.MenuOut:
+    await _limit(request, db, settings)
+    r = await _editing(owner, db)
+    category = await menu_service.category_of(db, r, _uuid(body.category_id))
+    await menu_service.check_photo(db, body.photo_url)
+    db.add(
+        MenuItem(
+            id=uuid.uuid4(),
+            restaurant_id=r.id,
+            category_id=category.id,
+            name=body.name.strip(),
+            description=(body.description or "").strip() or None,
+            price_paise=body.price_paise,
+            is_veg=body.is_veg,
+            photo_url=body.photo_url,
+            is_available=body.is_available,
+            sort=await menu_service.next_sort(db, MenuItem, category_id=category.id),
+        )
+    )
+    return await _saved(db, settings, r)
+
+
+@router.delete("/items/{item_id}", response_model=s.MenuOut)
+async def delete_item(
+    item_id: uuid.UUID,
+    request: Request,
+    owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.MenuOut:
+    """Past orders keep their own copy of the dish (order_items is a snapshot)."""
+    await _limit(request, db, settings)
+    r = await _editing(owner, db)
+    await db.delete(await menu_service.item_of(db, r, item_id))
+    return await _saved(db, settings, r)
+
+
+@router.post("/categories", response_model=s.MenuOut, status_code=201)
+async def add_category(
+    body: s.CategoryIn,
+    request: Request,
+    owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.MenuOut:
+    await _limit(request, db, settings)
+    r = await _editing(owner, db)
+    db.add(
+        MenuCategory(
+            id=uuid.uuid4(),
+            restaurant_id=r.id,
+            name=body.name.strip(),
+            sort=await menu_service.next_sort(db, MenuCategory, restaurant_id=r.id),
+        )
+    )
+    return await _saved(db, settings, r)
+
+
+@router.patch("/categories/{category_id}", response_model=s.MenuOut)
+async def rename_category(
+    category_id: uuid.UUID,
+    body: s.CategoryIn,
+    request: Request,
+    owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.MenuOut:
+    await _limit(request, db, settings)
+    r = await _editing(owner, db)
+    (await menu_service.category_of(db, r, category_id)).name = body.name.strip()
+    return await _saved(db, settings, r)
+
+
+@router.delete("/categories/{category_id}", response_model=s.MenuOut)
+async def delete_category(
+    category_id: uuid.UUID,
+    request: Request,
+    owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.MenuOut:
+    """Only an empty category: deleting one never takes dishes with it."""
+    await _limit(request, db, settings)
+    r = await _editing(owner, db)
+    c = await menu_service.category_of(db, r, category_id)
+    used = select(func.count()).select_from(MenuItem).where(MenuItem.category_id == c.id)
+    if (await db.execute(used)).scalar_one():
+        raise ApiError(409, "category_not_empty", "Move or delete its dishes first")
+    await db.delete(c)
+    return await _saved(db, settings, r)
+
+
+@router.put("/categories/order", response_model=s.MenuOut)
+async def order_categories(
+    body: s.CategoryOrderIn,
+    request: Request,
+    owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.MenuOut:
+    """`ids`: every category of the menu, in the new order."""
+    await _limit(request, db, settings)
+    r = await _editing(owner, db)
+    cats = {
+        str(c.id): c
+        for c in (
+            await db.execute(select(MenuCategory).where(MenuCategory.restaurant_id == r.id))
+        ).scalars()
+    }
+    if sorted(body.ids) != sorted(cats) or len(set(body.ids)) != len(body.ids):
+        raise ApiError(422, "validation", "Send every category exactly once")
+    for i, cid in enumerate(body.ids):
+        cats[cid].sort = i
+    return await _saved(db, settings, r)
+
+
+@router.patch("", response_model=s.MenuOut)
+async def update_details(
+    body: s.DetailsIn,
+    request: Request,
+    owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.MenuOut:
+    """Hours per weekday, the open / closed switch, prep time, cover photo."""
+    await _limit(request, db, settings)
+    r = await _editing(owner, db)
+    if body.hours is not None:
+        menu_service.check_hours(body.hours)
+        r.hours = body.hours
+    if body.cover_url is not None:
+        await menu_service.check_photo(db, body.cover_url)
+        r.cover_url = body.cover_url
+    if body.is_open is not None:
+        r.is_open = body.is_open
+    if body.prep_min is not None:
+        r.prep_min = body.prep_min
+    return await _saved(db, settings, r)
 
 
 @router.get("/events", response_class=StreamingResponse)

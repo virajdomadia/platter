@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { AvailabilityList } from "@/components/board/AvailabilityList";
+import { MenuEditor } from "@/components/board/MenuEditor";
 
-export const metadata: Metadata = { title: "Menu availability", robots: { index: false } };
+export const metadata: Metadata = { title: "Menu", robots: { index: false } };
 
 export default function RestaurantMenuPage() {
-  return <AvailabilityList />;
+  return <MenuEditor />;
 }
