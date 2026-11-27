@@ -9,7 +9,17 @@ from fastapi import FastAPI, Request, Response
 from app.core.config import Settings, get_settings
 from app.core.db import dispose_engines
 from app.core.errors import envelope, install_error_handlers
-from app.routers import addresses, admin, auth, discovery, orders, restaurant, rider, system
+from app.routers import (
+    addresses,
+    admin,
+    auth,
+    discovery,
+    orders,
+    push,
+    restaurant,
+    rider,
+    system,
+)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -45,7 +55,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return envelope(403, "forbidden", "Cross-site request refused")
         return await call_next(request)
 
-    for r in (system, auth, discovery, addresses, orders, restaurant, rider, admin):
+    for r in (system, auth, discovery, addresses, orders, restaurant, rider, admin, push):
         app.include_router(r.router)
     return app
 

@@ -42,6 +42,16 @@ class Settings(BaseSettings):
     # someone watches the board or the admin map. Off in tests.
     ambient_orders: bool = True
 
+    # Web Push (v2). Generate the pair with `uv run python -m scripts.gen_vapid`. Unset = no push
+    # (the opt-in buttons hide themselves). The public key is served by GET /push/key.
+    vapid_public_key: str | None = None
+    vapid_private_key: SecretStr | None = None
+    vapid_subject: str = "https://platter.virajdomadia.com"
+
+    @property
+    def push_enabled(self) -> bool:
+        return bool(self.vapid_public_key and self.vapid_private_key)
+
     @property
     def secure_cookies(self) -> bool:
         return self.web_url.startswith("https://")

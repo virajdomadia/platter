@@ -5,6 +5,7 @@
 // fixes patch the ticket's distance + ETA in place. New orders "print" into the New column.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { PushOptIn } from "@/components/ui/PushOptIn";
 import { RoleBar } from "@/components/ui/RoleBar";
 import { api, errorMessage, type Board, type Ticket as TicketT } from "@/lib/api";
 import { age, inr } from "@/lib/format";
@@ -259,6 +260,8 @@ export function BoardScreen() {
           </button>
         </div>
       )}
+
+      <PushOptIn className="sky">Get a notification for every new order, even with this tab closed.</PushOptIn>
 
       <p className="sr-only" aria-live="polite" role="status">
         {announce}

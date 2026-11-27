@@ -454,6 +454,24 @@ class RiderMe(BaseModel):
     offer: RiderOffer | None = None
 
 
+class PushKeys(BaseModel):
+    p256dh: str = Field(min_length=20, max_length=200)
+    auth: str = Field(min_length=8, max_length=100)
+
+
+class PushSubscribeIn(BaseModel):
+    endpoint: str = Field(min_length=12, max_length=1000)
+    keys: PushKeys
+
+
+class PushUnsubscribeIn(BaseModel):
+    endpoint: str = Field(min_length=12, max_length=1000)
+
+
+class PushKeyOut(BaseModel):
+    key: str | None  # None = push is switched off on this deployment
+
+
 class RiderStatusIn(BaseModel):
     status: Literal["available", "offline"]
 

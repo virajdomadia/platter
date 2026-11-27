@@ -288,3 +288,7 @@
 .rd:focus {
   outline: none;
 }
+
+.rd .push-optin {
+  margin-top: 0;
+}
