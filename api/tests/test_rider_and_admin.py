@@ -11,7 +11,7 @@ from app.core import clock
 from app.models import Order, OrderEvent, OrderStatus, Rider, RiderTrack
 from app.services import admin, orders
 from app.services.events import Actor
-from tests.conftest import login, make_client, place
+from tests.conftest import login, make_client, place, take_offer
 
 pytestmark = pytest.mark.db
 S = OrderStatus
@@ -62,6 +62,7 @@ async def test_fixes_on_a_job_draw_the_trail(world, app):
             db, order.id, S.accepted, Actor("restaurant", restaurant_id=order.restaurant_id)
         )
         await db.commit()
+        await take_offer(db, order.id)
         for i in range(3):
             clock.advance(3)
             await c.post("/rider/position", json=fix(12.9354 + i * 0.0001, 77.6148, clock.now()))
@@ -119,6 +120,7 @@ async def test_reassign_releases_the_old_rider_and_redraws(world, app):
         db, order.id, S.accepted, Actor("restaurant", restaurant_id=order.restaurant_id)
     )
     await db.commit()
+    order = await take_offer(db, order.id)
     old = order.rider_id
     async with await make_client(app) as c:
         await login(c, db, "admin@platter.demo")
@@ -175,6 +177,8 @@ async def test_a_kitchen_running_late_is_stuck_and_the_autopilot_takes_over(worl
     order = await place(db)
     kitchen = Actor("restaurant", restaurant_id=order.restaurant_id)
     order = await orders.transition(db, order.id, S.accepted, kitchen)
+    await db.commit()
+    await take_offer(db, order.id)
     order = await orders.transition(db, order.id, S.preparing, kitchen)
     await db.commit()
     prep = (

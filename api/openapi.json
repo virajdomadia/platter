@@ -143,6 +143,11 @@
       "title": "Number",
       "type": "string"
      },
+     "offer_attempts": {
+      "default": 0,
+      "title": "Offer Attempts",
+      "type": "integer"
+     },
      "restaurant": {
       "$ref": "#/components/schemas/Point"
      },
@@ -1192,6 +1197,11 @@
       "title": "Number",
       "type": "string"
      },
+     "offer_attempts": {
+      "default": 0,
+      "title": "Offer Attempts",
+      "type": "integer"
+     },
      "payment": {
       "enum": [
        "cod",
@@ -2120,6 +2130,16 @@
       ],
       "title": "Last Fix S"
      },
+     "offer": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RiderOffer"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
      "rider": {
       "$ref": "#/components/schemas/RiderSelf"
      },
@@ -2139,6 +2159,34 @@
      "seq"
     ],
     "title": "RiderMe",
+    "type": "object"
+   },
+   "RiderOffer": {
+    "properties": {
+     "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+     },
+     "expires_in_s": {
+      "title": "Expires In S",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "job": {
+      "$ref": "#/components/schemas/Job"
+     }
+    },
+    "required": [
+     "id",
+     "expires_at",
+     "expires_in_s",
+     "job"
+    ],
+    "title": "RiderOffer",
     "type": "object"
    },
    "RiderPublic": {
@@ -2195,6 +2243,23 @@
      "status"
     ],
     "title": "RiderSelf",
+    "type": "object"
+   },
+   "RiderStatusIn": {
+    "properties": {
+     "status": {
+      "enum": [
+       "available",
+       "offline"
+      ],
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "status"
+    ],
+    "title": "RiderStatusIn",
     "type": "object"
    },
    "RiderToday": {
@@ -3564,7 +3629,7 @@
   },
   "/orders/{order_id}/events": {
    "get": {
-    "description": "SSE for one order \u2014 its owner only (authorised again on every reconnect).",
+    "description": "SSE for one order \u00e2\u20ac\u201d its owner only (authorised again on every reconnect).",
     "operationId": "events_orders__order_id__events_get",
     "parameters": [
      {
@@ -4060,6 +4125,109 @@
     ]
    }
   },
+  "/rider/offers/{offer_id}/accept": {
+   "post": {
+    "description": "409 `offer_expired` after the 30 s, `offer_taken` if it was already answered.",
+    "operationId": "accept_offer_rider_offers__offer_id__accept_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "offer_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Offer Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/Job"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Accept Offer Rider Offers  Offer Id  Accept Post"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Accept Offer",
+    "tags": [
+     "rider"
+    ]
+   }
+  },
+  "/rider/offers/{offer_id}/decline": {
+   "post": {
+    "operationId": "decline_offer_rider_offers__offer_id__decline_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "offer_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Offer Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/Job"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Decline Offer Rider Offers  Offer Id  Decline Post"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Decline Offer",
+    "tags": [
+     "rider"
+    ]
+   }
+  },
   "/rider/orders/{order_id}/transition": {
    "post": {
     "description": "Picked up (only once the kitchen marked it ready) / Delivered. Returns the next job, if a\nwaiting order was handed to this rider on delivery.",
@@ -4152,6 +4320,48 @@
      }
     },
     "summary": "Position",
+    "tags": [
+     "rider"
+    ]
+   }
+  },
+  "/rider/status": {
+   "post": {
+    "description": "Online (`available`) / offline. Offline riders get no offers; finish the job first.",
+    "operationId": "set_status_rider_status_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RiderStatusIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RiderMe"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Set Status",
     "tags": [
      "rider"
     ]

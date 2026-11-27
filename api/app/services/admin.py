@@ -35,14 +35,17 @@ NOT_PICKED_UP = dt.timedelta(minutes=10)
 KITCHEN_LATE = dt.timedelta(minutes=5)
 
 
-def stuck(order: Order, now: dt.datetime, prep_min: int | None = None) -> str | None:
+def stuck(
+    order: Order, now: dt.datetime, prep_min: int | None = None, attempts: int = 0
+) -> str | None:
     if order.status == S.placed and order.placed_at and now - order.placed_at >= UNACCEPTED:
         return "unaccepted"
     if (
         order.status in dispatch.WAITING
         and order.rider_id is None
         and order.accepted_at
-        and now - order.accepted_at >= NO_RIDER
+        # five riders said no: the chain has stopped, so it needs a human now
+        and (now - order.accepted_at >= NO_RIDER or attempts >= dispatch.MAX_OFFERS)
     ):
         return "no_rider"
     if (
@@ -147,6 +150,7 @@ async def admin_order(
     rlat, rlng = latlng(restaurant.loc)
     dlat, dlng = latlng(order.drop_loc)
     placed = order.placed_at or order.created_at
+    attempts = await views.offer_attempts(db, order.id)
     return s.AdminOrder(
         id=str(order.id),
         number=order.number,
@@ -158,9 +162,10 @@ async def admin_order(
         rider_name=rider.name if rider else None,
         age_s=int((now - placed).total_seconds()),
         status_age_s=int((now - status_since(order)).total_seconds()),
-        stuck=stuck(order, now, restaurant.prep_min),  # type: ignore[arg-type]
+        stuck=stuck(order, now, restaurant.prep_min, attempts),  # type: ignore[arg-type]
         legs=[views.route_out(lg) for lg in legs],
         total_paise=order.total_paise,
+        offer_attempts=attempts,
     )
 
 

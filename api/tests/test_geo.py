@@ -6,7 +6,7 @@ import asyncio
 import pytest
 from sqlalchemy import select, text
 
-from app.models import Order, OrderStatus, Rider
+from app.models import Offer, Order, OrderStatus, Rider
 from app.services import dispatch, geo, orders, routing
 from app.services.events import Actor
 from tests.conftest import KORAMANGALA_5TH, place, restaurant
@@ -126,10 +126,9 @@ async def test_skip_locked_never_double_books(world, factory):
 
     await asyncio.gather(accept(a.id), accept(b.id))
     async with factory() as db:
-        riders = (
-            (await db.execute(select(Order.rider_id).where(Order.id.in_([a.id, b.id]))))
+        offered = (
+            (await db.execute(select(Offer.rider_id).where(Offer.order_id.in_([a.id, b.id]))))
             .scalars()
             .all()
         )
-    assert sorted(map(str, riders), key=lambda x: x == "None").count("None") == 1
-    assert len({r for r in riders if r}) == 1
+    assert len(offered) == 1  # Kiran was asked once, never for both at the same time

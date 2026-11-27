@@ -379,7 +379,7 @@ export interface paths {
         };
         /**
          * Events
-         * @description SSE for one order — its owner only (authorised again on every reconnect).
+         * @description SSE for one order â€” its owner only (authorised again on every reconnect).
          */
         get: operations["events_orders__order_id__events_get"];
         put?: never;
@@ -560,6 +560,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/rider/offers/{offer_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Offer
+         * @description 409 `offer_expired` after the 30 s, `offer_taken` if it was already answered.
+         */
+        post: operations["accept_offer_rider_offers__offer_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rider/offers/{offer_id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline Offer */
+        post: operations["decline_offer_rider_offers__offer_id__decline_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rider/orders/{order_id}/transition": {
         parameters: {
             query?: never;
@@ -596,6 +633,26 @@ export interface paths {
          *     more than 200 m from the previous one within 3 s is a GPS jump and is dropped.
          */
         post: operations["position_rider_position_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rider/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Status
+         * @description Online (`available`) / offline. Offline riders get no offers; finish the job first.
+         */
+        post: operations["set_status_rider_status_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -674,6 +731,11 @@ export interface components {
             legs: components["schemas"]["RouteOut"][];
             /** Number */
             number: string;
+            /**
+             * Offer Attempts
+             * @default 0
+             */
+            offer_attempts: number;
             restaurant: components["schemas"]["Point"];
             /** Restaurant Name */
             restaurant_name: string;
@@ -1014,6 +1076,11 @@ export interface components {
             /** Number */
             number: string;
             /**
+             * Offer Attempts
+             * @default 0
+             */
+            offer_attempts: number;
+            /**
              * Payment
              * @enum {string}
              */
@@ -1297,10 +1364,24 @@ export interface components {
             job: components["schemas"]["Job"] | null;
             /** Last Fix S */
             last_fix_s: number | null;
+            offer?: components["schemas"]["RiderOffer"] | null;
             rider: components["schemas"]["RiderSelf"];
             /** Seq */
             seq: number;
             today: components["schemas"]["RiderToday"];
+        };
+        /** RiderOffer */
+        RiderOffer: {
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Expires In S */
+            expires_in_s: number;
+            /** Id */
+            id: string;
+            job: components["schemas"]["Job"];
         };
         /** RiderPublic */
         RiderPublic: {
@@ -1323,6 +1404,14 @@ export interface components {
             status: string;
             /** Vehicle */
             vehicle: string;
+        };
+        /** RiderStatusIn */
+        RiderStatusIn: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "available" | "offline";
         };
         /** RiderToday */
         RiderToday: {
@@ -2470,6 +2559,68 @@ export interface operations {
             };
         };
     };
+    accept_offer_rider_offers__offer_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                offer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decline_offer_rider_offers__offer_id__decline_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                offer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     transition_rider_orders__order_id__transition_post: {
         parameters: {
             query?: never;
@@ -2524,6 +2675,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_status_rider_status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiderStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiderMe"];
+                };
             };
             /** @description Validation Error */
             422: {

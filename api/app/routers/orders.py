@@ -1,4 +1,4 @@
-"""Customer orders (06 §C): quote, place (COD / Razorpay), verify, list, read, cancel, stream."""
+"""Customer orders (06 Â§C): quote, place (COD / Razorpay), verify, list, read, cancel, stream."""
 
 import uuid
 
@@ -86,7 +86,7 @@ async def place(
     payment = PaymentKind(body.payment)
     if payment == PaymentKind.razorpay and not settings.razorpay_enabled:
         raise ApiError(
-            503, "payments_off", "Online payment is switched off — choose cash on delivery"
+            503, "payments_off", "Online payment is switched off â€” choose cash on delivery"
         )
     q = await _quote(db, body)
     if body.expected_total_paise is not None and body.expected_total_paise != q.total_paise:
@@ -110,15 +110,16 @@ async def place(
     )
     start = None
     if payment == PaymentKind.razorpay:
-        order.razorpay_order_id = await razorpay.create_order(
+        rp_order = await razorpay.create_order(
             settings, amount_paise=order.total_paise, receipt=order.number
         )
+        order.razorpay_order_id = rp_order
         start = s.RazorpayStart(
-            order_id=order.razorpay_order_id,
+            order_id=rp_order,
             key_id=settings.razorpay_key_id or "",
             amount_paise=order.total_paise,
             name="Platter",
-            description=f"{order.number} · {q.restaurant.name}",
+            description=f"{order.number} Â· {q.restaurant.name}",
             prefill={"name": user.name, "email": user.email, "contact": user.phone or ""},
         )
     await db.commit()
@@ -203,6 +204,6 @@ async def events(
     user: User = Depends(auth.require_user),
     db: AsyncSession = Depends(get_session),
 ) -> StreamingResponse:
-    """SSE for one order — its owner only (authorised again on every reconnect)."""
+    """SSE for one order â€” its owner only (authorised again on every reconnect)."""
     await own_order(db, order_id, user)
     return await sse.respond(request, db, stream_service.Scope("order", order_id), since)

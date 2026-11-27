@@ -207,14 +207,9 @@ async def _advance_leg(db: AsyncSession, order: Order, leg: RiderLeg, rider: Rid
 async def run_waiting(
     db: AsyncSession, order_ids: list[uuid.UUID] | None, restaurant_id: uuid.UUID | None
 ) -> None:
-    q = (
-        select(Order)
-        .where(Order.rider_id.is_(None), Order.status.in_(dispatch.WAITING))
-        .order_by(Order.accepted_at)
-        .with_for_update(skip_locked=True)
-    )
+    q = dispatch.waiting_for_offer().with_for_update(skip_locked=True)
     for order in (await db.execute(_scoped(q, order_ids, restaurant_id))).scalars().all():
-        if await dispatch.assign_rider(db, order) is None:
+        if await dispatch.offer(db, order) is None:
             break  # nobody free: the rest wait too
 
 
@@ -227,5 +222,6 @@ async def advance(
     """Move the world forward for a scope (everything when both are None). The caller commits."""
     await orders.expire_stale(db, order_ids)
     await run_kitchens(db, order_ids, restaurant_id)
+    await dispatch.run_offers(db, order_ids, restaurant_id)
     await run_riders(db, order_ids, restaurant_id)
     await run_waiting(db, order_ids, restaurant_id)

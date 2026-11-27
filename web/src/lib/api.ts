@@ -24,6 +24,7 @@ export type Board = Schemas["Board"];
 export type MenuOut = Schemas["MenuOut"];
 export type Job = Schemas["Job"];
 export type RiderMe = Schemas["RiderMe"];
+export type RiderOffer = Schemas["RiderOffer"];
 export type AdminMap = Schemas["AdminMap"];
 export type AdminOrder = Schemas["AdminOrder"];
 export type AdminRider = Schemas["AdminRider"];

@@ -332,7 +332,7 @@ function Row({
     o.stuck === "unaccepted"
       ? `unaccepted ${minutes(o.status_age_s + elapsed)} min`
       : o.stuck === "no_rider"
-        ? "no rider"
+        ? `no rider${o.offer_attempts ? `, ${o.offer_attempts} asked` : ""}`
         : o.stuck === "not_picked_up"
           ? "not picked up"
           : o.stuck === "kitchen_late"

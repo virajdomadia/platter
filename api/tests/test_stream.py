@@ -13,7 +13,7 @@ from app.models import OrderStatus, Rider
 from app.services import orders, sim
 from app.services import stream as st
 from app.services.events import Actor
-from tests.conftest import login, make_client, place
+from tests.conftest import login, make_client, place, take_offer
 
 pytestmark = pytest.mark.db
 S = OrderStatus
@@ -68,6 +68,8 @@ async def test_reconnect_replays_exactly_the_missed_events(world, factory):
     # the connection drops; meanwhile the kitchen accepts and starts cooking
     kitchen = Actor("restaurant", restaurant_id=order.restaurant_id)
     await orders.transition(db, order.id, S.accepted, kitchen)
+    await db.commit()
+    await take_offer(db, order.id)
     await orders.transition(db, order.id, S.preparing, kitchen)
     await db.commit()
 
@@ -118,6 +120,7 @@ async def test_positions_after_the_cursor_only(world, factory):
     kitchen = Actor("restaurant", restaurant_id=order.restaurant_id)
     order = await orders.transition(db, order.id, S.accepted, kitchen)
     await db.commit()
+    order = await take_offer(db, order.id)
     assert order.rider_id == divya.id
     cursor_ms = clock.ms(clock.now())
     seq = int((await db.execute(text("select max(seq) from order_events"))).scalar_one())
@@ -154,6 +157,7 @@ async def test_sim_positions_flow_while_on_a_leg(world, factory):
     await orders.transition(db, order.id, S.accepted, kitchen)
     await db.execute(text("update restaurants set board_seen_at = :t"), {"t": clock.now()})
     await db.commit()
+    await take_offer(db, order.id)
     frames = await frames_until(factory, st.Scope("order", order.id), None, 5)
     fixes = [f["data"] for f in frames if f["event"] == "rider"]
     assert len(fixes) >= 4

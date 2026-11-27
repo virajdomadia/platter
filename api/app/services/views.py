@@ -11,6 +11,7 @@ from app import schemas as s
 from app.core import clock
 from app.models import (
     LegKind,
+    Offer,
     Order,
     OrderEvent,
     OrderItem,
@@ -269,6 +270,7 @@ async def order_out(db: AsyncSession, order: Order) -> s.OrderOut:
         timestamps=timestamps,
         created_at=order.created_at,
         seq=int(seq),
+        offer_attempts=await offer_attempts(db, order.id),
     )
 
 
@@ -367,6 +369,37 @@ async def job(db: AsyncSession, order: Order) -> s.Job:
         note=order.note,
         leg=route_out(leg) if leg else None,
         pay_preview_paise=rider_pay_preview(order.distance_m),
+    )
+
+
+async def offer_attempts(db: AsyncSession, order_id: uuid.UUID) -> int:
+    return int(
+        (
+            await db.execute(
+                select(func.count()).select_from(Offer).where(Offer.order_id == order_id)
+            )
+        ).scalar_one()
+    )
+
+
+async def rider_offer(db: AsyncSession, rider: Rider) -> s.RiderOffer | None:
+    """The offer on this rider's screen, if one is still out (an expired one is never shown)."""
+    now = clock.now()
+    f = (
+        await db.execute(
+            select(Offer)
+            .where(Offer.rider_id == rider.id, Offer.state == "sent", Offer.expires_at > now)
+            .limit(1)
+            .execution_options(populate_existing=True)
+        )
+    ).scalar_one_or_none()
+    if f is None:
+        return None
+    order = await db.get(Order, f.order_id)
+    assert order is not None  # noqa: S101 - FK
+    left = max(0, round((f.expires_at - now).total_seconds()))
+    return s.RiderOffer(
+        id=str(f.id), expires_at=f.expires_at, expires_in_s=left, job=await job(db, order)
     )
 
 

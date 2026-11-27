@@ -21,11 +21,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import clock
 from app.core.db import SessionFactory
-from app.models import ACTIVE_STATUSES, LegKind, Order, OrderEvent, Restaurant, Rider, RiderLeg
+from app.models import (
+    ACTIVE_STATUSES,
+    LegKind,
+    Offer,
+    Order,
+    OrderEvent,
+    Restaurant,
+    Rider,
+    RiderLeg,
+)
 from app.models.geo import latlng
 from app.services import admin as admin_service
 from app.services import eta as eta_service
 from app.services import routing, sim, views
+from app.services.dispatch import OFFER_KINDS
 from app.services.events import STATUS_KINDS
 
 TICK_S = 1.0
@@ -69,8 +79,14 @@ def frame(event: str, data: Any, event_id: str | None = None) -> str:
     return f"{head}event: {event}\ndata: {body}\n\n"
 
 
-def event_frame(ev: OrderEvent, cursor: Cursor) -> str | None:
+def event_frame(ev: OrderEvent, cursor: Cursor, scope: ScopeKind = "admin") -> str | None:
     oid = str(ev.order_id)
+    if ev.kind in OFFER_KINDS:
+        p = ev.payload
+        data = {"order_id": oid, "state": p.get("state"), "attempt": p.get("attempt")}
+        if scope != "order":  # the customer learns how many riders were asked, never who
+            data |= {k: p.get(k) for k in ("offer_id", "rider_id", "expires_at")}
+        return frame("offer", data, cursor.id)
     if ev.kind in STATUS_KINDS:
         data: dict[str, Any] = {"order_id": oid, "status": ev.kind, "at": ev.at.isoformat()}
         if ev.payload.get("reason"):
@@ -111,10 +127,16 @@ def _scope_filter(q, scope: Scope):  # type: ignore[no-untyped-def]
     if scope.kind == "rider":
         mine = select(RiderLeg.order_id).where(RiderLeg.rider_id == scope.id)
         legs = select(func.cast(RiderLeg.id, Text)).where(RiderLeg.rider_id == scope.id)
-        # After a reassign, the old rider still hears the status, never the new rider's route.
+        # After a reassign, the old rider still hears the status, never the new rider's route; a
+        # rider hears only their own offers.
+        offered = OrderEvent.kind.in_(OFFER_KINDS)
         return q.where(
-            OrderEvent.order_id.in_(mine),
-            (OrderEvent.kind != "route") | OrderEvent.payload["leg_id"].astext.in_(legs),
+            (
+                OrderEvent.order_id.in_(mine)
+                & ~offered
+                & ((OrderEvent.kind != "route") | OrderEvent.payload["leg_id"].astext.in_(legs))
+            )
+            | (offered & (OrderEvent.payload["rider_id"].astext == str(scope.id)))
         )
     # admin: the public demo console hears demo orders only
     return q.where(OrderEvent.order_id.in_(select(Order.id).where(Order.is_demo.is_(True))))
@@ -135,6 +157,12 @@ async def _advance(db: AsyncSession, scope: Scope) -> None:
                     select(Order.id).where(
                         Order.rider_id == scope.id, Order.status.in_(ACTIVE_STATUSES)
                     )
+                )
+            ).scalars()
+        ) + list(
+            (
+                await db.execute(
+                    select(Offer.order_id).where(Offer.rider_id == scope.id, Offer.state == "sent")
                 )
             ).scalars()
         )
@@ -265,7 +293,7 @@ async def stream(
                 cursor.seq = ev.seq
                 if ev.kind in STATUS_KINDS or ev.kind == "route":
                     status_changed = True
-                out = event_frame(ev, cursor)
+                out = event_frame(ev, cursor, scope.kind)
                 if out:
                     yield out
             if scope.kind == "order":

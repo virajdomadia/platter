@@ -289,6 +289,19 @@ class RiderLeg(Base):
     ended_at: Mapped[dt.datetime | None] = _ts()
 
 
+class Offer(Base):
+    """v2: one rider's 30 s to take an order (`state` sent → accepted | declined | expired)."""
+
+    __tablename__ = "offers"
+    id: Mapped[uuid.UUID] = _uuid()
+    order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"))
+    rider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("riders.id", ondelete="CASCADE"))
+    state: Mapped[str] = mapped_column(Text, default="sent")
+    expires_at: Mapped[dt.datetime] = _ts(False)
+    created_at: Mapped[dt.datetime] = _ts(False)
+    closed_at: Mapped[dt.datetime | None] = _ts()
+
+
 class WebhookEvent(Base):
     __tablename__ = "webhook_events"
     id: Mapped[str] = mapped_column(Text, primary_key=True)

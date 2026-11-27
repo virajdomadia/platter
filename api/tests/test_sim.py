@@ -10,10 +10,10 @@ import pytest
 from sqlalchemy import select, text
 
 from app.core import clock
-from app.models import LegKind, Order, OrderStatus, Restaurant, Rider, RiderLeg, RouteMethod
+from app.models import LegKind, Offer, Order, OrderStatus, Restaurant, Rider, RiderLeg, RouteMethod
 from app.services import orders, routing, sim
 from app.services.events import Actor
-from tests.conftest import place
+from tests.conftest import place, settle, take_offer
 
 pytestmark = pytest.mark.db
 S = OrderStatus
@@ -54,6 +54,9 @@ async def accepted_order(db, slug="dosa-camp"):  # type: ignore[no-untyped-def]
     kitchen = Actor("restaurant", restaurant_id=order.restaurant_id)
     order = await orders.transition(db, order.id, S.accepted, kitchen)
     await db.commit()
+    offered = select(Offer.id).where(Offer.order_id == order.id, Offer.state == "sent")
+    if (await db.execute(offered)).first():
+        order = await take_offer(db, order.id)
     return order, kitchen
 
 
@@ -147,6 +150,7 @@ async def test_delivery_frees_the_rider_for_the_oldest_waiting_order(world):
         await db.commit()
         if (await db.get(Order, first.id, populate_existing=True)).status == S.delivered:
             break
+    await settle(db)  # the freed rider is offered the waiting order and takes it
     second = await db.get(Order, second.id, populate_existing=True)
     assert second.rider_id == kiran.id  # taken the moment Kiran was free
     leg = await open_leg(db, second.id)
@@ -179,7 +183,7 @@ async def test_two_streams_advancing_at_once_move_a_sim_once(world, factory):
         .scalars()
         .all()
     )
-    statuses = [k for k in kinds if k not in ("route", "rider_assigned")]
+    statuses = [k for k in kinds if k not in ("route", "rider_assigned") and "offer" not in k]
     assert statuses == ["placed", "accepted", "preparing", "ready", "picked_up", "delivered"]
     assert kinds.count("route") == 2
 

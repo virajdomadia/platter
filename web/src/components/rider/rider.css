@@ -197,3 +197,89 @@
 .rd-touch {
   min-height: 48px;
 }
+
+/* v2 · the offer card: lemon (rider / money) so it reads first on the ink ground, the 30-s ring
+   beside the pickup, then two full-width answers under the thumb. */
+.rd-offer {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 0 0 3px var(--ink-tile-2), 0 0 0 5px var(--lemon);
+}
+.rd-offer-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+.rd-offer small {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.rd-offer h2 {
+  margin-top: 2px;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+/* focus lands here so screen readers read the offer first; it isn't a control, so no ring */
+.rd-offer h2:focus {
+  outline: none;
+}
+.rd-offer p {
+  margin-top: 4px;
+  font-size: 14px;
+}
+.rd-ring {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+}
+.rd-ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+.rd-ring circle {
+  fill: none;
+  stroke-width: 6;
+}
+.rd-ring-track {
+  stroke: rgba(29, 26, 46, 0.14);
+}
+.rd-ring-left {
+  stroke: var(--ink);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.25s linear;
+}
+.rd-ring.low .rd-ring-left {
+  stroke: #b3260b; /* 5.6:1 on lemon */
+}
+.rd-ring.low b {
+  color: #b3260b; /* the number counts down too: colour is never the only cue */
+}
+.rd-ring b {
+  font-size: 20px;
+  font-weight: 900;
+}
+.rd-offer-actions {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 10px;
+}
+.rd .rd-accept {
+  min-height: 56px;
+  font-size: 18px;
+}
+.rd-offer .btn.ghost {
+  min-height: 56px;
+}
+.rd .rd-switch:disabled {
+  opacity: 0.55;
+}
