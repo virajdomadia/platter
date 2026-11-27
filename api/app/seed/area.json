@@ -1,10 +1,10 @@
 {
   "_about": "One neighbourhood: Koramangala + HSR Layout, Bengaluru. Fictional restaurants at real street points; prices in rupees; `photo` keys map to web/public/dishes/{key}.jpg (fetch_photos.py, CC licences in CREDITS.md). From the default pin (Koramangala 5th Block) 9 restaurants are within 5 km and 3 are 5–8 km away (too far).",
   "default_pin": { "label": "Koramangala 5th Block", "lat": 12.9352, "lng": 77.6195 },
-  "demo_restaurant": "koramangala-social",
+  "demo_restaurant": "bandstand-kitchen",
   "restaurants": [
     {
-      "slug": "koramangala-social", "name": "Koramangala Social", "area": "Koramangala 4th Block",
+      "slug": "bandstand-kitchen", "name": "Bandstand Kitchen", "area": "Koramangala 4th Block",
       "address": "118, 80 Feet Road, Koramangala 4th Block", "lat": 12.9356, "lng": 77.6143,
       "cuisines": ["Cafe", "Bar food", "Continental"], "is_veg": false, "prep_min": 14, "rating": 4.1,
       "cover": "kitchen", "owner": "Nisha Menon",
@@ -118,7 +118,7 @@
       }
     },
     {
-      "slug": "pizza-bakery", "name": "Pizza Bakery", "area": "Koramangala 3rd Block",
+      "slug": "forno-17", "name": "Forno 17", "area": "Koramangala 3rd Block",
       "address": "3, Hosur Road service lane, Koramangala 3rd Block", "lat": 12.9281, "lng": 77.6340,
       "cuisines": ["Pizza", "Italian"], "is_veg": false, "prep_min": 18, "rating": 4.0,
       "cover": "pizza", "owner": "Marco D'Souza",
@@ -201,7 +201,7 @@
       }
     },
     {
-      "slug": "chai-point", "name": "Chai Point", "area": "Indiranagar",
+      "slug": "tapri-tales", "name": "Tapri Tales", "area": "Indiranagar",
       "address": "100 Feet Road, HAL 2nd Stage, Indiranagar", "lat": 12.9784, "lng": 77.6408,
       "cuisines": ["Chai", "Snacks"], "is_veg": true, "prep_min": 10, "rating": 4.2,
       "cover": "chai", "owner": "Ankit Bansal",
