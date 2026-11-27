@@ -10,7 +10,7 @@ import { toast } from "@/lib/toast";
 
 const CARDS: { role: Role; tone: string; icon: string; title: string; body: string }[] = [
   { role: "customer", tone: "lav", icon: "🙂", title: "Customer", body: "Ananya · 3 saved addresses, an order on the way" },
-  { role: "restaurant", tone: "sky", icon: "🍳", title: "Restaurant", body: "Koramangala Social's kitchen board, tickets printing" },
+  { role: "restaurant", tone: "sky", icon: "🍳", title: "Restaurant", body: "Bandstand Kitchen's kitchen board, tickets printing" },
   { role: "rider", tone: "lemon", icon: "🛵", title: "Rider", body: "A job assigned — share your location and walk" },
   { role: "admin", tone: "peach", icon: "🗺️", title: "Admin", body: "Every order and rider on one live map" },
 ];

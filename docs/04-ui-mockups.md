@@ -10,7 +10,7 @@
 
 **The product is the map and the food.** On the tracking page the map is the biggest thing; on the menu the photos are. Chrome is type and rules. The rider phone is dark in every direction (a screen in sunlight and at night); everything else is free. Board is a tablet in landscape; admin is desktop.
 
-**Real content:** the seed — 12 restaurants around Koramangala / HSR (Dosa Camp, Biryani Bhatti, Koramangala Social, Momo Junction, Thali Ghar, Chai Point…), ~100 dishes with CC photos, prices in ₹ (₹40 filter coffee to ₹420 biryani), a live order `PL-1042` with a sim rider (Suresh · scooter) 6 minutes away, a board with four tickets, an admin map with 9 riders.
+**Real content:** the seed — 12 restaurants around Koramangala / HSR (Dosa Camp, Biryani Bhatti, Bandstand Kitchen, Momo Junction, Thali Ghar, Tapri Tales…), ~100 dishes with CC photos, prices in ₹ (₹40 filter coffee to ₹420 biryani), a live order `PL-1042` with a sim rider (Suresh · scooter) 6 minutes away, a board with four tickets, an admin map with 9 riders.
 
 ## Motion candidates — live in the variant page
 | Candidate | What happens | Reduced-motion fallback |

@@ -63,7 +63,7 @@ ROLE_ROUTES = [
 async def test_the_wrong_role_gets_404_everywhere(world, app):
     expected_ok = {
         "ananya@platter.demo": set(),
-        "owner.koramangala-social@platter.demo": {"/restaurant/board", "/restaurant/menu"},
+        "owner.bandstand-kitchen@platter.demo": {"/restaurant/board", "/restaurant/menu"},
         "rider@platter.demo": {"/rider/me"},
         "admin@platter.demo": {"/admin/map", "/admin/orders", "/admin/riders"},
     }
@@ -83,10 +83,10 @@ async def test_the_wrong_role_gets_404_everywhere(world, app):
 
 
 async def test_a_restaurant_sees_and_moves_only_its_own_orders(world, app):
-    mine = await place(world, slug="koramangala-social")
+    mine = await place(world, slug="bandstand-kitchen")
     theirs = await place(world, slug="dosa-camp")
     async with await make_client(app) as c:
-        await login(c, world, "owner.koramangala-social@platter.demo")
+        await login(c, world, "owner.bandstand-kitchen@platter.demo")
         board = (await c.get("/restaurant/board")).json()
         assert [t["id"] for t in board["new"]] == [str(mine.id)]
         assert board["new"][0]["customer_first_name"] == "Ananya"
@@ -122,7 +122,7 @@ async def test_a_rider_touches_only_its_own_job(world, app):
     await sim.upsert_position(db, divya_id, (12.9356, 77.6143), 0, 0.0)
     await db.execute(text("update restaurants set board_seen_at = now() + interval '1 day'"))
     await db.commit()
-    order = await place(db, slug="koramangala-social")
+    order = await place(db, slug="bandstand-kitchen")
     kitchen = Actor("restaurant", restaurant_id=order.restaurant_id)
     order = await orders.transition(db, order.id, S.accepted, kitchen)
     await db.commit()
@@ -175,7 +175,7 @@ async def test_demo_logins_land_on_something_alive(world, app):
     )
     assert active, "the demo customer has an order on the way"
     kitchen = (
-        await db.execute(text("select id from restaurants where slug = 'koramangala-social'"))
+        await db.execute(text("select id from restaurants where slug = 'bandstand-kitchen'"))
     ).scalar_one()
     tickets = (
         (await db.execute(select(Order.status).where(Order.restaurant_id == kitchen)))

@@ -10,7 +10,7 @@ Every side has a one-tap demo login on the home page and `/sign-in`:
 | Demo | What you land on |
 |---|---|
 | 🙂 **Customer** (Ananya) | Three saved addresses and an order already on the way — the route draws itself and the rider glides along real streets |
-| 🍳 **Restaurant** (Koramangala Social) | The kitchen board on a tablet: tickets print with a chime; Accept dispatches the nearest rider |
+| 🍳 **Restaurant** (Bandstand Kitchen) | The kitchen board on a tablet: tickets print with a chime; Accept dispatches the nearest rider |
 | 🛵 **Rider** (Divya) | A phone PWA with a job assigned. Switch on *Share my location* and walk — the customer's map walks with you (outside Bengaluru, *relay mode* replays your steps in Koramangala) |
 | 🗺️ **Admin** | Every active order and rider on one map, stuck flags, reassign |
 

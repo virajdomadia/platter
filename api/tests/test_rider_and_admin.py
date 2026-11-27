@@ -57,7 +57,7 @@ async def test_fixes_on_a_job_draw_the_trail(world, app):
     async with await make_client(app) as c:
         await login(c, db, "rider@platter.demo")
         await c.post("/rider/position", json=fix(12.9354, 77.6150, clock.now()))
-        order = await place(db, slug="koramangala-social")
+        order = await place(db, slug="bandstand-kitchen")
         await orders.transition(
             db, order.id, S.accepted, Actor("restaurant", restaurant_id=order.restaurant_id)
         )
@@ -154,12 +154,12 @@ async def test_reassign_releases_the_old_rider_and_redraws(world, app):
 
 async def test_menu_toggle_reaches_the_customer_menu(world, app):
     async with await make_client(app) as c:
-        await login(c, world, "owner.koramangala-social@platter.demo")
+        await login(c, world, "owner.bandstand-kitchen@platter.demo")
         menu = (await c.get("/restaurant/menu")).json()
         item = menu["categories"][0]["items"][0]
         r = await c.patch(f"/restaurant/items/{item['id']}", json={"is_available": False})
         assert r.status_code == 200 and r.json()["is_available"] is False
     async with await make_client(app) as anon:
-        page = (await anon.get("/restaurants/koramangala-social")).json()
+        page = (await anon.get("/restaurants/bandstand-kitchen")).json()
         found = next(i for cat in page["categories"] for i in cat["items"] if i["id"] == item["id"])
         assert found["is_available"] is False

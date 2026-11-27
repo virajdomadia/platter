@@ -38,7 +38,7 @@ S = OrderStatus
 SIM_CUSTOMER_DOMAIN = "@customers.platter.demo"
 DEMO_CUSTOMER_EMAIL = "ananya@platter.demo"
 DEMO_RIDER_EMAIL = "rider@platter.demo"
-DEMO_RESTAURANT_SLUG = "koramangala-social"
+DEMO_RESTAURANT_SLUG = "bandstand-kitchen"
 AMBIENT_TARGET = 3
 AMBIENT_GAP = dt.timedelta(seconds=90)
 
@@ -314,7 +314,7 @@ async def ensure_customer_scene(db: AsyncSession, user: User) -> None:
     home = await home_of(db, user)
     if home is None:
         return
-    prefer = ["dosa-camp", "momo-junction", "biryani-bhatti", "burger-barn", "koramangala-social"]
+    prefer = ["dosa-camp", "momo-junction", "biryani-bhatti", "burger-barn", "bandstand-kitchen"]
     for restaurant in await open_restaurants_near(db, home[1], home[2], prefer):
         if await nearest_free_sim(db, restaurant) is None:
             break

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 
 const RESTAURANTS = [
-  "koramangala-social", "dosa-camp", "biryani-bhatti", "thali-ghar", "momo-junction", "pizza-bakery",
-  "burger-barn", "idli-hut", "sweet-tooth", "chai-point", "punjabi-rasoi", "pav-bhaji-corner",
+  "bandstand-kitchen", "dosa-camp", "biryani-bhatti", "thali-ghar", "momo-junction", "forno-17",
+  "burger-barn", "idli-hut", "sweet-tooth", "tapri-tales", "punjabi-rasoi", "pav-bhaji-corner",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

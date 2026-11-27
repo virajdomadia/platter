@@ -20,7 +20,7 @@ async def test_koramangala_5th_block_sees_9_orderable_and_3_too_far(world):
     orderable = [c for c in cards if c.orderable]
     too_far = [c for c in cards if c.reason == "too_far"]
     assert len(orderable) == 9
-    assert {c.slug for c in too_far} == {"chai-point", "punjabi-rasoi", "pav-bhaji-corner"}
+    assert {c.slug for c in too_far} == {"tapri-tales", "punjabi-rasoi", "pav-bhaji-corner"}
     # sorted by distance within each group, and distances agree with PostGIS
     assert [c.distance_m for c in orderable] == sorted(c.distance_m for c in orderable)
     assert all(5000 < c.distance_m <= 8000 for c in too_far)
@@ -66,7 +66,7 @@ async def test_closed_restaurants_are_shown_with_their_hours(world):
     assert cards["thali-ghar"].orderable is False
     assert cards["thali-ghar"].reason == "closed"
     assert cards["thali-ghar"].opens == "Opens at 19:00"
-    assert cards["koramangala-social"].orderable is True
+    assert cards["bandstand-kitchen"].orderable is True
 
 
 def nearest_sim(point: tuple[float, float]) -> str:
