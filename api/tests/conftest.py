@@ -186,6 +186,32 @@ async def login(client: AsyncClient, db: AsyncSession, email: str) -> User:
     return u
 
 
+async def settle(db: AsyncSession, order_ids: list[uuid.UUID] | None = None) -> None:
+    """v2: an accept *offers* the order; sims take their offers 3–8 s later. Let them answer."""
+    from app.services import dispatch
+
+    clock.advance(dispatch.SIM_ACCEPT_MAX_S)
+    await dispatch.run_offers(db, order_ids)
+    await db.commit()
+
+
+async def take_offer(db: AsyncSession, order_id: uuid.UUID):  # type: ignore[no-untyped-def]
+    """The rider offered `order_id` accepts it now (a sim or the demo phone)."""
+    from app.models import Offer, Order
+    from app.services import dispatch
+    from app.services.events import Actor
+
+    f = (
+        await db.execute(select(Offer).where(Offer.order_id == order_id, Offer.state == "sent"))
+    ).scalar_one()
+    r = await db.get(Rider, f.rider_id)
+    assert r is not None
+    actor = Actor("rider", user_id=r.user_id, rider_id=r.id)
+    await dispatch.answer(db, f.id, r.id, "accepted", actor)
+    await db.commit()
+    return await db.get(Order, order_id, populate_existing=True)
+
+
 async def place(
     db: AsyncSession,
     *,

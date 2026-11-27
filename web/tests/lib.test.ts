@@ -107,6 +107,14 @@ describe("the tracking reducer", () => {
     s = liveReducer(s, { type: "status", data: { order_id: "o1", status: "delivered", at: "2026-11-26T15:30:00Z" } });
     expect(s.eta).toBeNull();
   });
+
+  test("offer frames count riders asked, and a replayed or closing frame never lowers it", () => {
+    let s = liveReducer(start, { type: "offer", data: { attempt: 1 } });
+    s = liveReducer(s, { type: "offer", data: { attempt: 2 } });
+    s = liveReducer(s, { type: "offer", data: { attempt: null } }); // offer_expired carries none
+    s = liveReducer(s, { type: "offer", data: { attempt: 1 } }); // replay after a reconnect
+    expect(s.order.offer_attempts).toBe(2);
+  });
 });
 
 describe("safeNext", () => {

@@ -11,21 +11,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import schemas as s
 from app.core import clock
+from app.core.config import Settings, current_settings
 from app.core.db import get_session
 from app.core.errors import not_found
 from app.models import (
     ACTIVE_STATUSES,
     LegKind,
+    Offer,
     Order,
     OrderStatus,
     Restaurant,
     Rider,
     RiderLeg,
     RiderPosition,
+    RiderStatus,
 )
 from app.models.geo import latlng
 from app.routers import sse
-from app.services import auth, orders, routing, sim, views
+from app.services import auth, dispatch, limits, orders, routing, sim, views
 from app.services import stream as stream_service
 from app.services.events import Actor
 
@@ -76,6 +79,7 @@ async def rider_me(db: AsyncSession, rider: Rider) -> s.RiderMe:
         ),
         last_fix_s=views.seconds_since(pos.recorded_at) if pos else None,
         seq=await views.max_seq(db),
+        offer=await views.rider_offer(db, rider),
     )
 
 
@@ -84,10 +88,74 @@ async def me(
     who: auth.RiderUser = Depends(auth.require_rider), db: AsyncSession = Depends(get_session)
 ) -> s.RiderMe:
     job = await current_job(db, who.rider)
-    if job is not None:
-        await sim.advance(db, order_ids=[job.id])
+    offered = (
+        await db.execute(
+            select(Offer.order_id).where(Offer.rider_id == who.rider.id, Offer.state == "sent")
+        )
+    ).scalars()
+    ids = [job.id] if job else []
+    ids += [i for i in offered if i not in ids]
+    if ids:
+        await sim.advance(db, order_ids=ids)
         await db.commit()
     return await rider_me(db, who.rider)
+
+
+async def _limit(request: Request, db: AsyncSession, settings: Settings) -> None:
+    await limits.hit(db, f"rider:{limits.client_ip(request, settings)}", 60)
+
+
+@router.post("/status", response_model=s.RiderMe)
+async def set_status(
+    body: s.RiderStatusIn,
+    request: Request,
+    who: auth.RiderUser = Depends(auth.require_rider),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.RiderMe:
+    """Online (`available`) / offline. Offline riders get no offers; finish the job first."""
+    await _limit(request, db, settings)
+    rider = await dispatch.set_status(db, who.rider.id, RiderStatus(body.status))
+    await db.commit()
+    return await rider_me(db, rider)
+
+
+async def _answer(
+    request: Request,
+    offer_id: uuid.UUID,
+    to: str,
+    who: auth.RiderUser,
+    db: AsyncSession,
+    settings: Settings,
+) -> s.Job | None:
+    await _limit(request, db, settings)
+    actor = Actor("rider", user_id=who.user.id, rider_id=who.rider.id)
+    order = await dispatch.answer(db, offer_id, who.rider.id, to, actor)
+    await db.commit()
+    return await views.job(db, order) if to == "accepted" else None
+
+
+@router.post("/offers/{offer_id}/accept", response_model=s.Job | None)
+async def accept_offer(
+    offer_id: uuid.UUID,
+    request: Request,
+    who: auth.RiderUser = Depends(auth.require_rider),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.Job | None:
+    """409 `offer_expired` after the 30 s, `offer_taken` if it was already answered."""
+    return await _answer(request, offer_id, "accepted", who, db, settings)
+
+
+@router.post("/offers/{offer_id}/decline", response_model=s.Job | None)
+async def decline_offer(
+    offer_id: uuid.UUID,
+    request: Request,
+    who: auth.RiderUser = Depends(auth.require_rider),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.Job | None:
+    return await _answer(request, offer_id, "declined", who, db, settings)
 
 
 @router.post("/position", status_code=204)

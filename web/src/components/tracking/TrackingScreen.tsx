@@ -27,6 +27,12 @@ const ORDER = STEPS.map((s) => s.status);
 const ENDED = new Set(["rejected", "cancelled", "expired"]);
 const WEAK_AFTER_MS = 30_000;
 
+function askedLabel(asked: number): string {
+  if (asked === 0) return "the nearest free rider gets the first offer";
+  if (asked === 1) return "offered to the nearest rider, waiting for a yes";
+  return `offered to ${asked} riders nearby, waiting for a yes`;
+}
+
 export function TrackingScreen({ initial }: { initial: OrderOut }) {
   const { live, stream } = useOrderStream(initial);
   const o = live.order;
@@ -201,7 +207,10 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
         ) : findingRider ? (
           <>
             <span className="av" aria-hidden="true">📡</span>
-            <div><b>Finding a rider…</b><small>the nearest free rider takes it</small></div>
+            <div>
+              <b>Finding a rider…</b>
+              <small aria-live="polite">{askedLabel(o.offer_attempts ?? 0)}</small>
+            </div>
           </>
         ) : (
           <>

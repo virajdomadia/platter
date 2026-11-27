@@ -18,6 +18,7 @@ export const EVENTS = [
   "rider",
   "riders",
   "eta",
+  "offer",
   "ping",
   "reconnect",
 ] as const;
@@ -97,7 +98,8 @@ type Action =
   | { type: "rider_assigned"; data: { rider: OrderOut["rider"] } }
   | { type: "route"; data: RouteOut }
   | { type: "rider"; data: RiderFix }
-  | { type: "eta"; data: EtaOut };
+  | { type: "eta"; data: EtaOut }
+  | { type: "offer"; data: { attempt?: number | null } };
 
 const ACTIVE = new Set(["placed", "accepted", "preparing", "ready", "picked_up"]);
 
@@ -140,6 +142,11 @@ export function liveReducer(state: Live, action: Action): Live {
       return { ...state, fix: action.data, fixAt: Date.now() };
     case "eta":
       return { ...state, eta: action.data };
+    case "offer": {
+      // "Finding a rider": how many riders have been asked (never who)
+      const asked = Math.max(state.order.offer_attempts ?? 0, action.data.attempt ?? 0);
+      return { ...state, order: { ...state.order, offer_attempts: asked } };
+    }
   }
 }
 
@@ -156,6 +163,7 @@ export function useOrderStream(initial: OrderOut) {
     else if (name === "route") dispatch({ type: "route", data: data as RouteOut });
     else if (name === "rider") dispatch({ type: "rider", data: data as RiderFix });
     else if (name === "eta") dispatch({ type: "eta", data: data as EtaOut });
+    else if (name === "offer") dispatch({ type: "offer", data: data as { attempt?: number | null } });
   });
   return { live, stream };
 }

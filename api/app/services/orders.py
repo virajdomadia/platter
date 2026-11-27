@@ -350,7 +350,10 @@ async def _side_effects(
     db: AsyncSession, order: Order, to: OrderStatus, chosen: Rider | None = None
 ) -> None:
     if to == S.accepted:
-        await dispatch.assign_rider(db, order, chosen, started_at=order.accepted_at)
+        if chosen is not None:  # demo staging hands the order straight to its rider
+            await dispatch.assign_rider(db, order, chosen, started_at=order.accepted_at)
+        else:
+            await dispatch.offer(db, order, at=order.accepted_at)
     elif to == S.ready and order.rider_id is not None:
         # A sim rider already waiting at the counter picks up at once.
         rider = await db.get(Rider, order.rider_id)

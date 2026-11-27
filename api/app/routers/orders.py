@@ -110,11 +110,12 @@ async def place(
     )
     start = None
     if payment == PaymentKind.razorpay:
-        order.razorpay_order_id = await razorpay.create_order(
+        rp_order = await razorpay.create_order(
             settings, amount_paise=order.total_paise, receipt=order.number
         )
+        order.razorpay_order_id = rp_order
         start = s.RazorpayStart(
-            order_id=order.razorpay_order_id,
+            order_id=rp_order,
             key_id=settings.razorpay_key_id or "",
             amount_paise=order.total_paise,
             name="Platter",

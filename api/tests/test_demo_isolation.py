@@ -11,7 +11,15 @@ from app.core import clock
 from app.models import Order, OrderStatus, Rider, RiderPosition, RiderTrack
 from app.services import dispatch, orders, sim
 from app.services.events import Actor
-from tests.conftest import KORAMANGALA_5TH, item_ids, login, make_client, place, restaurant
+from tests.conftest import (
+    KORAMANGALA_5TH,
+    item_ids,
+    login,
+    make_client,
+    place,
+    restaurant,
+    take_offer,
+)
 
 pytestmark = pytest.mark.db
 S = OrderStatus
@@ -96,6 +104,7 @@ async def test_admin_never_sees_a_sim_rider_heading_to_a_real_door(world, app):
         db, order.id, S.accepted, Actor("restaurant", restaurant_id=order.restaurant_id)
     )
     await db.commit()
+    order = await take_offer(db, order.id)
     assert order.rider_id is not None
     async with await make_client(app) as c:
         await login(c, db, "admin@platter.demo")
@@ -146,7 +155,10 @@ async def test_delivery_by_the_demo_phone_deletes_its_fix_and_trail(world, app):
 
         order = await place(db, slug="bandstand-kitchen")  # the demo customer: a demo order
         kitchen = Actor("restaurant", restaurant_id=order.restaurant_id)
-        for to in (S.accepted, S.preparing, S.ready):
+        await orders.transition(db, order.id, S.accepted, kitchen)
+        await db.commit()
+        await take_offer(db, order.id)
+        for to in (S.preparing, S.ready):
             order = await orders.transition(db, order.id, to, kitchen)
         await db.commit()
         assert order.rider_id == rider.id

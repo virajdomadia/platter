@@ -125,7 +125,8 @@ async def nearest_free_sim(db: AsyncSession, restaurant: Restaurant) -> Rider | 
         await db.execute(
             text(
                 "select r.id from riders r join rider_positions p on p.rider_id = r.id"
-                " where r.status = 'available' and r.is_sim"
+                " where r.status = 'available' and r.is_sim and not exists"
+                " (select 1 from offers f where f.rider_id = r.id and f.state = 'sent')"
                 " order by p.loc <-> (select loc from restaurants where id = :rest) limit 1"
                 " for update of r skip locked"
             ),

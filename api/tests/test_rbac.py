@@ -8,7 +8,7 @@ from sqlalchemy import select, text
 from app.models import Order, OrderStatus
 from app.services import orders
 from app.services.events import Actor
-from tests.conftest import login, make_client, place
+from tests.conftest import login, make_client, place, take_offer
 
 pytestmark = pytest.mark.db
 S = OrderStatus
@@ -126,6 +126,7 @@ async def test_a_rider_touches_only_its_own_job(world, app):
     kitchen = Actor("restaurant", restaurant_id=order.restaurant_id)
     order = await orders.transition(db, order.id, S.accepted, kitchen)
     await db.commit()
+    order = await take_offer(db, order.id)
     assert order.rider_id == divya_id
     other = await place(db, slug="dosa-camp")
     async with await make_client(app) as c:

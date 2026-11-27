@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Map, type MapMarker, type MapRoute } from "@/components/map/Map";
 import { RoleBar } from "@/components/ui/RoleBar";
-import { api, ApiError, errorMessage, type Job, type RiderMe } from "@/lib/api";
+import { api, ApiError, errorMessage, type Job, type RiderMe, type RiderOffer } from "@/lib/api";
 import { etaLabel, inr, km } from "@/lib/format";
 import { AREA_CENTRE, haversine, type LatLng } from "@/lib/geo";
 import { useGeoUplink, useShareToggle, type Uplink } from "@/lib/geoUplink";
@@ -77,8 +77,25 @@ export function RiderApp() {
 
   const live = stream.connected && !stream.stale;
 
+  // An offer that leaves the screen (timed out, taken, or answered) says so, and focus lands on
+  // the page instead of falling to <body> with the unmounted card.
+  const [offerNote, setOfferNote] = useState("");
+  const shownOffer = useRef<string | null>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const id = me?.offer?.id ?? null;
+    if (shownOffer.current && !id) {
+      setOfferNote(job ? "Offer accepted. Your job is below." : "The offer has gone to the next rider.");
+      if (document.activeElement === document.body) mainRef.current?.focus();
+    } else if (id) setOfferNote("");
+    shownOffer.current = id;
+  }, [me?.offer?.id, job]);
+
   return (
-    <main id="main" className="rd">
+    <main id="main" className="rd" ref={mainRef} tabIndex={-1}>
+      <p className="sr-only" role="status">
+        {offerNote}
+      </p>
       <RoleBar
         title={me?.rider.name ?? "Rider"}
         subtitle={me ? me.rider.vehicle : undefined}
@@ -103,8 +120,10 @@ export function RiderApp() {
 
       {me && (
         <>
-          <MapTile job={job} uplink={uplink} />
-          {job ? <JobTile job={job} /> : <IdleTiles me={me} />}
+          {!job && me.offer && <OfferCard key={me.offer.id} offer={me.offer} onAnswered={setMe} reload={load} />}
+          <MapTile job={job ?? me.offer?.job ?? null} uplink={uplink} />
+          {job ? <JobTile job={job} /> : <IdleTiles me={me} offered={!!me.offer} />}
+          <OnlineTile me={me} onChange={setMe} />
           <ShareTile on={share} onChange={setShare} uplink={uplink} />
           {job && <Actions job={job} busy={busy} onStep={transition} />}
         </>
@@ -238,14 +257,20 @@ function ItemList({ job }: { job: Job }) {
   );
 }
 
-function IdleTiles({ me }: { me: RiderMe }) {
+function IdleTiles({ me, offered }: { me: RiderMe; offered: boolean }) {
   return (
     <>
-      <section className="tile lav rd-wide rd-job spring">
-        <small>Waiting for work</small>
-        <b>No job right now</b>
-        <p>Jobs arrive when a restaurant accepts an order near you. Keep sharing your location so dispatch can find you.</p>
-      </section>
+      {!offered && (
+        <section className="tile lav rd-wide rd-job spring">
+          <small>{me.rider.status === "offline" ? "Off duty" : "Waiting for work"}</small>
+          <b>{me.rider.status === "offline" ? "You're offline" : "No job right now"}</b>
+          <p>
+            {me.rider.status === "offline"
+              ? "Switch Taking jobs on when you're ready to ride."
+              : "Offers arrive when a kitchen near you accepts an order. Keep sharing your location so dispatch can find you."}
+          </p>
+        </section>
+      )}
       <section className="tile mint rd-stat spring">
         <span className="label">Today</span>
         <b className="num">{me.today.deliveries}</b>
@@ -257,6 +282,136 @@ function IdleTiles({ me }: { me: RiderMe }) {
         <span>paid per drop</span>
       </section>
     </>
+  );
+}
+
+// ── the offer: 30 s to say yes ───────────────────────────────────────────────────────────────
+
+const RING_R = 26;
+const RING_C = 2 * Math.PI * RING_R;
+
+function OfferCard({
+  offer,
+  onAnswered,
+  reload,
+}: {
+  offer: RiderOffer;
+  onAnswered: (fn: (m: RiderMe | null) => RiderMe | null) => void;
+  reload: () => Promise<void>;
+}) {
+  // The deadline on this phone's clock: the server says how many seconds are left, not when.
+  const [deadline] = useState(() => Date.now() + offer.expires_in_s * 1000);
+  const total = 30;
+  const now = useNow(250);
+  const left = Math.max(0, Math.ceil((deadline - now) / 1000));
+  const [busy, setBusy] = useState<"accept" | "decline" | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const job = offer.job;
+  const dropKm = km(haversine([job.restaurant.lat, job.restaurant.lng], [job.drop.lat, job.drop.lng]));
+
+  // Land keyboard and screen-reader users on the offer the moment it arrives.
+  useEffect(() => heading.current?.focus(), []);
+  useEffect(() => {
+    if (left === 0 && !busy) void reload();
+  }, [left, busy, reload]);
+
+  const answer = async (to: "accept" | "decline") => {
+    setBusy(to);
+    try {
+      const next = await api<Job | null>(`/rider/offers/${offer.id}/${to}`, { method: "POST" });
+      onAnswered((m) => (m ? { ...m, offer: null, job: next ?? m.job } : m));
+      if (to === "accept") toast("Job accepted", `Head to ${job.restaurant.name}.`, "ok");
+    } catch (err) {
+      toast(errorMessage(err));
+    } finally {
+      setBusy(null);
+      void reload();
+    }
+  };
+
+  return (
+    <section className="tile lemon rd-wide rd-offer spring" aria-labelledby="offer-h" aria-describedby="offer-d">
+      <div className="rd-offer-top">
+        <div style={{ minWidth: 0 }}>
+          <small>New job offer</small>
+          <h2 id="offer-h" ref={heading} tabIndex={-1}>
+            {job.restaurant.name}
+          </h2>
+          <p id="offer-d">
+            Pickup {job.restaurant.line}, then {dropKm} to the drop. {job.items_count} item{job.items_count === 1 ? "" : "s"}, you earn{" "}
+            {inr(job.pay_preview_paise)}.
+          </p>
+        </div>
+        <div className={`rd-ring ${left <= 10 ? "low" : ""}`} role="timer" aria-label={`${left} seconds left to accept`}>
+          <svg viewBox="0 0 60 60" aria-hidden="true">
+            <circle cx="30" cy="30" r={RING_R} className="rd-ring-track" />
+            <circle
+              cx="30"
+              cy="30"
+              r={RING_R}
+              className="rd-ring-left"
+              strokeDasharray={RING_C}
+              strokeDashoffset={RING_C * (1 - left / total)}
+            />
+          </svg>
+          <b className="num" aria-hidden="true">{left}</b>
+        </div>
+      </div>
+      {/* announced once at 10 s left, not every second */}
+      <p className="sr-only" aria-live="assertive">{left === 10 ? "10 seconds left to accept" : ""}</p>
+      <div className="rd-offer-actions">
+        <button type="button" className="btn rd-touch rd-accept" disabled={busy !== null} onClick={() => void answer("accept")}>
+          {busy === "accept" ? "Accepting…" : "Accept"}
+        </button>
+        <button type="button" className="btn ghost rd-touch" disabled={busy !== null} onClick={() => void answer("decline")}>
+          {busy === "decline" ? "Passing…" : "Decline"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// ── online / offline ─────────────────────────────────────────────────────────────────────────
+
+function OnlineTile({ me, onChange }: { me: RiderMe; onChange: (m: RiderMe) => void }) {
+  const [saving, setSaving] = useState(false);
+  const status = me.rider.status;
+  const online = status !== "offline";
+  const flip = async () => {
+    setSaving(true);
+    try {
+      onChange(await api<RiderMe>("/rider/status", { body: { status: online ? "offline" : "available" } }));
+    } catch (err) {
+      toast(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <section className="tile rd-wide rd-share">
+      <div className="between">
+        <span id="online-label" className="rd-share-title">
+          Taking jobs
+        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={online}
+          aria-labelledby="online-label"
+          aria-describedby="online-help"
+          className="switch rd-switch"
+          disabled={saving || status === "busy"}
+          onClick={() => void flip()}
+        />
+      </div>
+      <p id="online-help" className="muted" role="status">
+        {status === "busy"
+          ? "On a job. Finish it to go offline."
+          : online
+            ? "Online. Offers from nearby kitchens appear here for 30 seconds."
+            : "Offline. No offers until you switch this back on."}
+      </p>
+    </section>
   );
 }
 

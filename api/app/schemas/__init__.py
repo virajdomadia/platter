@@ -275,6 +275,7 @@ class OrderOut(BaseModel):
     timestamps: dict[str, dt.datetime]
     created_at: dt.datetime
     seq: int
+    offer_attempts: int = 0  # riders asked so far ("Finding a rider", v2)
 
 
 class RazorpayStart(BaseModel):
@@ -437,12 +438,24 @@ class RiderToday(BaseModel):
     pay_paise: int
 
 
+class RiderOffer(BaseModel):
+    id: str
+    expires_at: dt.datetime
+    expires_in_s: int
+    job: Job
+
+
 class RiderMe(BaseModel):
     rider: RiderSelf
     job: Job | None
     today: RiderToday
     last_fix_s: int | None
     seq: int
+    offer: RiderOffer | None = None
+
+
+class RiderStatusIn(BaseModel):
+    status: Literal["available", "offline"]
 
 
 # --- admin ------------------------------------------------------------------------------------
@@ -476,6 +489,7 @@ class AdminOrder(BaseModel):
     stuck: Literal["unaccepted", "no_rider", "not_picked_up", "kitchen_late"] | None
     legs: list[RouteOut]
     total_paise: int
+    offer_attempts: int = 0
 
 
 class AdminToday(BaseModel):

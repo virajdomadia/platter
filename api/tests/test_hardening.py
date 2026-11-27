@@ -14,7 +14,15 @@ from app.core import clock
 from app.models import Order, OrderStatus
 from app.services import orders, routing
 from app.services.events import Actor
-from tests.conftest import KORAMANGALA_5TH, item_ids, login, make_client, place, restaurant
+from tests.conftest import (
+    KORAMANGALA_5TH,
+    item_ids,
+    login,
+    make_client,
+    place,
+    restaurant,
+    take_offer,
+)
 from tests.test_mark_paid import fake_razorpay, signature, start, webhook  # noqa: F401
 
 pytestmark = pytest.mark.db
@@ -141,6 +149,7 @@ async def test_rider_stream_drops_route_frames_of_a_leg_that_is_not_theirs(world
         db, order.id, S.accepted, Actor("restaurant", restaurant_id=order.restaurant_id)
     )
     await db.commit()
+    order = await take_offer(db, order.id)
     first = await db.get(Rider, order.rider_id)
     other = (
         await db.execute(select(Rider).where(Rider.is_sim, Rider.status == "available").limit(1))
