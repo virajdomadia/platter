@@ -76,8 +76,13 @@ def session_factory(app: FastAPI) -> SessionFactory:
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
+    from app.services import push
+
     async with session_factory(request.app)() as session:
-        yield session
+        try:
+            yield session
+        finally:
+            await push.drain(session)  # notifications for what this request committed
 
 
 async def dispose_engines() -> None:

@@ -5,6 +5,7 @@
 // refreshes from /rider/me whenever the rider stream says something changed.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Map, type MapMarker, type MapRoute } from "@/components/map/Map";
+import { PushOptIn } from "@/components/ui/PushOptIn";
 import { RoleBar } from "@/components/ui/RoleBar";
 import { api, ApiError, errorMessage, type Job, type RiderMe, type RiderOffer } from "@/lib/api";
 import { etaLabel, inr, km } from "@/lib/format";
@@ -124,6 +125,9 @@ export function RiderApp() {
           <MapTile job={job ?? me.offer?.job ?? null} uplink={uplink} />
           {job ? <JobTile job={job} /> : <IdleTiles me={me} offered={!!me.offer} />}
           <OnlineTile me={me} onChange={setMe} />
+          {me.rider.status !== "offline" && (
+            <PushOptIn className="rd-wide lemon">Get job offers as notifications while this app is in the background.</PushOptIn>
+          )}
           <ShareTile on={share} onChange={setShare} uplink={uplink} />
           {job && <Actions job={job} busy={busy} onStep={transition} />}
         </>

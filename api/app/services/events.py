@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session, SessionTransaction
 
 from app.core import clock
 from app.models import OrderEvent
+from app.services import push
 
 ActorRole = Literal["customer", "restaurant", "rider", "admin", "system"]
 
@@ -85,7 +86,18 @@ def _write_pending(session: Session) -> None:
     evs = session.info.pop(PENDING, None)
     if evs:
         session.execute(text("select pg_advisory_xact_lock(1)"))
+        push.stage(session, evs)  # who to notify, read now; sent only after the commit lands
         session.add_all(evs)
+
+
+@event.listens_for(Session, "after_commit")
+def _push_after_commit(session: Session) -> None:
+    push.committed(session)
+
+
+@event.listens_for(Session, "after_rollback")
+def _push_after_rollback(session: Session) -> None:
+    push.dropped(session)
 
 
 @event.listens_for(Session, "after_transaction_end")

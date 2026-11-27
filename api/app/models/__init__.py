@@ -302,6 +302,19 @@ class Offer(Base):
     closed_at: Mapped[dt.datetime | None] = _ts()
 
 
+class PushSubscription(Base):
+    """v2: one browser's Web Push endpoint, tied to the session that subscribed it."""
+
+    __tablename__ = "push_subscriptions"
+    id: Mapped[uuid.UUID] = _uuid()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    session_id: Mapped[str] = mapped_column(ForeignKey("sessions.id", ondelete="CASCADE"))
+    endpoint: Mapped[str] = mapped_column(Text, unique=True)
+    p256dh: Mapped[str] = mapped_column(Text)
+    auth: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[dt.datetime] = _ts(False)
+
+
 class WebhookEvent(Base):
     __tablename__ = "webhook_events"
     id: Mapped[str] = mapped_column(Text, primary_key=True)

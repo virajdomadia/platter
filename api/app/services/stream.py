@@ -34,7 +34,7 @@ from app.models import (
 from app.models.geo import latlng
 from app.services import admin as admin_service
 from app.services import eta as eta_service
-from app.services import routing, sim, views
+from app.services import push, routing, sim, views
 from app.services.dispatch import OFFER_KINDS
 from app.services.events import STATUS_KINDS
 
@@ -172,6 +172,7 @@ async def _advance(db: AsyncSession, scope: Scope) -> None:
         # Admin: one global advance at a time across every open console; the others just read.
         await sim.advance(db)
     await db.commit()
+    await push.drain(db)  # a sim picking up or delivering still notifies the customer
 
 
 async def _order_positions(
@@ -288,6 +289,7 @@ async def stream(
             if on_tick is not None:
                 await on_tick(db, tick)
                 await db.commit()
+                await push.drain(db)
             q = _scope_filter(select(OrderEvent), scope).where(OrderEvent.seq > cursor.seq)
             for ev in (await db.execute(q.order_by(OrderEvent.seq).limit(500))).scalars():
                 cursor.seq = ev.seq

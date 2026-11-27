@@ -9,6 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Map, type MapMarker, type MapRoute } from "@/components/map/Map";
+import { PushOptIn } from "@/components/ui/PushOptIn";
 import { api, errorMessage, type OrderOut } from "@/lib/api";
 import { clock, etaLabel, inr, km, minutes, STATUS_LABEL } from "@/lib/format";
 import { cumulative, decode, project, type LatLng } from "@/lib/geo";
@@ -132,6 +133,9 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
         </div>
         <div className="row" style={{ marginLeft: "auto", flexWrap: "wrap", justifyContent: "flex-end" }}>
           {!ended && !delivered && (stream.connected && !stream.stale ? <span className="chip mint live">Live</span> : <span className="chip peach">{stream.lastFrameAt ? "Reconnecting…" : "Connecting…"}</span>)}
+          {!ended && !delivered && (
+            <PushOptIn compact>get a notification when it is accepted, on the way and delivered, even with this tab closed</PushOptIn>
+          )}
           {status === "placed" && o.payment === "cod" && (
             <button className="btn small ghost" onClick={cancel} disabled={cancelling}>
               {cancelling ? "Cancelling…" : "Cancel order"}
