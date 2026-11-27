@@ -23,7 +23,9 @@ async def geo_search(
     lng: float | None = Query(default=None, ge=-180, le=180),
     db: AsyncSession = Depends(get_session),
 ) -> list[s.Place]:
-    await limits.hit(db, f"geo:{limits.client_ip(request)}", geo.LIMIT_PER_MIN)
+    await limits.hit(
+        db, f"geo:{limits.client_ip(request, request.app.state.settings)}", geo.LIMIT_PER_MIN
+    )
     return await geo.search(q, lat, lng)
 
 
@@ -34,7 +36,9 @@ async def geo_reverse(
     lng: float = Query(ge=-180, le=180),
     db: AsyncSession = Depends(get_session),
 ) -> s.Place:
-    await limits.hit(db, f"geo:{limits.client_ip(request)}", geo.LIMIT_PER_MIN)
+    await limits.hit(
+        db, f"geo:{limits.client_ip(request, request.app.state.settings)}", geo.LIMIT_PER_MIN
+    )
     return await geo.reverse(lat, lng)
 
 

@@ -2,20 +2,32 @@
 (an in-process counter resets per serverless instance and limits nothing)."""
 
 import datetime as dt
+import hmac
 
 from fastapi import Request
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import clock
+from app.core.config import Settings
 from app.core.errors import ApiError
 
 WINDOW_S = 60
 
 
-def client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for", "")
-    return forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
+def client_ip(request: Request, settings: Settings) -> str:
+    """The visitor's address from headers a client can't forge: the web tier's forwarded address
+    when it proves itself with PROXY_SECRET (browsers reach us through its `/api` rewrite, so
+    otherwise every visitor shares the proxy's address), else the platform's `x-real-ip`, else the
+    socket. Never the client-supplied `X-Forwarded-For`. (Frontrow's pattern.)"""
+    secret = settings.proxy_secret
+    forwarded = request.headers.get("x-platter-client-ip")
+    proof = request.headers.get("x-platter-proxy", "")
+    if secret and forwarded and hmac.compare_digest(proof, secret.get_secret_value()):
+        return forwarded.strip()
+    return request.headers.get("x-real-ip") or (
+        request.client.host if request.client else "unknown"
+    )
 
 
 async def hit(db: AsyncSession, key: str, per_minute: int) -> None:

@@ -178,3 +178,23 @@ async def test_stream_opens_are_rate_limited_per_browser(world, app):
         app.state.settings.stream_lifetime_s = 0  # each stream closes at once
         codes = [(await c.get(f"/orders/{order.id}/events")).status_code for _ in range(7)]
     assert codes == [200] * 6 + [429]
+
+
+def test_client_ip_trusts_the_web_only_with_the_proxy_secret() -> None:
+    from starlette.requests import Request
+
+    from app.core.config import Settings
+    from app.services import limits
+
+    def req(headers: dict[str, str]) -> Request:
+        raw = [(k.encode(), v.encode()) for k, v in headers.items()]
+        return Request({"type": "http", "headers": raw, "client": ("10.0.0.1", 1234)})
+
+    on = Settings(_env_file=None, proxy_secret="s3cret")  # type: ignore[call-arg, arg-type]
+    via_web = {"x-platter-client-ip": "203.0.113.5", "x-platter-proxy": "s3cret"}
+    assert limits.client_ip(req(via_web), on) == "203.0.113.5"
+    assert limits.client_ip(req({**via_web, "x-platter-proxy": "guess"}), on) == "10.0.0.1"
+    assert limits.client_ip(req({"x-platter-client-ip": "203.0.113.5"}), on) == "10.0.0.1"
+    assert limits.client_ip(req({"x-forwarded-for": "1.2.3.4"}), on) == "10.0.0.1"
+    off = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert limits.client_ip(req(via_web), off) == "10.0.0.1"

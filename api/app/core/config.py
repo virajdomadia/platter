@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # Shared with the web's /api/revalidate route; unset = menu changes wait out the page cache.
     revalidate_secret: SecretStr | None = None
 
+    # Shared with the web tier, which forwards the visitor's address with it (limits.client_ip).
+    proxy_secret: SecretStr | None = None
+
     # Razorpay (test mode). Unset key = online payment is switched off; COD still works.
     razorpay_key_id: str | None = None
     razorpay_key_secret: SecretStr | None = None

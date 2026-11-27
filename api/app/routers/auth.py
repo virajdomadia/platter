@@ -56,7 +56,7 @@ async def sign_up(
     db: AsyncSession = Depends(get_session),
     settings: Settings = Depends(current_settings),
 ) -> s.Me:
-    await limits.hit(db, f"sign-up:{limits.client_ip(request)}", 10)
+    await limits.hit(db, f"sign-up:{limits.client_ip(request, settings)}", 10)
     if body.email.lower().endswith("platter.demo"):  # the seeded demo and sim accounts' domain
         raise ApiError(422, "validation", "Use your own email address", {"fields": {"email": ""}})
     password_hash = await asyncio.to_thread(auth.hash_password, body.password)
@@ -126,7 +126,7 @@ async def demo_login(
 ) -> s.Me:
     """Sign in as one of the four seeded demo accounts — and make sure there is something to see:
     an order on the way, tickets on the board, a job on the rider's phone, orders on the map."""
-    await limits.hit(db, f"demo:{limits.client_ip(request)}", 30)
+    await limits.hit(db, f"demo:{limits.client_ip(request, settings)}", 30)
     await dispatch.prune(db)
     role = body.as_
     user = (
