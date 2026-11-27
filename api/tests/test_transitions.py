@@ -1,4 +1,4 @@
-"""04 Â§12 test_transitions + R4: every allowed edge succeeds for its actor and 409s for every other
+"""04 §12 test_transitions + R4: every allowed edge succeeds for its actor and 409s for every other
 actor; illegal jumps 409; two concurrent accepts produce one `accepted` event."""
 
 import asyncio
@@ -95,13 +95,13 @@ async def test_every_other_actor_is_refused_on_every_edge(world):
     order = await place(db)
     oid = order.id
     a = await actors(db, order)
-    # placed â†’ accepted: only the restaurant that owns the order (or the kitchen autopilot)
+    # placed → accepted: only the restaurant that owns the order (or the kitchen autopilot)
     for who in ("owner", "stranger", "other_kitchen", "rider", "admin"):
         assert await refused(db, oid, S.accepted, a[who]), who
-    # placed â†’ cancelled: only the customer who placed it
+    # placed → cancelled: only the customer who placed it
     for who in ("stranger", "kitchen", "rider", "admin"):
         assert await refused(db, oid, S.cancelled, a[who]), who
-    # placed â†’ rejected: only the owning restaurant (the autopilot never rejects)
+    # placed → rejected: only the owning restaurant (the autopilot never rejects)
     for who in ("owner", "other_kitchen", "rider", "admin"):
         assert await refused(db, oid, S.rejected, a[who]), who
     assert await refused(db, oid, S.rejected, SYSTEM)
@@ -113,7 +113,7 @@ async def test_every_other_actor_is_refused_on_every_edge(world):
     order = await orders.transition(db, oid, S.ready, a["kitchen"])
     await db.commit()
     a = await actors(db, order)
-    # ready â†’ picked_up: only the assigned rider â€” a customer, the restaurant, another rider: no
+    # ready → picked_up: only the assigned rider — a customer, the restaurant, another rider: no
     for who in ("owner", "kitchen", "other_rider", "admin"):
         assert await refused(db, oid, S.picked_up, a[who]), who
     await orders.transition(db, oid, S.picked_up, a["rider"])
@@ -128,12 +128,12 @@ async def test_illegal_jumps(world):
     order = await place(db)
     oid = order.id
     a = await actors(db, order)
-    assert await refused(db, oid, S.ready, a["kitchen"])  # placed â†’ ready
+    assert await refused(db, oid, S.ready, a["kitchen"])  # placed → ready
     assert await refused(db, oid, S.delivered, a["kitchen"])
     await orders.transition(db, oid, S.accepted, a["kitchen"])
     order = await orders.transition(db, oid, S.preparing, a["kitchen"])
     await db.commit()
-    assert await refused(db, oid, S.delivered, a["kitchen"])  # preparing â†’ delivered
+    assert await refused(db, oid, S.delivered, a["kitchen"])  # preparing → delivered
     a = await actors(db, await db.get(Order, oid))
     assert await refused(db, oid, S.picked_up, a["rider"])  # picked up before ready
     assert await refused(db, oid, S.cancelled, a["owner"])  # cancel only while placed

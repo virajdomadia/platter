@@ -1,4 +1,4 @@
-"""The rider app ðŸ›µ (06 Â§C): my job, GPS uplink, picked up / delivered, my stream."""
+"""The rider app 🛵 (06 §C): my job, GPS uplink, picked up / delivered, my stream."""
 
 import datetime as dt
 import uuid
