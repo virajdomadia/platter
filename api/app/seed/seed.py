@@ -255,7 +255,7 @@ async def seed_history(db: AsyncSession, offline: bool) -> int:
         await db.execute(
             text(
                 "select id, slug, prep_min, ST_Y(loc::geometry), ST_X(loc::geometry), hours"
-                " from restaurants order by slug"
+                " from restaurants where not is_sandbox order by slug"
             )
         )
     ).all()

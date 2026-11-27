@@ -148,6 +148,8 @@ class Restaurant(Base):
     # v1 addition: when the board last had a live stream open. The kitchen autopilot
     # (services/sim.py) only runs a restaurant's tickets while nobody is on its board.
     board_seen_at: Mapped[dt.datetime | None] = _ts()
+    # v2: the demo kitchen's private menu-editor copy (services/menu.py): never public.
+    is_sandbox: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[dt.datetime] = _ts(False)
 
 

@@ -2,9 +2,9 @@
 distances integer metres, times seconds; points are `{ lat, lng }`."""
 
 import datetime as dt
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, StringConstraints
 
 OrderStatusT = Literal[
     "pending_payment",
@@ -373,8 +373,54 @@ class RestaurantTransitionIn(BaseModel):
     reason: str | None = Field(default=None, max_length=200)
 
 
+# Stripped before the length check, so "   " is refused rather than saved as an empty name.
+Name80 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
+Name60 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
+Text280 = Annotated[str, StringConstraints(strip_whitespace=True, max_length=280)]
+
+
 class AvailabilityIn(BaseModel):
-    is_available: bool
+    """PATCH /restaurant/items/{id}: any subset (v1 sent only `is_available`)."""
+
+    is_available: bool | None = None
+    name: Name80 | None = None
+    description: Text280 | None = None
+    price_paise: int | None = Field(default=None, ge=100, le=1_000_000)
+    is_veg: bool | None = None
+    photo_url: str | None = Field(default=None, max_length=300)
+    category_id: str | None = None
+
+
+class ItemIn(BaseModel):
+    category_id: str
+    name: Name80
+    description: Text280 | None = None
+    price_paise: int = Field(ge=100, le=1_000_000)  # ₹1 to ₹10,000
+    is_veg: bool
+    photo_url: str | None = Field(default=None, max_length=300)
+    is_available: bool = True
+
+
+class CategoryIn(BaseModel):
+    name: Name60
+
+
+class CategoryOrderIn(BaseModel):
+    ids: list[str] = Field(max_length=50)
+
+
+class DetailsIn(BaseModel):
+    hours: dict[str, list[list[str]]] | None = None
+    is_open: bool | None = None
+    prep_min: int | None = Field(default=None, ge=5, le=90)
+    cover_url: str | None = Field(default=None, max_length=300)
+
+
+class RestaurantDetails(BaseModel):
+    hours: dict[str, list[list[str]]]
+    is_open: bool  # the owner's switch; `restaurant.is_open` also applies the hours
+    prep_min: int
+    cover: Photo | None
 
 
 class MenuItemAdmin(MenuItemOut):
@@ -384,6 +430,8 @@ class MenuItemAdmin(MenuItemOut):
 class MenuOut(BaseModel):
     restaurant: BoardRestaurant
     categories: list[CategoryOut]
+    details: RestaurantDetails | None = None
+    sandbox: bool = False  # the public demo login edits a private copy (v2)
 
 
 # --- rider ------------------------------------------------------------------------------------

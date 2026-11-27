@@ -382,15 +382,92 @@
     "type": "object"
    },
    "AvailabilityIn": {
+    "description": "PATCH /restaurant/items/{id}: any subset (v1 sent only `is_available`).",
     "properties": {
+     "category_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Category Id"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "maxLength": 280,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
      "is_available": {
-      "title": "Is Available",
-      "type": "boolean"
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Is Available"
+     },
+     "is_veg": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Is Veg"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "photo_url": {
+      "anyOf": [
+       {
+        "maxLength": 300,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Photo Url"
+     },
+     "price_paise": {
+      "anyOf": [
+       {
+        "maximum": 1000000.0,
+        "minimum": 100.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price Paise"
      }
     },
-    "required": [
-     "is_available"
-    ],
     "title": "AvailabilityIn",
     "type": "object"
    },
@@ -535,6 +612,38 @@
     "title": "CartLine",
     "type": "object"
    },
+   "CategoryIn": {
+    "properties": {
+     "name": {
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "CategoryIn",
+    "type": "object"
+   },
+   "CategoryOrderIn": {
+    "properties": {
+     "ids": {
+      "items": {
+       "type": "string"
+      },
+      "maxItems": 50,
+      "title": "Ids",
+      "type": "array"
+     }
+    },
+    "required": [
+     "ids"
+    ],
+    "title": "CategoryOrderIn",
+    "type": "object"
+   },
    "CategoryOut": {
     "properties": {
      "id": {
@@ -578,6 +687,68 @@
      "as"
     ],
     "title": "DemoIn",
+    "type": "object"
+   },
+   "DetailsIn": {
+    "properties": {
+     "cover_url": {
+      "anyOf": [
+       {
+        "maxLength": 300,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cover Url"
+     },
+     "hours": {
+      "anyOf": [
+       {
+        "additionalProperties": {
+         "items": {
+          "items": {
+           "type": "string"
+          },
+          "type": "array"
+         },
+         "type": "array"
+        },
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Hours"
+     },
+     "is_open": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Is Open"
+     },
+     "prep_min": {
+      "anyOf": [
+       {
+        "maximum": 90.0,
+        "minimum": 5.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Prep Min"
+     }
+    },
+    "title": "DetailsIn",
     "type": "object"
    },
    "Drop": {
@@ -651,6 +822,67 @@
      }
     },
     "title": "HTTPValidationError",
+    "type": "object"
+   },
+   "ItemIn": {
+    "properties": {
+     "category_id": {
+      "title": "Category Id",
+      "type": "string"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "maxLength": 280,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "is_available": {
+      "default": true,
+      "title": "Is Available",
+      "type": "boolean"
+     },
+     "is_veg": {
+      "title": "Is Veg",
+      "type": "boolean"
+     },
+     "name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "photo_url": {
+      "anyOf": [
+       {
+        "maxLength": 300,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Photo Url"
+     },
+     "price_paise": {
+      "maximum": 1000000.0,
+      "minimum": 100.0,
+      "title": "Price Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "category_id",
+     "name",
+     "price_paise",
+     "is_veg"
+    ],
+    "title": "ItemIn",
     "type": "object"
    },
    "Job": {
@@ -959,8 +1191,23 @@
       "title": "Categories",
       "type": "array"
      },
+     "details": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RestaurantDetails"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
      "restaurant": {
       "$ref": "#/components/schemas/BoardRestaurant"
+     },
+     "sandbox": {
+      "default": false,
+      "title": "Sandbox",
+      "type": "boolean"
      }
     },
     "required": [
@@ -1918,6 +2165,49 @@
      "hours_label"
     ],
     "title": "RestaurantCard",
+    "type": "object"
+   },
+   "RestaurantDetails": {
+    "properties": {
+     "cover": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Photo"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "hours": {
+      "additionalProperties": {
+       "items": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "type": "array"
+      },
+      "title": "Hours",
+      "type": "object"
+     },
+     "is_open": {
+      "title": "Is Open",
+      "type": "boolean"
+     },
+     "prep_min": {
+      "title": "Prep Min",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "hours",
+     "is_open",
+     "prep_min",
+     "cover"
+    ],
+    "title": "RestaurantDetails",
     "type": "object"
    },
    "RestaurantOut": {
@@ -3897,6 +4187,48 @@
     ]
    }
   },
+  "/restaurant": {
+   "patch": {
+    "description": "Hours per weekday, the open / closed switch, prep time, cover photo.",
+    "operationId": "update_details_restaurant_patch",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DetailsIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MenuOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Update Details",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
   "/restaurant/board": {
    "get": {
     "operationId": "board_restaurant_board_get",
@@ -3913,6 +4245,184 @@
      }
     },
     "summary": "Board",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
+  "/restaurant/categories": {
+   "post": {
+    "operationId": "add_category_restaurant_categories_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CategoryIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MenuOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Add Category",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
+  "/restaurant/categories/order": {
+   "put": {
+    "description": "`ids`: every category of the menu, in the new order.",
+    "operationId": "order_categories_restaurant_categories_order_put",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CategoryOrderIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MenuOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Order Categories",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
+  "/restaurant/categories/{category_id}": {
+   "delete": {
+    "description": "Only an empty category: deleting one never takes dishes with it.",
+    "operationId": "delete_category_restaurant_categories__category_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "category_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Category Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MenuOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Category",
+    "tags": [
+     "restaurant"
+    ]
+   },
+   "patch": {
+    "operationId": "rename_category_restaurant_categories__category_id__patch",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "category_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Category Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CategoryIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MenuOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Rename Category",
     "tags": [
      "restaurant"
     ]
@@ -3960,9 +4470,93 @@
     ]
    }
   },
+  "/restaurant/items": {
+   "post": {
+    "operationId": "add_item_restaurant_items_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ItemIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MenuOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Add Item",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
   "/restaurant/items/{item_id}": {
+   "delete": {
+    "description": "Past orders keep their own copy of the dish (order_items is a snapshot).",
+    "operationId": "delete_item_restaurant_items__item_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "item_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Item Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MenuOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Item",
+    "tags": [
+     "restaurant"
+    ]
+   },
    "patch": {
-    "operationId": "set_availability_restaurant_items__item_id__patch",
+    "description": "Switch a dish on / off, or edit it. Off \u2192 gone from the customer menu, refused at order.",
+    "operationId": "update_item_restaurant_items__item_id__patch",
     "parameters": [
      {
       "in": "path",
@@ -4007,7 +4601,7 @@
       "description": "Validation Error"
      }
     },
-    "summary": "Set Availability",
+    "summary": "Update Item",
     "tags": [
      "restaurant"
     ]
@@ -4082,6 +4676,32 @@
      }
     },
     "summary": "Transition",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
+  "/restaurant/photos": {
+   "get": {
+    "description": "The photo library a dish or cover can use.",
+    "operationId": "photos_restaurant_photos_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "type": "string"
+         },
+         "title": "Response Photos Restaurant Photos Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Photos",
     "tags": [
      "restaurant"
     ]

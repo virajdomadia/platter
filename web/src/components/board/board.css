@@ -470,3 +470,252 @@
     display: none;
   }
 }
+
+/* v2 · the menu editor (S12): category tools, the dish dialog, restaurant details */
+.me-note {
+  margin-top: 10px;
+  font-weight: 800;
+}
+.me-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.me-head h2 {
+  margin: 4px 4px 10px;
+}
+.me-cat {
+  display: grid;
+  gap: 2px;
+}
+.me-tools {
+  display: grid;
+  grid-template-columns: 44px 44px 1fr 1fr;
+  gap: 4px;
+  padding: 0 0 8px;
+}
+.av-cats .me-arrange {
+  width: auto;
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.me-cat + .me-cat {
+  margin-top: 2px;
+}
+.av-cats .me-tools button {
+  width: auto;
+  min-height: 40px;
+  padding: 4px 6px;
+  justify-content: center;
+  font-size: 12px;
+  background: var(--bg);
+}
+.av-cats .me-tools button[aria-disabled="true"],
+.btn[aria-disabled="true"],
+.av-item .switch[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.av-section h2:focus {
+  outline: none;
+}
+.me-rename,
+.me-add {
+  display: grid;
+  gap: 6px;
+  padding: 6px 8px;
+}
+.me-add {
+  margin-top: 10px;
+  border-radius: 16px;
+  background: var(--bg);
+  padding: 10px;
+}
+.av-item .me-edit {
+  min-height: 44px;
+  flex: none;
+}
+.me-dialog {
+  margin: auto; /* the reset zeroes the UA's centring margin */
+  width: min(720px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  border: 0;
+  border-radius: 24px;
+  padding: 20px;
+  background: var(--tile);
+  color: var(--ink);
+  box-shadow: var(--shadow-pop);
+}
+.me-dialog::backdrop {
+  background: rgba(31, 27, 46, 0.45);
+}
+.me-dialog h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.me-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.me-wide {
+  grid-column: 1 / -1;
+}
+@media (max-width: 560px) {
+  .me-form {
+    grid-template-columns: 1fr;
+  }
+}
+.me-checks {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.me-checks label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  font-weight: 800;
+}
+.me-checks input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--violet);
+}
+.me-photos {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.me-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 6px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 4px;
+}
+.me-photo {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+.me-photo input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+}
+.me-photo img,
+.me-photo .ph {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  height: auto;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background: var(--lav);
+  font-size: 12px;
+  font-weight: 800;
+}
+.me-photo input:checked + img,
+.me-photo input:checked + .ph {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.me-photo input:focus-visible + img,
+.me-photo input:focus-visible + .ph {
+  outline: 3px solid var(--violet);
+  outline-offset: 2px;
+}
+.me-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.me-actions .btn {
+  min-height: 44px;
+}
+.me-danger {
+  color: var(--coral-deep);
+}
+.me-details {
+  margin-top: 10px;
+}
+.me-details summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 17px;
+}
+.me-details summary small {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.me-details-body {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+.me-details-body form {
+  display: grid;
+  gap: 14px;
+}
+.me-prep {
+  max-width: 220px;
+}
+.me-hours {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.me-day {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: var(--bg);
+}
+.me-day-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.me-day-head .btn {
+  margin-left: auto;
+}
+.me-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.me-range .input {
+  width: 112px;
+  padding-inline: 10px;
+}
+.me-day .btn {
+  min-height: 40px;
+}
+
+/* the editor's dish cards carry an Edit button too: a little wider so names don't stack */
+.av-items {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.me-day .input {
+  background: var(--tile);
+}

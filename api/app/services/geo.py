@@ -35,7 +35,7 @@ async def nearby(db: AsyncSession, lat: float, lng: float) -> list[s.RestaurantC
                 with pin as (select ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography as p)
                 select r.id, ST_Distance(r.loc, pin.p) as distance_m
                 from restaurants r, pin
-                where ST_DWithin(r.loc, pin.p, :shown)
+                where ST_DWithin(r.loc, pin.p, :shown) and not r.is_sandbox
                 order by distance_m
                 """
             ),

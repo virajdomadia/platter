@@ -61,7 +61,7 @@ async def restaurant(
     db: AsyncSession = Depends(get_session),
 ) -> s.RestaurantOut:
     r = (await db.execute(select(Restaurant).where(Restaurant.slug == slug))).scalar_one_or_none()
-    if r is None:
+    if r is None or r.is_sandbox:
         raise not_found("No such restaurant")
     pin = (lat, lng) if lat is not None and lng is not None else DEFAULT_PIN
     distance = await orders.straight_distance(db, r.id, pin[0], pin[1])
