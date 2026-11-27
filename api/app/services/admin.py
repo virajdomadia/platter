@@ -2,9 +2,10 @@
 The only admin login is the public demo, so a real customer's order (and a sim rider's position
 while it carries one, which would trace their door) never appears here.
 
-Stuck rules: `placed` unaccepted for 5 min · accepted for 3 min with no rider · `ready` for 10 min
-and not picked up. A real rider with no fix for 2 minutes and no job shows as offline (they are
-not sharing their location, so dispatch skips them too)."""
+Stuck rules: `placed` unaccepted for 5 min · accepted for 3 min with no rider · still cooking 5 min
+past the kitchen's prep time · `ready` for 10 min and not picked up. A real rider with no fix for 2
+minutes and no job shows as offline (they are not sharing their location, so dispatch skips them
+too)."""
 
 import datetime as dt
 import uuid
@@ -31,9 +32,10 @@ IST = ZoneInfo("Asia/Kolkata")
 UNACCEPTED = dt.timedelta(minutes=5)
 NO_RIDER = dt.timedelta(minutes=3)
 NOT_PICKED_UP = dt.timedelta(minutes=10)
+KITCHEN_LATE = dt.timedelta(minutes=5)
 
 
-def stuck(order: Order, now: dt.datetime) -> str | None:
+def stuck(order: Order, now: dt.datetime, prep_min: int | None = None) -> str | None:
     if order.status == S.placed and order.placed_at and now - order.placed_at >= UNACCEPTED:
         return "unaccepted"
     if (
@@ -43,6 +45,13 @@ def stuck(order: Order, now: dt.datetime) -> str | None:
         and now - order.accepted_at >= NO_RIDER
     ):
         return "no_rider"
+    if (
+        prep_min is not None
+        and order.status in (S.accepted, S.preparing)
+        and order.accepted_at
+        and now - order.accepted_at >= dt.timedelta(minutes=prep_min) + KITCHEN_LATE
+    ):
+        return "kitchen_late"
     if order.status == S.ready and order.ready_at and now - order.ready_at >= NOT_PICKED_UP:
         return "not_picked_up"
     return None
@@ -149,7 +158,7 @@ async def admin_order(
         rider_name=rider.name if rider else None,
         age_s=int((now - placed).total_seconds()),
         status_age_s=int((now - status_since(order)).total_seconds()),
-        stuck=stuck(order, now),  # type: ignore[arg-type]
+        stuck=stuck(order, now, restaurant.prep_min),  # type: ignore[arg-type]
         legs=[views.route_out(lg) for lg in legs],
         total_paise=order.total_paise,
     )

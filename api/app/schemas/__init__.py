@@ -473,7 +473,7 @@ class AdminOrder(BaseModel):
     rider_name: str | None
     age_s: int
     status_age_s: int
-    stuck: Literal["unaccepted", "no_rider", "not_picked_up"] | None
+    stuck: Literal["unaccepted", "no_rider", "not_picked_up", "kitchen_late"] | None
     legs: list[RouteOut]
     total_paise: int
 

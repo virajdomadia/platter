@@ -4,6 +4,7 @@ import { etaLabel, inr, km } from "@/lib/format";
 import { bearing, cumulative, decode, haversine, lerpAngle, project, slice } from "@/lib/geo";
 import { liveReducer, type Live } from "@/lib/stream";
 import type { OrderOut } from "@/lib/api";
+import { safeNext } from "@/lib/session";
 
 describe("geo", () => {
   test("decodes Google's reference polyline", () => {
@@ -105,5 +106,14 @@ describe("the tracking reducer", () => {
     s = liveReducer(s, { type: "eta", data: { order_id: "o1", eta_s: 300, method: "osrm", phase: "to_customer" } });
     s = liveReducer(s, { type: "status", data: { order_id: "o1", status: "delivered", at: "2026-11-26T15:30:00Z" } });
     expect(s.eta).toBeNull();
+  });
+});
+
+describe("safeNext", () => {
+  test("keeps same-origin paths and refuses anything that leaves the site", () => {
+    expect(safeNext("/orders/42?x=1#t")).toBe("/orders/42?x=1#t");
+    for (const bad of [null, "", "https://evil.com", "//evil.com", "/\\evil.com", "/\\/evil.com", "\\\\evil.com", "/\t/evil.com"]) {
+      expect(safeNext(bad)).toBeNull();
+    }
   });
 });

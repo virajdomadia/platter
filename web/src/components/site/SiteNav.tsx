@@ -40,7 +40,7 @@ export function TopBar() {
           ) : me ? (
             <>
               <span className="chip lav" title={me.email}>
-                🙂 {me.name.split(" ")[0]}
+                <span aria-hidden="true">🙂</span> {me.name.split(" ")[0]}
               </span>
               <button
                 className="btn small ghost"
@@ -53,7 +53,7 @@ export function TopBar() {
               </button>
             </>
           ) : (
-            <Link className="btn small" href={`/sign-in?next=${encodeURIComponent(pathname)}`}>
+            <Link className="btn small" href={pathname.startsWith("/sign") ? "/sign-in" : `/sign-in?next=${encodeURIComponent(pathname)}`}>
               Sign in
             </Link>
           )}
@@ -66,18 +66,28 @@ export function TopBar() {
 export function BottomNav() {
   const pathname = usePathname();
   const me = useMe();
+  if (pathname.startsWith("/r/")) return null; // the cart bar sits there on a menu
   return (
-    <nav className="bottomnav" aria-label="Main">
+    <nav className="bottomnav" aria-label="Tabs">
       {LINKS.map((l) => (
         <Link key={l.href} href={l.href} aria-current={current(pathname, l.href) ? "page" : undefined}>
           <span aria-hidden="true">{l.icon}</span>
           {l.label}
         </Link>
       ))}
-      <Link href={me ? (me.role === "customer" ? "/orders" : HOME_FOR[me.role]) : "/sign-in"} aria-current={pathname.startsWith("/sign") ? "page" : undefined}>
-        <span aria-hidden="true">🙂</span>
-        {me ? me.name.split(" ")[0] : "Sign in"}
-      </Link>
+      {me ? (
+        me.role !== "customer" && (
+          <Link href={HOME_FOR[me.role]}>
+            <span aria-hidden="true">🙂</span>
+            My {me.role === "admin" ? "admin" : me.role === "rider" ? "app" : "kitchen"}
+          </Link>
+        )
+      ) : (
+        <Link href="/sign-in" aria-current={pathname.startsWith("/sign") ? "page" : undefined}>
+          <span aria-hidden="true">🙂</span>
+          Sign in
+        </Link>
+      )}
     </nav>
   );
 }

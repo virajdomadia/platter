@@ -198,7 +198,8 @@
         "enum": [
          "unaccepted",
          "no_rider",
-         "not_picked_up"
+         "not_picked_up",
+         "kitchen_late"
         ],
         "type": "string"
        },

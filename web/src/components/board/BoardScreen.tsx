@@ -20,7 +20,7 @@ type Loaded = { board: Board; at: number }; // `at`: client time the board's age
 type RiderFrame = { order_id: string; distance_m: number | null; eta_s: number | null };
 
 const COLS: { key: ColKey; title: string; emoji: string; tone: string; empty: string }[] = [
-  { key: "new", title: "New", emoji: "🧾", tone: "peach", empty: "No new orders — the next one prints here." },
+  { key: "new", title: "New", emoji: "🧾", tone: "peach", empty: "No new orders. The next one prints here." },
   { key: "cooking", title: "Cooking", emoji: "🍳", tone: "lemon", empty: "Nothing on the stove right now." },
   { key: "ready", title: "Ready", emoji: "🛍️", tone: "mint", empty: "Nothing waiting at the counter." },
   { key: "out", title: "Out for delivery", emoji: "🛵", tone: "sky", empty: "No one on the road yet." },
@@ -230,7 +230,7 @@ export function BoardScreen() {
   return (
     <>
       <RoleBar
-        title={r ? `${r.name} · kitchen` : "Kitchen"}
+        title={r ? r.name : "Kitchen"}
         subtitle={r ? `${r.area} · ${r.is_open ? (r.hours_label === "Open 24 hours" ? "Open 24 hours" : `Open · ${r.hours_label}`) : `Closed · ${r.hours_label}`}` : undefined}
         who="🍳 Kitchen"
       >
@@ -250,6 +250,15 @@ export function BoardScreen() {
           {chime.on ? "🔔 Sound on" : "🔕 Sound off"}
         </button>
       </RoleBar>
+
+      {!chime.on && (
+        <div className="tile lemon bd-sound" role="note">
+          <span>Sound is off: a new order prints silently.</span>
+          <button type="button" className="btn small" onClick={chime.toggle}>
+            Turn on sound
+          </button>
+        </div>
+      )}
 
       <p className="sr-only" aria-live="polite" role="status">
         {announce}
@@ -303,17 +312,6 @@ export function BoardScreen() {
             <div className="tile spring bd-stat">
               <span className="label">Avg accept</span>
               <b className="num">{today.avg_accept_s != null ? age(today.avg_accept_s) : "—"}</b>
-            </div>
-            <div className="tile peach spring bd-stat">
-              <span className="label">New</span>
-              <b className="num">
-                <span key={`b${prints}`} className={`bd-bell${prints ? " swing" : ""}`} aria-hidden="true">
-                  🔔
-                </span>{" "}
-                <span key={`c${prints}`} className={`bd-count${prints ? " pop" : ""}`}>
-                  {newCount}
-                </span>
-              </b>
             </div>
           </section>
 

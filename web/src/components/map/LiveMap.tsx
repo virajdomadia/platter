@@ -23,6 +23,7 @@ export type MapMarker = {
   heading?: number | null;
   color?: string;
   sim?: boolean;
+  busy?: boolean;
   title?: string;
   onClick?: () => void;
 };
@@ -121,7 +122,12 @@ export default function LiveMap({
           cooperativeGestures: false,
           fadeDuration: 0,
         });
-        m.on("load", () => !cancelled && setReady(true));
+        m.on("load", () => {
+          if (cancelled) return;
+          // A small map starts with the attribution folded to its (i) button, so it hides no pin.
+          if ((box.current?.clientHeight ?? 0) < 400) box.current?.querySelectorAll(".maplibregl-compact-show").forEach((e) => e.classList.remove("maplibregl-compact-show"));
+          setReady(true);
+        });
         m.on("error", () => undefined);
         map.current = m;
         if (process.env.NODE_ENV !== "production") (window as unknown as { __maps?: MlMap[] }).__maps = [...((window as unknown as { __maps?: MlMap[] }).__maps ?? []), m];
@@ -236,7 +242,7 @@ export default function LiveMap({
       seen.add(mk.id);
       const target: LatLng = [mk.lat, mk.lng];
       const heading = mk.heading ?? 0;
-      const look = `${mk.kind}|${mk.color ?? ""}|${mk.sim ? 1 : 0}|${mk.title ?? ""}`;
+      const look = `${mk.kind}|${mk.color ?? ""}|${mk.sim ? 1 : 0}|${mk.busy ? 1 : 0}|${mk.title ?? ""}`;
       const existing = live.current.get(mk.id);
       if (existing && existing.look !== look) {
         // colour / sim ring / title changed: restyle in place, keep gliding
@@ -319,7 +325,8 @@ export default function LiveMap({
     }
     const b = new ml.LngLatBounds();
     fit.forEach(([a, c]) => b.extend([c, a]));
-    m.fitBounds(b, { padding: 56, maxZoom: 16, duration: reduced() ? 0 : 700 });
+    // extra room at the top: the status pill sits there
+    m.fitBounds(b, { padding: { top: 72, bottom: 48, left: 48, right: 48 }, maxZoom: 16, duration: reduced() ? 0 : 700 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, fitKey]);
 
@@ -337,7 +344,7 @@ export default function LiveMap({
       const el = document.createElement("div");
       el.className = "marker-pin drop";
       el.innerHTML = pinSvg();
-      el.setAttribute("aria-label", "Delivery pin — drag to move");
+      el.setAttribute("aria-label", "Delivery pin, drag to move");
       pin.current = new ml.Marker({ element: el, anchor: "bottom", draggable: true })
         .setLngLat([draggable.lng, draggable.lat])
         .addTo(m);
@@ -370,9 +377,10 @@ export default function LiveMap({
   return (
     <div className={`map-wrap ${className ?? ""}`} role="region" aria-label={label}>
       <div ref={box} style={{ position: "absolute", inset: 0 }} />
+      {!ready && !failed && <div className="skeleton" aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: 0 }} />}
       {failed && (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 16 }}>
-          <p className="muted">The map couldn&apos;t load — everything else still works.</p>
+          <p className="muted">The map couldn&apos;t load. Everything else still works.</p>
         </div>
       )}
       {children}
@@ -383,7 +391,7 @@ export default function LiveMap({
 function paint(el: HTMLElement, mk: MapMarker) {
   el.title = mk.title ?? "";
   if (mk.kind === "rider") {
-    el.className = `marker-rider${mk.sim ? " sim" : ""}`;
+    el.className = `marker-rider${mk.sim ? " sim" : ""}${mk.busy ? " busy" : ""}`;
     el.innerHTML = riderSvg(mk.color);
   } else if (mk.kind === "drop") {
     el.className = "marker-pin drop";

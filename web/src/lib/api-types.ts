@@ -689,7 +689,7 @@ export interface components {
             /** Status Age S */
             status_age_s: number;
             /** Stuck */
-            stuck: ("unaccepted" | "no_rider" | "not_picked_up") | null;
+            stuck: ("unaccepted" | "no_rider" | "not_picked_up" | "kitchen_late") | null;
             /** Total Paise */
             total_paise: number;
         };

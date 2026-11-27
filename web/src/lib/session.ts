@@ -46,6 +46,18 @@ export async function signOut(): Promise<void> {
   setMe(null);
 }
 
+/** A same-origin path to go to after sign-in, else null. Parsed like the browser will parse it, so
+ * `/\evil.com` (a backslash reads as `//`) can't send anyone off-site. */
+export function safeNext(next: string | null, origin = "https://platter.invalid"): string | null {
+  if (!next || !next.startsWith("/")) return null;
+  try {
+    const u = new URL(next, origin);
+    return u.origin === origin ? u.pathname + u.search + u.hash : null;
+  } catch {
+    return null;
+  }
+}
+
 export const HOME_FOR: Record<Role, string> = {
   customer: "/",
   restaurant: "/restaurant",

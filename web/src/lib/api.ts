@@ -57,7 +57,7 @@ export async function api<T>(path: string, init: Init = {}): Promise<T> {
     });
   } catch (err) {
     if ((err as Error).name === "AbortError") throw err;
-    throw new ApiError(0, "offline", "You seem to be offline — check your connection and try again");
+    throw new ApiError(0, "offline", "You seem to be offline. Check your connection and try again");
   }
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => null);
@@ -66,7 +66,7 @@ export async function api<T>(path: string, init: Init = {}): Promise<T> {
     throw new ApiError(
       res.status,
       e?.code ?? "error",
-      e?.message ?? "Something went wrong — please try again",
+      e?.message ?? "Something went wrong. Please try again",
       e?.details ?? {},
     );
   }
@@ -75,5 +75,5 @@ export async function api<T>(path: string, init: Init = {}): Promise<T> {
 
 export function errorMessage(err: unknown): string {
   if (err instanceof ApiError) return err.message;
-  return "Something went wrong — please try again";
+  return "Something went wrong. Please try again";
 }

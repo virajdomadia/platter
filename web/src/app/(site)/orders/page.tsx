@@ -56,7 +56,9 @@ function Row({ o }: { o: OrderCard }) {
         <small>{o.items_summary}</small>
         <small className="num">{o.number} · {day(o.created_at)} · {inr(o.total_paise)}</small>
       </div>
-      <span className={`chip ${tone}`}>{tone === "mint" ? `● ${STATUS_LABEL[o.status]}` : STATUS_LABEL[o.status]}</span>
+      <span className={`chip ${tone}`}>
+        {tone === "mint" ? `${STATUS_LABEL[o.status]} · Track →` : STATUS_LABEL[o.status]}
+      </span>
     </Link>
   );
 }

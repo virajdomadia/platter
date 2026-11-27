@@ -5,12 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { api, ApiError, errorMessage, type Me } from "@/lib/api";
-import { HOME_FOR, setMe } from "@/lib/session";
+import { HOME_FOR, safeNext, setMe } from "@/lib/session";
 import { DemoCards } from "./DemoCards";
-
-function safeNext(next: string | null): string | null {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : null;
-}
 
 export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const router = useRouter();
@@ -52,7 +48,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     <main id="main" className="page narrow">
       <div className="stack">
         <div className="tile spring">
-          <h1 style={{ fontSize: 26 }}>{up ? "Create your account" : "Welcome back 🍽️"}</h1>
+          <h1 style={{ fontSize: 26 }}>{up ? "Create your account" : "Welcome back"}</h1>
           <p className="muted" style={{ marginTop: 4 }}>
             {up ? "Order from kitchens near you and watch the rider come to your door." : "Sign in, or try any side of the platform in one tap below."}
           </p>

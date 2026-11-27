@@ -41,6 +41,7 @@ export function RoleBar({
         </span>
         <button
           className={`btn small ${dark ? "white" : "ghost"}`}
+          style={{ minHeight: 44 }}
           onClick={async () => {
             await signOut().catch(() => undefined);
             router.push("/sign-in");

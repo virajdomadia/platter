@@ -11,6 +11,9 @@ export type TransitionTo = "accepted" | "rejected" | "preparing" | "ready";
 
 const REASONS = ["Out of an item", "Kitchen too busy", "Closing soon"] as const;
 const LATE_S = 180;
+// shortcut: one cooking threshold for every kitchen (the ticket doesn't carry prep time); send
+// prep_min on the ticket if kitchens' times diverge.
+const LATE_COOKING_S = 30 * 60;
 
 function riderLine(t: TicketT): { text: string; wait?: boolean } | null {
   const r = t.rider;
@@ -45,7 +48,7 @@ export function Ticket({
   const [typed, setTyped] = useState("");
 
   const isNew = t.status === "placed";
-  const late = isNew && ageS >= LATE_S;
+  const late = isNew ? ageS >= LATE_S : (t.status === "accepted" || t.status === "preparing") && ageS >= LATE_COOKING_S;
   const rider = riderLine(t);
 
   async function go(to: TransitionTo, why?: string) {
@@ -62,7 +65,7 @@ export function Ticket({
 
   return (
     <article
-      className={`bd-tk${fresh ? " fresh" : ""}`}
+      className={`bd-tk${fresh ? " fresh" : ""}${late ? " late" : ""}`}
       style={{ viewTransitionName: `tk-${t.id}` } as CSSProperties}
       aria-label={`Order ${t.number}`}
       aria-busy={busy || undefined}
@@ -70,7 +73,7 @@ export function Ticket({
       <div className="h">
         <span className="num">{t.number}</span>
         <span className={`age num${late ? " late" : ""}`} title="Since the order was placed">
-          {late ? "⏱ " : ""}
+          {late ? "Late · " : ""}
           {age(ageS)}
         </span>
       </div>

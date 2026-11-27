@@ -1,7 +1,8 @@
 // SSE consumers (04 §8). One EventSource per screen; the browser resends `Last-Event-ID` on every
 // reconnect and the API replays exactly what was missed from `order_events`, so there is nothing
 // to do on `reconnect` but let it happen. A banner appears if no frame (not even `ping`) arrives for
-// 45 s.
+// 45 s. A hidden tab closes its stream (each one keeps a server function busy) and reopens it with
+// `?since=` the last id when shown again, so nothing is missed.
 "use client";
 
 import { useEffect, useReducer, useRef, useState } from "react";
@@ -32,10 +33,21 @@ export function useEventStream(
   const handler = useRef(onEvent);
   handler.current = onEvent;
   const [state, setState] = useState<StreamState>({ connected: false, stale: false, lastFrameAt: 0 });
+  const [visible, setVisible] = useState(true);
+  const lastId = useRef<{ url: string; id: string } | null>(null);
 
   useEffect(() => {
-    if (!url) return;
-    const es = new EventSource(url, { withCredentials: true });
+    const onChange = () => setVisible(document.visibilityState !== "hidden");
+    document.addEventListener("visibilitychange", onChange);
+    return () => document.removeEventListener("visibilitychange", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!url || !visible) return;
+    const since = lastId.current?.url === url ? lastId.current.id : null;
+    const es = new EventSource(since ? `${url}${url.includes("?") ? "&" : "?"}since=${encodeURIComponent(since)}` : url, {
+      withCredentials: true,
+    });
     let last = Date.now();
     const seen = () => {
       last = Date.now();
@@ -44,6 +56,7 @@ export function useEventStream(
     const listeners = EVENTS.map((name) => {
       const fn = (e: MessageEvent) => {
         seen();
+        if (e.lastEventId) lastId.current = { url, id: e.lastEventId };
         try {
           handler.current(name, e.data ? JSON.parse(e.data) : null);
         } catch {
@@ -63,7 +76,7 @@ export function useEventStream(
       listeners.forEach(([name, fn]) => es.removeEventListener(name, fn as EventListener));
       es.close();
     };
-  }, [url]);
+  }, [url, visible]);
 
   return state;
 }

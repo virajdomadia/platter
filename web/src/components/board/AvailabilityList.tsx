@@ -121,7 +121,7 @@ export function AvailabilityList() {
               })}
             </ul>
             <p className="muted" style={{ fontSize: 12, margin: "12px 12px 4px" }}>
-              Add / edit dishes — coming in v2
+              Add / edit dishes: coming in v2
             </p>
           </nav>
 

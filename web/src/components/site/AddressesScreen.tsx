@@ -54,7 +54,7 @@ export function AddressesScreen() {
       <div className="grid2">
         <div className="tile flush span2" style={{ height: 240, position: "relative" }}>
           <Map
-            label="New address pin — drag to place"
+            label="New address pin, drag to place"
             center={[draft.lat, draft.lng]}
             zoom={15}
             draggable={{ lat: draft.lat, lng: draft.lng, onDragEnd: (lat, lng) => setDraft((d) => ({ ...d, lat, lng })) }}
@@ -78,11 +78,11 @@ export function AddressesScreen() {
           <div className="grid2">
             <label className="field">
               <span className="label">Label</span>
-              <input className="input" required maxLength={40} placeholder="Home, Office, Mom's…" value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
+              <input className="input" required maxLength={40} placeholder="Home, Office…" value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
             </label>
             <label className="field">
               <span className="label">Flat, street, landmark</span>
-              <input className="input" required minLength={3} maxLength={200} placeholder="3rd floor, 17th Cross" value={draft.line} onChange={(e) => setDraft({ ...draft, line: e.target.value })} />
+              <input className="input" required minLength={3} maxLength={200} placeholder="Flat, street" value={draft.line} onChange={(e) => setDraft({ ...draft, line: e.target.value })} />
             </label>
           </div>
           <button className="btn" disabled={saving || !me}>
@@ -90,7 +90,7 @@ export function AddressesScreen() {
           </button>
         </form>
         {list === null && [0, 1].map((i) => <div key={i} className="skeleton" style={{ height: 120 }} />)}
-        {list?.length === 0 && <p className="muted span2" style={{ padding: 8 }}>No saved addresses yet — drop the pin and save one.</p>}
+        {list?.length === 0 && <p className="muted span2" style={{ padding: 8 }}>No saved addresses yet. Drop the pin and save one.</p>}
         {list?.map((a) => (
           <div key={a.id} className={`tile spring ${pin.addressId === a.id ? "lav" : ""}`} style={{ display: "grid", gap: 6, alignContent: "start" }}>
             <span style={{ fontSize: 22 }} aria-hidden="true">

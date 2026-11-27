@@ -38,12 +38,12 @@ export function AddressSearch({
         }
         const found = await api<Place[]>(`/geo/search?${qs}`, { signal: ctrl.signal });
         setResults(found);
-        setNote(found.length ? null : "No matches in Bengaluru — try a nearby landmark, or drag the pin.");
+        setNote(found.length ? null : "No matches in Bengaluru. Try a nearby landmark, or drag the pin.");
         setOpen(true);
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
         setResults([]);
-        setNote(err instanceof ApiError && err.status !== 0 ? err.message : "Search is unavailable — drop the pin instead.");
+        setNote(err instanceof ApiError && err.status !== 0 ? err.message : "Search is unavailable. Drop the pin instead.");
         setOpen(true);
       }
     }, 450);

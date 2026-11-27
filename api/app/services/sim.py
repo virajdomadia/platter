@@ -31,6 +31,9 @@ S = OrderStatus
 AUTO_ACCEPT_S = 45
 AUTO_PREPARING_S = 20
 BOARD_WATCHED = dt.timedelta(seconds=30)
+# Even with the board open, a demo ticket 10 min overdue runs itself: a visitor who leaves the tab
+# open mustn't leave a two-hour-old order on the public demo.
+TAKE_OVER = dt.timedelta(minutes=10)
 POSITION_EVERY = dt.timedelta(seconds=3)
 
 
@@ -111,16 +114,18 @@ async def run_kitchens(
 ) -> None:
     now = clock.now()
     q = (
-        select(Order.id, Order.status, Order.placed_at, Order.accepted_at, Restaurant.prep_min)
-        .join(Restaurant, Restaurant.id == Order.restaurant_id)
-        .where(
-            Order.status.in_((S.placed, S.accepted, S.preparing)),
-            (Restaurant.board_seen_at.is_(None))
-            | (Restaurant.board_seen_at < now - BOARD_WATCHED)
-            | Order.is_demo.is_(False),
+        select(
+            Order.id,
+            Order.status,
+            Order.placed_at,
+            Order.accepted_at,
+            Restaurant.prep_min,
+            Order.is_demo & (Restaurant.board_seen_at >= now - BOARD_WATCHED),
         )
+        .join(Restaurant, Restaurant.id == Order.restaurant_id)
+        .where(Order.status.in_((S.placed, S.accepted, S.preparing)))
     )
-    for oid, status, placed_at, accepted_at, prep_min in (
+    for oid, status, placed_at, accepted_at, prep_min, watched in (
         await db.execute(_scoped(q, order_ids, restaurant_id))
     ).all():
         to: OrderStatus | None = None
@@ -131,7 +136,7 @@ async def run_kitchens(
             to, when = S.preparing, accepted_at + dt.timedelta(seconds=AUTO_PREPARING_S)
         elif status == S.preparing and accepted_at:
             to, when = S.ready, accepted_at + dt.timedelta(minutes=prep_min)
-        if when is not None and when > now:
+        if when is not None and when + (TAKE_OVER if watched else dt.timedelta(0)) > now:
             to = None
         if to is None:
             continue

@@ -24,6 +24,22 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
+.home-where {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.home-change {
+  display: none;
+  margin-left: auto;
+  flex: none;
+}
+.span-all {
+  grid-column: 1 / -1;
+}
+.demo-chip {
+  min-height: 36px;
+}
 .home-hero {
   grid-column: 1 / 2;
   grid-row: span 1;
@@ -72,13 +88,34 @@
   .home-map {
     height: 200px;
   }
+  /* Phone: "Deliver to Home · Change" on one line, the food first. */
+  .home-change {
+    display: inline-flex;
+  }
+  .home-side:not(.open) > :not(.home-where) {
+    display: none;
+  }
+  .home-blurb {
+    display: none;
+  }
+  .home-list .stat {
+    order: 1;
+  }
 }
 
 /* S2 restaurant */
+.back-link {
+  display: inline-block;
+  margin: 0 4px 8px;
+  font-weight: 800;
+  font-size: 14px;
+  text-decoration: none;
+  color: var(--violet-deep);
+}
 .menu-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-  grid-auto-rows: minmax(110px, auto);
+  grid-auto-rows: auto;
   gap: 10px;
   margin-bottom: 10px;
 }
@@ -119,6 +156,10 @@
   .menu-grid {
     grid-template-columns: 1fr;
   }
+  /* one floating bar, not two: the cart bar takes the tab bar's place on a menu */
+  .menu-page .cartbar {
+    bottom: 12px;
+  }
 }
 .dish {
   display: flex;
@@ -149,7 +190,7 @@
 }
 .dish p {
   margin: 2px 0 4px;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--ink2);
   line-height: 1.3;
@@ -181,8 +222,8 @@
   padding: 3px;
 }
 .stepper button {
-  width: 36px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 11px;
   background: transparent;
@@ -191,7 +232,7 @@
   font-size: 18px;
 }
 .stepper button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--violet-deep);
 }
 .stepper span {
   min-width: 18px;
@@ -223,6 +264,28 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+.checkout h2.label {
+  font-size: 12px;
+}
+/* desktop: where + how on the left, the bill pinned on the right */
+@media (min-width: 1000px) {
+  .page.narrow.checkout-page {
+    width: min(1060px, 100% - 24px);
+  }
+  .checkout {
+    grid-template-columns: 1fr 1fr 360px;
+  }
+  .checkout > .span2:not(.totals) {
+    grid-column: 1 / 3;
+  }
+  .checkout > .totals {
+    grid-column: 3;
+    grid-row: 2 / span 4;
+    position: sticky;
+    top: 84px;
+    align-self: start;
+  }
 }
 .addr-opt {
   display: grid;
@@ -371,6 +434,23 @@
   .rail-tile,
   .summary {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  /* ETA, rider and progress each get the full width: the rider's name and plate stay whole */
+  .track {
+    grid-template-columns: 1fr;
+  }
+  .rail {
+    flex-direction: column;
+  }
+  .rail .step {
+    grid-template-columns: 32px 1fr auto;
+    justify-items: start;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
   }
 }
 
