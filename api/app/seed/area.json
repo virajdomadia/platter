@@ -1,0 +1,296 @@
+{
+  "_about": "One neighbourhood: Koramangala + HSR Layout, Bengaluru. Fictional restaurants at real street points; prices in rupees; `photo` keys map to web/public/dishes/{key}.jpg (fetch_photos.py, CC licences in CREDITS.md). From the default pin (Koramangala 5th Block) 9 restaurants are within 5 km and 3 are 5–8 km away (too far).",
+  "default_pin": { "label": "Koramangala 5th Block", "lat": 12.9352, "lng": 77.6195 },
+  "demo_restaurant": "koramangala-social",
+  "restaurants": [
+    {
+      "slug": "koramangala-social", "name": "Koramangala Social", "area": "Koramangala 4th Block",
+      "address": "118, 80 Feet Road, Koramangala 4th Block", "lat": 12.9356, "lng": 77.6143,
+      "cuisines": ["Cafe", "Bar food", "Continental"], "is_veg": false, "prep_min": 14, "rating": 4.1,
+      "cover": "kitchen", "owner": "Nisha Menon",
+      "hours": "24h",
+      "menu": {
+        "Bar bites": [
+          ["Chilli Cheese Fries", 249, true, "fries", "Loaded fries, jalapeños, cheddar sauce"],
+          ["Chicken Wings (6)", 329, false, "wings", "Tossed in smoked chilli glaze"],
+          ["Paneer Tikka", 289, true, "paneer-tikka", "Charred in the tandoor, mint chutney"],
+          ["Nachos Grande", 279, true, "nachos", "Beans, salsa, sour cream, pickled onions"]
+        ],
+        "Mains": [
+          ["Social Burger", 349, false, "burger", "Double chicken patty, house pickles, brioche"],
+          ["Butter Chicken Bowl", 369, false, "butter-chicken", "Makhani gravy over jeera rice"],
+          ["Pasta Arrabbiata", 319, true, "pasta", "Penne, spicy tomato, basil, parmesan"]
+        ],
+        "Drinks": [
+          ["Cold Coffee", 169, true, "cold-coffee", "Thick, with a scoop of vanilla"],
+          ["Fresh Lime Soda", 99, true, "lime-soda", "Sweet, salted or mixed"]
+        ]
+      }
+    },
+    {
+      "slug": "dosa-camp", "name": "Dosa Camp", "area": "Koramangala 5th Block",
+      "address": "22, 1st Cross, Koramangala 5th Block", "lat": 12.9345, "lng": 77.6182,
+      "cuisines": ["South Indian"], "is_veg": true, "prep_min": 12, "rating": 4.5,
+      "cover": "dosa", "owner": "Ramesh Iyer",
+      "hours": [["06:30", "23:30"]],
+      "menu": {
+        "Dosas": [
+          ["Masala Dosa", 140, true, "dosa", "Crisp rice crêpe, potato masala, sambar & chutney"],
+          ["Ghee Roast Dosa", 160, true, "ghee-roast", "Paper-thin, roasted in ghee"],
+          ["Paneer Dosa", 180, true, "paneer-dosa", "With spiced paneer bhurji"],
+          ["Rava Onion Dosa", 150, true, "rava-dosa", "Lacy semolina dosa, onions, green chilli"]
+        ],
+        "Breakfast": [
+          ["Idli Sambar (2)", 80, true, "idli", "Steamed, soft, with coconut chutney"],
+          ["Medu Vada (2)", 90, true, "vada", "Crisp lentil doughnuts, sambar"],
+          ["Mini Thali", 220, true, "south-thali", "Rice, two curries, roti, papad, sweet"]
+        ],
+        "Drinks & sweets": [
+          ["Filter Coffee", 40, true, "coffee", "Peaberry, frothed in a dabara"],
+          ["Kesari Bath", 70, true, "kesari", "Semolina, saffron, ghee, cashews"]
+        ]
+      }
+    },
+    {
+      "slug": "biryani-bhatti", "name": "Biryani Bhatti", "area": "Koramangala 1st Block",
+      "address": "7, Jakkasandra Main Road, Koramangala 1st Block", "lat": 12.9279, "lng": 77.6271,
+      "cuisines": ["Biryani", "Kebabs", "Mughlai"], "is_veg": false, "prep_min": 20, "rating": 4.3,
+      "cover": "biryani", "owner": "Imran Qureshi",
+      "hours": [["11:00", "03:00"]],
+      "menu": {
+        "Biryani": [
+          ["Chicken Dum Biryani", 320, false, "biryani", "Seeraga samba rice, slow-cooked on dum"],
+          ["Mutton Biryani", 420, false, "mutton-biryani", "Tender mutton, saffron, fried onions"],
+          ["Veg Biryani", 240, true, "veg-biryani", "Seasonal vegetables, mint, raita"],
+          ["Egg Biryani", 260, false, "egg-biryani", "Two masala eggs, dum rice"]
+        ],
+        "Kebabs": [
+          ["Chicken Seekh Kebab", 280, false, "seekh", "Minced, skewered, charcoal grilled"],
+          ["Tandoori Chicken (half)", 300, false, "tandoori", "Yoghurt-marinated, smoky"]
+        ],
+        "On the side": [
+          ["Mirchi Ka Salan", 90, true, "salan", "Green chillies in peanut-sesame gravy"],
+          ["Double Ka Meetha", 120, true, "double-ka-meetha", "Hyderabadi bread pudding"]
+        ]
+      }
+    },
+    {
+      "slug": "thali-ghar", "name": "Thali Ghar", "area": "Koramangala 7th Block",
+      "address": "41, 5th Main, Koramangala 7th Block", "lat": 12.9369, "lng": 77.6125,
+      "cuisines": ["North Indian", "Thali"], "is_veg": true, "prep_min": 15, "rating": 4.6,
+      "cover": "thali", "owner": "Sunita Agarwal",
+      "hours": [["11:00", "15:30"], ["19:00", "23:00"]],
+      "menu": {
+        "Thalis": [
+          ["Veg Thali", 220, true, "thali", "Dal, two sabzis, rice, three phulkas, sweet"],
+          ["Rajasthani Thali", 290, true, "rajasthani-thali", "Dal baati churma, gatte, kadhi"],
+          ["Gujarati Thali", 270, true, "gujarati-thali", "Dhokla, kadhi, undhiyu, shrikhand"]
+        ],
+        "À la carte": [
+          ["Paneer Butter Masala", 240, true, "paneer", "Cottage cheese in silky makhani gravy"],
+          ["Dal Makhani", 190, true, "dal-makhani", "Black lentils, slow-cooked overnight"],
+          ["Aloo Paratha (2)", 140, true, "paratha", "With curd and pickle"]
+        ],
+        "Sweets": [
+          ["Gulab Jamun (2)", 80, true, "gulab-jamun", "Warm, in cardamom syrup"],
+          ["Sweet Lassi", 90, true, "lassi", "Thick, topped with malai"]
+        ]
+      }
+    },
+    {
+      "slug": "momo-junction", "name": "Momo Junction", "area": "HSR Layout Sector 1",
+      "address": "14, 19th Main, HSR Layout Sector 1", "lat": 12.9183, "lng": 77.6390,
+      "cuisines": ["Tibetan", "Chinese"], "is_veg": false, "prep_min": 15, "rating": 4.4,
+      "cover": "momos", "owner": "Tenzin Dorjee",
+      "hours": "24h",
+      "menu": {
+        "Momos": [
+          ["Steamed Chicken Momos (8)", 180, false, "momos", "With fiery tomato achar"],
+          ["Veg Momos (8)", 150, true, "veg-momos", "Cabbage, carrot, ginger"],
+          ["Fried Paneer Momos (8)", 190, true, "fried-momos", "Crisp, with schezwan dip"],
+          ["Jhol Momos (8)", 210, false, "jhol-momo", "In a tangy sesame broth"]
+        ],
+        "Bowls": [
+          ["Chicken Thukpa", 220, false, "thukpa", "Noodle soup, greens, chilli oil"],
+          ["Veg Hakka Noodles", 170, true, "noodles", "Wok-tossed, spring onions"],
+          ["Chilli Chicken", 240, false, "chilli-chicken", "Indo-Chinese, dry"]
+        ]
+      }
+    },
+    {
+      "slug": "pizza-bakery", "name": "Pizza Bakery", "area": "Koramangala 3rd Block",
+      "address": "3, Hosur Road service lane, Koramangala 3rd Block", "lat": 12.9281, "lng": 77.6340,
+      "cuisines": ["Pizza", "Italian"], "is_veg": false, "prep_min": 18, "rating": 4.0,
+      "cover": "pizza", "owner": "Marco D'Souza",
+      "hours": [["11:00", "02:00"]],
+      "menu": {
+        "Pizzas": [
+          ["Margherita", 299, true, "pizza", "San Marzano tomato, fior di latte, basil"],
+          ["Farmhouse", 349, true, "veg-pizza", "Peppers, onion, mushroom, olives"],
+          ["Pepperoni", 429, false, "pepperoni", "Spicy pepperoni, mozzarella"],
+          ["Tandoori Paneer Pizza", 379, true, "paneer-pizza", "Tikka paneer, onions, mint mayo"]
+        ],
+        "Sides": [
+          ["Garlic Bread", 149, true, "garlic-bread", "With cheese dip"],
+          ["Caesar Salad", 229, false, "salad", "Romaine, croutons, chicken, parmesan"],
+          ["Tiramisu", 199, true, "tiramisu", "Mascarpone, espresso, cocoa"]
+        ]
+      }
+    },
+    {
+      "slug": "burger-barn", "name": "Burger Barn", "area": "HSR Layout Sector 2",
+      "address": "27th Main, HSR Layout Sector 2", "lat": 12.9116, "lng": 77.6449,
+      "cuisines": ["Burgers", "American"], "is_veg": false, "prep_min": 13, "rating": 3.9,
+      "cover": "burger", "owner": "Arvind Shetty",
+      "hours": "24h",
+      "menu": {
+        "Burgers": [
+          ["Classic Veg Burger", 169, true, "burger", "Crumbed veg patty, lettuce, tomato"],
+          ["Crispy Chicken Burger", 219, false, "chicken-burger", "Buttermilk fried chicken, slaw"],
+          ["Smash Lamb Burger", 299, false, "lamb-burger", "Two smashed patties, cheese"],
+          ["Paneer Makhani Burger", 199, true, "paneer-burger", "Paneer slab, makhani mayo"]
+        ],
+        "Sides & shakes": [
+          ["Peri Peri Fries", 129, true, "fries", "Dusted with peri peri"],
+          ["Onion Rings", 139, true, "onion-rings", "Beer-battered"],
+          ["Oreo Shake", 179, true, "milkshake", "Thick and cold"]
+        ]
+      }
+    },
+    {
+      "slug": "idli-hut", "name": "Idli Hut", "area": "Ejipura",
+      "address": "9, Intermediate Ring Road, Ejipura", "lat": 12.9410, "lng": 77.6280,
+      "cuisines": ["Breakfast", "South Indian"], "is_veg": true, "prep_min": 12, "rating": 4.4,
+      "cover": "idli", "owner": "Lakshmi Narayan",
+      "hours": [["06:00", "14:00"]],
+      "menu": {
+        "Idlis": [
+          ["Thatte Idli", 70, true, "idli", "One big plate idli, butter, podi"],
+          ["Ghee Podi Idli", 90, true, "podi-idli", "Mini idlis tossed in podi and ghee"],
+          ["Rava Idli (2)", 80, true, "rava-idli", "MTR-style, with sagu"]
+        ],
+        "More": [
+          ["Pongal", 90, true, "pongal", "Rice and moong, pepper, ghee"],
+          ["Upma", 60, true, "upma", "Semolina, vegetables, cashew"],
+          ["Mangalore Buns (2)", 70, true, "buns", "Sweet banana puris, chutney"]
+        ],
+        "Drinks": [
+          ["Filter Coffee", 35, true, "coffee", "Strong, by the tumbler"],
+          ["Badam Milk", 60, true, "badam-milk", "Warm, saffron, almonds"]
+        ]
+      }
+    },
+    {
+      "slug": "sweet-tooth", "name": "Sweet Tooth", "area": "HSR Layout Sector 4",
+      "address": "12, 14th Cross, HSR Layout Sector 4", "lat": 12.9120, "lng": 77.6380,
+      "cuisines": ["Desserts", "Mithai"], "is_veg": true, "prep_min": 10, "rating": 4.7,
+      "cover": "rasmalai", "owner": "Pooja Jain",
+      "hours": [["10:00", "01:00"]],
+      "menu": {
+        "Mithai": [
+          ["Rasmalai (2)", 90, true, "rasmalai", "Two pieces, saffron milk"],
+          ["Gulab Jamun (4)", 120, true, "gulab-jamun", "Warm, in cardamom syrup"],
+          ["Kaju Katli (250 g)", 320, true, "kaju-katli", "Cashew fudge, silver leaf"],
+          ["Mysore Pak (250 g)", 220, true, "mysore-pak", "Ghee-rich, melt-in-the-mouth"]
+        ],
+        "Desserts": [
+          ["Gajar Halwa", 140, true, "halwa", "Slow-cooked carrots, khoya"],
+          ["Kulfi Falooda", 160, true, "falooda", "Rose syrup, vermicelli, kulfi"],
+          ["Chocolate Brownie", 130, true, "brownie", "Warm, with fudge sauce"]
+        ]
+      }
+    },
+    {
+      "slug": "chai-point", "name": "Chai Point", "area": "Indiranagar",
+      "address": "100 Feet Road, HAL 2nd Stage, Indiranagar", "lat": 12.9784, "lng": 77.6408,
+      "cuisines": ["Chai", "Snacks"], "is_veg": true, "prep_min": 10, "rating": 4.2,
+      "cover": "chai", "owner": "Ankit Bansal",
+      "hours": "24h",
+      "menu": {
+        "Chai": [
+          ["Masala Chai", 50, true, "chai", "Ginger, cardamom, strong leaf"],
+          ["Filter Coffee", 55, true, "coffee", "South Indian, by the tumbler"],
+          ["Lemon Iced Tea", 90, true, "iced-tea", "Fresh lemon, no syrup"]
+        ],
+        "Snacks": [
+          ["Samosa (2)", 60, true, "samosa", "Potato-pea, tamarind chutney"],
+          ["Vada Pav", 70, true, "vada-pav", "Mumbai style, dry garlic chutney"],
+          ["Bun Maska", 50, true, "bun-maska", "Soft bun, lots of butter"],
+          ["Poha", 80, true, "poha", "Flattened rice, peanuts, sev"]
+        ]
+      }
+    },
+    {
+      "slug": "punjabi-rasoi", "name": "Punjabi Rasoi", "area": "Bellandur",
+      "address": "Outer Ring Road, near Bellandur Gate", "lat": 12.9304, "lng": 77.6784,
+      "cuisines": ["North Indian", "Punjabi"], "is_veg": false, "prep_min": 25, "rating": 4.2,
+      "cover": "chole", "owner": "Harpreet Singh",
+      "hours": [["12:00", "00:30"]],
+      "menu": {
+        "Mains": [
+          ["Chole Bhature", 180, true, "chole", "Two bhature, spicy chickpeas, onions"],
+          ["Butter Chicken", 340, false, "butter-chicken", "Tandoori chicken in makhani gravy"],
+          ["Sarson Da Saag", 230, true, "saag", "With makki di roti and white butter"],
+          ["Rajma Chawal", 190, true, "rajma", "Kidney beans, steamed rice"]
+        ],
+        "Breads": [
+          ["Butter Naan", 60, true, "naan", "Tandoor-baked"],
+          ["Amritsari Kulcha", 120, true, "kulcha", "Stuffed, with chole"]
+        ],
+        "Drinks": [
+          ["Patiala Lassi", 110, true, "lassi", "A tall glass, malai on top"]
+        ]
+      }
+    },
+    {
+      "slug": "pav-bhaji-corner", "name": "Pav Bhaji Corner", "area": "JP Nagar 6th Phase",
+      "address": "24th Main, JP Nagar 6th Phase", "lat": 12.9060, "lng": 77.5780,
+      "cuisines": ["Street food", "Mumbai"], "is_veg": true, "prep_min": 12, "rating": 4.1,
+      "cover": "pavbhaji", "owner": "Sachin Patil",
+      "hours": [["16:00", "00:00"]],
+      "menu": {
+        "Street food": [
+          ["Butter Pav Bhaji", 150, true, "pavbhaji", "Two buttered pavs, mashed veg bhaji"],
+          ["Cheese Pav Bhaji", 180, true, "cheese-pavbhaji", "Grated cheese on top"],
+          ["Masala Pav", 90, true, "masala-pav", "Pav tossed in bhaji masala"],
+          ["Pani Puri (8)", 60, true, "pani-puri", "Mint water, tamarind, boondi"],
+          ["Dahi Puri (6)", 80, true, "dahi-puri", "Curd, chutneys, sev"],
+          ["Bhel Puri", 70, true, "bhel", "Puffed rice, raw mango, peanuts"]
+        ],
+        "Cool down": [
+          ["Kala Khatta Gola", 60, true, "gola", "Shaved ice, black plum syrup"],
+          ["Mango Lassi", 100, true, "mango-lassi", "Alphonso pulp, chilled"]
+        ]
+      }
+    }
+  ],
+  "riders": [
+    { "name": "Suresh K", "phone": "+91 98450 41201", "vehicle": "Scooter · KA 05 MJ 4321", "at": "Sony World Junction", "lat": 12.9370, "lng": 77.6266, "speed_kmh": 23.5 },
+    { "name": "Kiran M", "phone": "+91 98450 41202", "vehicle": "Scooter · KA 01 HK 7712", "at": "Forum Mall junction", "lat": 12.9346, "lng": 77.6113, "speed_kmh": 21.0 },
+    { "name": "Arjun P", "phone": "+91 98450 41203", "vehicle": "Scooter · KA 51 EQ 0934", "at": "Silk Board junction", "lat": 12.9177, "lng": 77.6233, "speed_kmh": 22.4 },
+    { "name": "Lakshmi N", "phone": "+91 98450 41204", "vehicle": "Scooter · KA 03 JN 5561", "at": "Agara junction", "lat": 12.9237, "lng": 77.6493, "speed_kmh": 20.2 },
+    { "name": "Farhan A", "phone": "+91 98450 41205", "vehicle": "Cycle", "at": "Jyoti Nivas College", "lat": 12.9306, "lng": 77.6216, "speed_kmh": 19.8 },
+    { "name": "Nikhil R", "phone": "+91 98450 41206", "vehicle": "Scooter · KA 05 NB 2280", "at": "BDA Complex, HSR", "lat": 12.9116, "lng": 77.6389, "speed_kmh": 24.0 },
+    { "name": "Basava G", "phone": "+91 98450 41207", "vehicle": "Scooter · KA 04 MP 8143", "at": "Ejipura signal", "lat": 12.9446, "lng": 77.6249, "speed_kmh": 22.9 },
+    { "name": "Ravi T", "phone": "+91 98450 41208", "vehicle": "Scooter · KA 53 HS 3307", "at": "St John's Hospital", "lat": 12.9293, "lng": 77.6184, "speed_kmh": 21.6 }
+  ],
+  "demo_rider": { "name": "Divya S", "phone": "+91 98450 41209", "vehicle": "Scooter · KA 05 DS 1042", "at": "Koramangala 5th Block", "lat": 12.9349, "lng": 77.6200 },
+  "demo_customer": {
+    "name": "Ananya Rao", "email": "ananya@platter.demo", "phone": "+91 99001 23456",
+    "addresses": [
+      { "label": "Home", "line": "17th Cross, HSR Layout Sector 2, near BDA park", "lat": 12.9152, "lng": 77.6396 },
+      { "label": "Office", "line": "80 Feet Road, Koramangala 4th Block", "lat": 12.9339, "lng": 77.6304 },
+      { "label": "Mom's", "line": "5th Main, Jakkasandra", "lat": 12.9255, "lng": 77.6338 }
+    ]
+  },
+  "customers": [
+    { "name": "Ravi Kumar", "line": "6th Main, Koramangala 8th Block", "lat": 12.9410, "lng": 77.6165 },
+    { "name": "Priya Sharma", "line": "Wipro Park road, Koramangala 1st Block", "lat": 12.9265, "lng": 77.6300 },
+    { "name": "Deepak Nair", "line": "24th Main, HSR Layout Sector 1", "lat": 12.9160, "lng": 77.6440 },
+    { "name": "Meera Pillai", "line": "Teacher's Colony, Koramangala", "lat": 12.9330, "lng": 77.6235 },
+    { "name": "Manoj Reddy", "line": "Venkatapura Main Road, Teacher's Layout", "lat": 12.9205, "lng": 77.6275 },
+    { "name": "Sneha Kulkarni", "line": "Ejipura Main Road", "lat": 12.9435, "lng": 77.6300 },
+    { "name": "Karthik Rao", "line": "Agara Lake road, HSR Sector 7", "lat": 12.9195, "lng": 77.6470 },
+    { "name": "Fatima Sheikh", "line": "ST Bed Layout, Koramangala 4th Block", "lat": 12.9300, "lng": 77.6195 }
+  ]
+}

@@ -1,0 +1,4174 @@
+{
+ "components": {
+  "schemas": {
+   "AddressIn": {
+    "properties": {
+     "label": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Label",
+      "type": "string"
+     },
+     "lat": {
+      "maximum": 90.0,
+      "minimum": -90.0,
+      "title": "Lat",
+      "type": "number"
+     },
+     "line": {
+      "maxLength": 200,
+      "minLength": 3,
+      "title": "Line",
+      "type": "string"
+     },
+     "lng": {
+      "maximum": 180.0,
+      "minimum": -180.0,
+      "title": "Lng",
+      "type": "number"
+     }
+    },
+    "required": [
+     "label",
+     "line",
+     "lat",
+     "lng"
+    ],
+    "title": "AddressIn",
+    "type": "object"
+   },
+   "AddressOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "label": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Label",
+      "type": "string"
+     },
+     "lat": {
+      "maximum": 90.0,
+      "minimum": -90.0,
+      "title": "Lat",
+      "type": "number"
+     },
+     "line": {
+      "maxLength": 200,
+      "minLength": 3,
+      "title": "Line",
+      "type": "string"
+     },
+     "lng": {
+      "maximum": 180.0,
+      "minimum": -180.0,
+      "title": "Lng",
+      "type": "number"
+     }
+    },
+    "required": [
+     "label",
+     "line",
+     "lat",
+     "lng",
+     "id"
+    ],
+    "title": "AddressOut",
+    "type": "object"
+   },
+   "AdminMap": {
+    "properties": {
+     "orders": {
+      "items": {
+       "$ref": "#/components/schemas/AdminOrder"
+      },
+      "title": "Orders",
+      "type": "array"
+     },
+     "restaurants": {
+      "items": {
+       "$ref": "#/components/schemas/RestaurantCard"
+      },
+      "title": "Restaurants",
+      "type": "array"
+     },
+     "riders": {
+      "items": {
+       "$ref": "#/components/schemas/AdminRider"
+      },
+      "title": "Riders",
+      "type": "array"
+     },
+     "seq": {
+      "title": "Seq",
+      "type": "integer"
+     },
+     "today": {
+      "$ref": "#/components/schemas/AdminToday"
+     }
+    },
+    "required": [
+     "orders",
+     "riders",
+     "restaurants",
+     "today",
+     "seq"
+    ],
+    "title": "AdminMap",
+    "type": "object"
+   },
+   "AdminOrder": {
+    "properties": {
+     "age_s": {
+      "title": "Age S",
+      "type": "integer"
+     },
+     "drop": {
+      "$ref": "#/components/schemas/Point"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "legs": {
+      "items": {
+       "$ref": "#/components/schemas/RouteOut"
+      },
+      "title": "Legs",
+      "type": "array"
+     },
+     "number": {
+      "title": "Number",
+      "type": "string"
+     },
+     "restaurant": {
+      "$ref": "#/components/schemas/Point"
+     },
+     "restaurant_name": {
+      "title": "Restaurant Name",
+      "type": "string"
+     },
+     "rider_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rider Id"
+     },
+     "rider_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rider Name"
+     },
+     "status": {
+      "enum": [
+       "pending_payment",
+       "placed",
+       "accepted",
+       "preparing",
+       "ready",
+       "picked_up",
+       "delivered",
+       "rejected",
+       "cancelled",
+       "expired"
+      ],
+      "title": "Status",
+      "type": "string"
+     },
+     "status_age_s": {
+      "title": "Status Age S",
+      "type": "integer"
+     },
+     "stuck": {
+      "anyOf": [
+       {
+        "enum": [
+         "unaccepted",
+         "no_rider",
+         "not_picked_up"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stuck"
+     },
+     "total_paise": {
+      "title": "Total Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "number",
+     "status",
+     "restaurant_name",
+     "restaurant",
+     "drop",
+     "rider_id",
+     "rider_name",
+     "age_s",
+     "status_age_s",
+     "stuck",
+     "legs",
+     "total_paise"
+    ],
+    "title": "AdminOrder",
+    "type": "object"
+   },
+   "AdminRider": {
+    "properties": {
+     "current_order": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Current Order"
+     },
+     "distance_m": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Distance M"
+     },
+     "heading": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Heading"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "is_sim": {
+      "title": "Is Sim",
+      "type": "boolean"
+     },
+     "last_fix_s": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Fix S"
+     },
+     "lat": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lat"
+     },
+     "lng": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lng"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "status": {
+      "enum": [
+       "offline",
+       "available",
+       "busy"
+      ],
+      "title": "Status",
+      "type": "string"
+     },
+     "vehicle": {
+      "title": "Vehicle",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "status",
+     "is_sim",
+     "vehicle",
+     "lat",
+     "lng",
+     "heading",
+     "current_order",
+     "last_fix_s"
+    ],
+    "title": "AdminRider",
+    "type": "object"
+   },
+   "AdminToday": {
+    "properties": {
+     "avg_delivery_s": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Avg Delivery S"
+     },
+     "delivered": {
+      "title": "Delivered",
+      "type": "integer"
+     },
+     "orders": {
+      "title": "Orders",
+      "type": "integer"
+     },
+     "revenue_paise": {
+      "title": "Revenue Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "orders",
+     "delivered",
+     "revenue_paise",
+     "avg_delivery_s"
+    ],
+    "title": "AdminToday",
+    "type": "object"
+   },
+   "AvailabilityIn": {
+    "properties": {
+     "is_available": {
+      "title": "Is Available",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "is_available"
+    ],
+    "title": "AvailabilityIn",
+    "type": "object"
+   },
+   "Board": {
+    "properties": {
+     "cooking": {
+      "items": {
+       "$ref": "#/components/schemas/Ticket"
+      },
+      "title": "Cooking",
+      "type": "array"
+     },
+     "new": {
+      "items": {
+       "$ref": "#/components/schemas/Ticket"
+      },
+      "title": "New",
+      "type": "array"
+     },
+     "out": {
+      "items": {
+       "$ref": "#/components/schemas/Ticket"
+      },
+      "title": "Out",
+      "type": "array"
+     },
+     "ready": {
+      "items": {
+       "$ref": "#/components/schemas/Ticket"
+      },
+      "title": "Ready",
+      "type": "array"
+     },
+     "restaurant": {
+      "$ref": "#/components/schemas/BoardRestaurant"
+     },
+     "seq": {
+      "title": "Seq",
+      "type": "integer"
+     },
+     "today": {
+      "$ref": "#/components/schemas/BoardToday"
+     }
+    },
+    "required": [
+     "restaurant",
+     "new",
+     "cooking",
+     "ready",
+     "out",
+     "today",
+     "seq"
+    ],
+    "title": "Board",
+    "type": "object"
+   },
+   "BoardRestaurant": {
+    "properties": {
+     "area": {
+      "title": "Area",
+      "type": "string"
+     },
+     "hours_label": {
+      "title": "Hours Label",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "is_open": {
+      "title": "Is Open",
+      "type": "boolean"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "slug": {
+      "title": "Slug",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "slug",
+     "name",
+     "area",
+     "is_open",
+     "hours_label"
+    ],
+    "title": "BoardRestaurant",
+    "type": "object"
+   },
+   "BoardToday": {
+    "properties": {
+     "avg_accept_s": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Avg Accept S"
+     },
+     "orders": {
+      "title": "Orders",
+      "type": "integer"
+     },
+     "revenue_paise": {
+      "title": "Revenue Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "orders",
+     "revenue_paise",
+     "avg_accept_s"
+    ],
+    "title": "BoardToday",
+    "type": "object"
+   },
+   "CartLine": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "qty": {
+      "maximum": 20.0,
+      "minimum": 1.0,
+      "title": "Qty",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "qty"
+    ],
+    "title": "CartLine",
+    "type": "object"
+   },
+   "CategoryOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/MenuItemOut"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "items"
+    ],
+    "title": "CategoryOut",
+    "type": "object"
+   },
+   "DemoIn": {
+    "properties": {
+     "as": {
+      "enum": [
+       "customer",
+       "restaurant",
+       "rider",
+       "admin"
+      ],
+      "title": "As",
+      "type": "string"
+     }
+    },
+    "required": [
+     "as"
+    ],
+    "title": "DemoIn",
+    "type": "object"
+   },
+   "Drop": {
+    "properties": {
+     "lat": {
+      "title": "Lat",
+      "type": "number"
+     },
+     "line": {
+      "title": "Line",
+      "type": "string"
+     },
+     "lng": {
+      "title": "Lng",
+      "type": "number"
+     }
+    },
+    "required": [
+     "line",
+     "lat",
+     "lng"
+    ],
+    "title": "Drop",
+    "type": "object"
+   },
+   "EtaOut": {
+    "properties": {
+     "eta_s": {
+      "title": "Eta S",
+      "type": "integer"
+     },
+     "method": {
+      "enum": [
+       "osrm",
+       "line"
+      ],
+      "title": "Method",
+      "type": "string"
+     },
+     "order_id": {
+      "title": "Order Id",
+      "type": "string"
+     },
+     "phase": {
+      "enum": [
+       "cooking",
+       "to_restaurant",
+       "to_customer"
+      ],
+      "title": "Phase",
+      "type": "string"
+     }
+    },
+    "required": [
+     "order_id",
+     "eta_s",
+     "method",
+     "phase"
+    ],
+    "title": "EtaOut",
+    "type": "object"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "title": "Detail",
+      "type": "array"
+     }
+    },
+    "title": "HTTPValidationError",
+    "type": "object"
+   },
+   "Job": {
+    "properties": {
+     "customer_first_name": {
+      "title": "Customer First Name",
+      "type": "string"
+     },
+     "drop": {
+      "$ref": "#/components/schemas/JobPlace"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/TicketItem"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "items_count": {
+      "title": "Items Count",
+      "type": "integer"
+     },
+     "leg": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RouteOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "number": {
+      "title": "Number",
+      "type": "string"
+     },
+     "order_id": {
+      "title": "Order Id",
+      "type": "string"
+     },
+     "pay_preview_paise": {
+      "title": "Pay Preview Paise",
+      "type": "integer"
+     },
+     "payment": {
+      "enum": [
+       "cod",
+       "razorpay"
+      ],
+      "title": "Payment",
+      "type": "string"
+     },
+     "phase": {
+      "enum": [
+       "to_restaurant",
+       "waiting",
+       "to_customer"
+      ],
+      "title": "Phase",
+      "type": "string"
+     },
+     "restaurant": {
+      "$ref": "#/components/schemas/JobPlace"
+     },
+     "status": {
+      "enum": [
+       "pending_payment",
+       "placed",
+       "accepted",
+       "preparing",
+       "ready",
+       "picked_up",
+       "delivered",
+       "rejected",
+       "cancelled",
+       "expired"
+      ],
+      "title": "Status",
+      "type": "string"
+     },
+     "total_paise": {
+      "title": "Total Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "order_id",
+     "number",
+     "status",
+     "phase",
+     "restaurant",
+     "drop",
+     "customer_first_name",
+     "items",
+     "items_count",
+     "payment",
+     "total_paise",
+     "note",
+     "leg",
+     "pay_preview_paise"
+    ],
+    "title": "Job",
+    "type": "object"
+   },
+   "JobPlace": {
+    "properties": {
+     "lat": {
+      "title": "Lat",
+      "type": "number"
+     },
+     "line": {
+      "title": "Line",
+      "type": "string"
+     },
+     "lng": {
+      "title": "Lng",
+      "type": "number"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "line",
+     "lat",
+     "lng"
+    ],
+    "title": "JobPlace",
+    "type": "object"
+   },
+   "Me": {
+    "properties": {
+     "email": {
+      "title": "Email",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "restaurant": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/MeRestaurant"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "rider": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/MeRider"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "role": {
+      "enum": [
+       "customer",
+       "restaurant",
+       "rider",
+       "admin"
+      ],
+      "title": "Role",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "email",
+     "role"
+    ],
+    "title": "Me",
+    "type": "object"
+   },
+   "MeRestaurant": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "slug": {
+      "title": "Slug",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "slug",
+     "name"
+    ],
+    "title": "MeRestaurant",
+    "type": "object"
+   },
+   "MeRider": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "status"
+    ],
+    "title": "MeRider",
+    "type": "object"
+   },
+   "MenuItemOut": {
+    "properties": {
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "is_available": {
+      "title": "Is Available",
+      "type": "boolean"
+     },
+     "is_veg": {
+      "title": "Is Veg",
+      "type": "boolean"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "photo": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Photo"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "price_paise": {
+      "title": "Price Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "description",
+     "price_paise",
+     "is_veg",
+     "photo",
+     "is_available"
+    ],
+    "title": "MenuItemOut",
+    "type": "object"
+   },
+   "MenuOut": {
+    "properties": {
+     "categories": {
+      "items": {
+       "$ref": "#/components/schemas/CategoryOut"
+      },
+      "title": "Categories",
+      "type": "array"
+     },
+     "restaurant": {
+      "$ref": "#/components/schemas/BoardRestaurant"
+     }
+    },
+    "required": [
+     "restaurant",
+     "categories"
+    ],
+    "title": "MenuOut",
+    "type": "object"
+   },
+   "OrderCard": {
+    "properties": {
+     "cover": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Photo"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "items_summary": {
+      "title": "Items Summary",
+      "type": "string"
+     },
+     "number": {
+      "title": "Number",
+      "type": "string"
+     },
+     "restaurant_name": {
+      "title": "Restaurant Name",
+      "type": "string"
+     },
+     "restaurant_slug": {
+      "title": "Restaurant Slug",
+      "type": "string"
+     },
+     "status": {
+      "enum": [
+       "pending_payment",
+       "placed",
+       "accepted",
+       "preparing",
+       "ready",
+       "picked_up",
+       "delivered",
+       "rejected",
+       "cancelled",
+       "expired"
+      ],
+      "title": "Status",
+      "type": "string"
+     },
+     "total_paise": {
+      "title": "Total Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "number",
+     "status",
+     "restaurant_name",
+     "restaurant_slug",
+     "cover",
+     "items_summary",
+     "total_paise",
+     "created_at"
+    ],
+    "title": "OrderCard",
+    "type": "object"
+   },
+   "OrderIn": {
+    "properties": {
+     "address": {
+      "$ref": "#/components/schemas/Point"
+     },
+     "address_line": {
+      "maxLength": 200,
+      "minLength": 3,
+      "title": "Address Line",
+      "type": "string"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/CartLine"
+      },
+      "maxItems": 40,
+      "minItems": 1,
+      "title": "Items",
+      "type": "array"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "maxLength": 280,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "payment": {
+      "default": "cod",
+      "enum": [
+       "cod",
+       "razorpay"
+      ],
+      "title": "Payment",
+      "type": "string"
+     },
+     "restaurant_id": {
+      "title": "Restaurant Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "restaurant_id",
+     "items",
+     "address",
+     "address_line"
+    ],
+    "title": "OrderIn",
+    "type": "object"
+   },
+   "OrderItemOut": {
+    "properties": {
+     "is_veg": {
+      "title": "Is Veg",
+      "type": "boolean"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "price_paise": {
+      "title": "Price Paise",
+      "type": "integer"
+     },
+     "qty": {
+      "title": "Qty",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "name",
+     "price_paise",
+     "qty",
+     "is_veg"
+    ],
+    "title": "OrderItemOut",
+    "type": "object"
+   },
+   "OrderOut": {
+    "properties": {
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "drop": {
+      "$ref": "#/components/schemas/Drop"
+     },
+     "eta": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/EtaOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "events": {
+      "items": {
+       "$ref": "#/components/schemas/StatusEventOut"
+      },
+      "title": "Events",
+      "type": "array"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/OrderItemOut"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "legs": {
+      "items": {
+       "$ref": "#/components/schemas/RouteOut"
+      },
+      "title": "Legs",
+      "type": "array"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "number": {
+      "title": "Number",
+      "type": "string"
+     },
+     "payment": {
+      "enum": [
+       "cod",
+       "razorpay"
+      ],
+      "title": "Payment",
+      "type": "string"
+     },
+     "reject_reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reject Reason"
+     },
+     "restaurant": {
+      "$ref": "#/components/schemas/OrderRestaurant"
+     },
+     "rider": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RiderPublic"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "rider_position": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RiderFix"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "seq": {
+      "title": "Seq",
+      "type": "integer"
+     },
+     "status": {
+      "enum": [
+       "pending_payment",
+       "placed",
+       "accepted",
+       "preparing",
+       "ready",
+       "picked_up",
+       "delivered",
+       "rejected",
+       "cancelled",
+       "expired"
+      ],
+      "title": "Status",
+      "type": "string"
+     },
+     "timestamps": {
+      "additionalProperties": {
+       "format": "date-time",
+       "type": "string"
+      },
+      "title": "Timestamps",
+      "type": "object"
+     },
+     "totals": {
+      "$ref": "#/components/schemas/Totals"
+     },
+     "trail": {
+      "items": {
+       "items": {
+        "type": "number"
+       },
+       "type": "array"
+      },
+      "title": "Trail",
+      "type": "array"
+     }
+    },
+    "required": [
+     "id",
+     "number",
+     "status",
+     "payment",
+     "restaurant",
+     "drop",
+     "items",
+     "totals",
+     "note",
+     "reject_reason",
+     "rider",
+     "rider_position",
+     "legs",
+     "trail",
+     "eta",
+     "events",
+     "timestamps",
+     "created_at",
+     "seq"
+    ],
+    "title": "OrderOut",
+    "type": "object"
+   },
+   "OrderRestaurant": {
+    "properties": {
+     "address": {
+      "title": "Address",
+      "type": "string"
+     },
+     "area": {
+      "title": "Area",
+      "type": "string"
+     },
+     "cover": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Photo"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "lat": {
+      "title": "Lat",
+      "type": "number"
+     },
+     "lng": {
+      "title": "Lng",
+      "type": "number"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "slug": {
+      "title": "Slug",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "slug",
+     "name",
+     "area",
+     "address",
+     "lat",
+     "lng",
+     "cover"
+    ],
+    "title": "OrderRestaurant",
+    "type": "object"
+   },
+   "OrderStart": {
+    "properties": {
+     "order": {
+      "$ref": "#/components/schemas/OrderOut"
+     },
+     "razorpay": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RazorpayStart"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "order"
+    ],
+    "title": "OrderStart",
+    "type": "object"
+   },
+   "PaymentsConfig": {
+    "properties": {
+     "razorpay_key_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Razorpay Key Id"
+     }
+    },
+    "required": [
+     "razorpay_key_id"
+    ],
+    "title": "PaymentsConfig",
+    "type": "object"
+   },
+   "Photo": {
+    "properties": {
+     "height": {
+      "title": "Height",
+      "type": "integer"
+     },
+     "url": {
+      "title": "Url",
+      "type": "string"
+     },
+     "width": {
+      "title": "Width",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "url",
+     "width",
+     "height"
+    ],
+    "title": "Photo",
+    "type": "object"
+   },
+   "Place": {
+    "properties": {
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "lat": {
+      "title": "Lat",
+      "type": "number"
+     },
+     "line": {
+      "title": "Line",
+      "type": "string"
+     },
+     "lng": {
+      "title": "Lng",
+      "type": "number"
+     }
+    },
+    "required": [
+     "label",
+     "line",
+     "lat",
+     "lng"
+    ],
+    "title": "Place",
+    "type": "object"
+   },
+   "Point": {
+    "properties": {
+     "lat": {
+      "maximum": 90.0,
+      "minimum": -90.0,
+      "title": "Lat",
+      "type": "number"
+     },
+     "lng": {
+      "maximum": 180.0,
+      "minimum": -180.0,
+      "title": "Lng",
+      "type": "number"
+     }
+    },
+    "required": [
+     "lat",
+     "lng"
+    ],
+    "title": "Point",
+    "type": "object"
+   },
+   "PositionIn": {
+    "properties": {
+     "accuracy_m": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Accuracy M"
+     },
+     "at": {
+      "format": "date-time",
+      "title": "At",
+      "type": "string"
+     },
+     "heading": {
+      "anyOf": [
+       {
+        "maximum": 360.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Heading"
+     },
+     "lat": {
+      "maximum": 90.0,
+      "minimum": -90.0,
+      "title": "Lat",
+      "type": "number"
+     },
+     "lng": {
+      "maximum": 180.0,
+      "minimum": -180.0,
+      "title": "Lng",
+      "type": "number"
+     },
+     "speed_mps": {
+      "anyOf": [
+       {
+        "maximum": 80.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Speed Mps"
+     }
+    },
+    "required": [
+     "lat",
+     "lng",
+     "at"
+    ],
+    "title": "PositionIn",
+    "type": "object"
+   },
+   "QuoteIn": {
+    "properties": {
+     "address": {
+      "$ref": "#/components/schemas/Point"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/CartLine"
+      },
+      "maxItems": 40,
+      "minItems": 1,
+      "title": "Items",
+      "type": "array"
+     },
+     "restaurant_id": {
+      "title": "Restaurant Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "restaurant_id",
+     "items",
+     "address"
+    ],
+    "title": "QuoteIn",
+    "type": "object"
+   },
+   "QuoteItem": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "is_veg": {
+      "title": "Is Veg",
+      "type": "boolean"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "price_paise": {
+      "title": "Price Paise",
+      "type": "integer"
+     },
+     "qty": {
+      "title": "Qty",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "price_paise",
+     "qty",
+     "is_veg"
+    ],
+    "title": "QuoteItem",
+    "type": "object"
+   },
+   "QuoteOut": {
+    "properties": {
+     "delivery_fee_paise": {
+      "title": "Delivery Fee Paise",
+      "type": "integer"
+     },
+     "distance_m": {
+      "title": "Distance M",
+      "type": "integer"
+     },
+     "eta_s": {
+      "title": "Eta S",
+      "type": "integer"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/QuoteItem"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "method": {
+      "enum": [
+       "osrm",
+       "line"
+      ],
+      "title": "Method",
+      "type": "string"
+     },
+     "platform_fee_paise": {
+      "title": "Platform Fee Paise",
+      "type": "integer"
+     },
+     "subtotal_paise": {
+      "title": "Subtotal Paise",
+      "type": "integer"
+     },
+     "total_paise": {
+      "title": "Total Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "items",
+     "subtotal_paise",
+     "delivery_fee_paise",
+     "platform_fee_paise",
+     "total_paise",
+     "distance_m",
+     "eta_s",
+     "method"
+    ],
+    "title": "QuoteOut",
+    "type": "object"
+   },
+   "RazorpayStart": {
+    "properties": {
+     "amount_paise": {
+      "title": "Amount Paise",
+      "type": "integer"
+     },
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "key_id": {
+      "title": "Key Id",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "order_id": {
+      "title": "Order Id",
+      "type": "string"
+     },
+     "prefill": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Prefill",
+      "type": "object"
+     }
+    },
+    "required": [
+     "order_id",
+     "key_id",
+     "amount_paise",
+     "name",
+     "description",
+     "prefill"
+    ],
+    "title": "RazorpayStart",
+    "type": "object"
+   },
+   "ReassignIn": {
+    "properties": {
+     "rider_id": {
+      "title": "Rider Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "rider_id"
+    ],
+    "title": "ReassignIn",
+    "type": "object"
+   },
+   "RestaurantCard": {
+    "properties": {
+     "area": {
+      "title": "Area",
+      "type": "string"
+     },
+     "cover": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Photo"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "cuisines": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Cuisines",
+      "type": "array"
+     },
+     "delivery_fee_paise": {
+      "title": "Delivery Fee Paise",
+      "type": "integer"
+     },
+     "distance_m": {
+      "title": "Distance M",
+      "type": "integer"
+     },
+     "eta_s": {
+      "title": "Eta S",
+      "type": "integer"
+     },
+     "hours_label": {
+      "title": "Hours Label",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "is_veg": {
+      "title": "Is Veg",
+      "type": "boolean"
+     },
+     "lat": {
+      "title": "Lat",
+      "type": "number"
+     },
+     "lng": {
+      "title": "Lng",
+      "type": "number"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "opens": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Opens"
+     },
+     "orderable": {
+      "title": "Orderable",
+      "type": "boolean"
+     },
+     "prep_min": {
+      "title": "Prep Min",
+      "type": "integer"
+     },
+     "rating": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rating"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "enum": [
+         "too_far",
+         "closed"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     },
+     "slug": {
+      "title": "Slug",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "slug",
+     "name",
+     "area",
+     "cuisines",
+     "is_veg",
+     "cover",
+     "rating",
+     "prep_min",
+     "lat",
+     "lng",
+     "distance_m",
+     "eta_s",
+     "delivery_fee_paise",
+     "orderable",
+     "hours_label"
+    ],
+    "title": "RestaurantCard",
+    "type": "object"
+   },
+   "RestaurantOut": {
+    "properties": {
+     "address": {
+      "title": "Address",
+      "type": "string"
+     },
+     "area": {
+      "title": "Area",
+      "type": "string"
+     },
+     "categories": {
+      "items": {
+       "$ref": "#/components/schemas/CategoryOut"
+      },
+      "title": "Categories",
+      "type": "array"
+     },
+     "cover": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Photo"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "cuisines": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Cuisines",
+      "type": "array"
+     },
+     "delivery_fee_paise": {
+      "title": "Delivery Fee Paise",
+      "type": "integer"
+     },
+     "distance_m": {
+      "title": "Distance M",
+      "type": "integer"
+     },
+     "eta_s": {
+      "title": "Eta S",
+      "type": "integer"
+     },
+     "hours": {
+      "additionalProperties": {
+       "items": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "type": "array"
+      },
+      "title": "Hours",
+      "type": "object"
+     },
+     "hours_label": {
+      "title": "Hours Label",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "is_veg": {
+      "title": "Is Veg",
+      "type": "boolean"
+     },
+     "lat": {
+      "title": "Lat",
+      "type": "number"
+     },
+     "lng": {
+      "title": "Lng",
+      "type": "number"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "opens": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Opens"
+     },
+     "orderable": {
+      "title": "Orderable",
+      "type": "boolean"
+     },
+     "prep_min": {
+      "title": "Prep Min",
+      "type": "integer"
+     },
+     "rating": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rating"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "enum": [
+         "too_far",
+         "closed"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     },
+     "slug": {
+      "title": "Slug",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "slug",
+     "name",
+     "area",
+     "cuisines",
+     "is_veg",
+     "cover",
+     "rating",
+     "prep_min",
+     "lat",
+     "lng",
+     "distance_m",
+     "eta_s",
+     "delivery_fee_paise",
+     "orderable",
+     "hours_label",
+     "address",
+     "hours",
+     "categories"
+    ],
+    "title": "RestaurantOut",
+    "type": "object"
+   },
+   "RestaurantTransitionIn": {
+    "properties": {
+     "reason": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     },
+     "to": {
+      "enum": [
+       "accepted",
+       "rejected",
+       "preparing",
+       "ready"
+      ],
+      "title": "To",
+      "type": "string"
+     }
+    },
+    "required": [
+     "to"
+    ],
+    "title": "RestaurantTransitionIn",
+    "type": "object"
+   },
+   "RiderFix": {
+    "properties": {
+     "at": {
+      "format": "date-time",
+      "title": "At",
+      "type": "string"
+     },
+     "distance_m": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Distance M"
+     },
+     "heading": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Heading"
+     },
+     "lat": {
+      "title": "Lat",
+      "type": "number"
+     },
+     "lng": {
+      "title": "Lng",
+      "type": "number"
+     },
+     "order_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Order Id"
+     },
+     "rider_id": {
+      "title": "Rider Id",
+      "type": "string"
+     },
+     "speed_mps": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Speed Mps"
+     }
+    },
+    "required": [
+     "rider_id",
+     "lat",
+     "lng",
+     "heading",
+     "speed_mps",
+     "at"
+    ],
+    "title": "RiderFix",
+    "type": "object"
+   },
+   "RiderMe": {
+    "properties": {
+     "job": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Job"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "last_fix_s": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Fix S"
+     },
+     "rider": {
+      "$ref": "#/components/schemas/RiderSelf"
+     },
+     "seq": {
+      "title": "Seq",
+      "type": "integer"
+     },
+     "today": {
+      "$ref": "#/components/schemas/RiderToday"
+     }
+    },
+    "required": [
+     "rider",
+     "job",
+     "today",
+     "last_fix_s",
+     "seq"
+    ],
+    "title": "RiderMe",
+    "type": "object"
+   },
+   "RiderPublic": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "phone_masked": {
+      "title": "Phone Masked",
+      "type": "string"
+     },
+     "vehicle": {
+      "title": "Vehicle",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "vehicle",
+     "phone_masked"
+    ],
+    "title": "RiderPublic",
+    "type": "object"
+   },
+   "RiderSelf": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     },
+     "vehicle": {
+      "title": "Vehicle",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "vehicle",
+     "status"
+    ],
+    "title": "RiderSelf",
+    "type": "object"
+   },
+   "RiderToday": {
+    "properties": {
+     "deliveries": {
+      "title": "Deliveries",
+      "type": "integer"
+     },
+     "pay_paise": {
+      "title": "Pay Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "deliveries",
+     "pay_paise"
+    ],
+    "title": "RiderToday",
+    "type": "object"
+   },
+   "RiderTransitionIn": {
+    "properties": {
+     "to": {
+      "enum": [
+       "picked_up",
+       "delivered"
+      ],
+      "title": "To",
+      "type": "string"
+     }
+    },
+    "required": [
+     "to"
+    ],
+    "title": "RiderTransitionIn",
+    "type": "object"
+   },
+   "RouteOut": {
+    "properties": {
+     "distance_m": {
+      "title": "Distance M",
+      "type": "integer"
+     },
+     "duration_s": {
+      "title": "Duration S",
+      "type": "integer"
+     },
+     "kind": {
+      "enum": [
+       "to_restaurant",
+       "to_customer"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "leg_id": {
+      "title": "Leg Id",
+      "type": "string"
+     },
+     "method": {
+      "enum": [
+       "osrm",
+       "line"
+      ],
+      "title": "Method",
+      "type": "string"
+     },
+     "order_id": {
+      "title": "Order Id",
+      "type": "string"
+     },
+     "polyline": {
+      "title": "Polyline",
+      "type": "string"
+     },
+     "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "order_id",
+     "leg_id",
+     "kind",
+     "polyline",
+     "distance_m",
+     "duration_s",
+     "method",
+     "started_at"
+    ],
+    "title": "RouteOut",
+    "type": "object"
+   },
+   "SignIn": {
+    "properties": {
+     "email": {
+      "format": "email",
+      "title": "Email",
+      "type": "string"
+     },
+     "password": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Password",
+      "type": "string"
+     }
+    },
+    "required": [
+     "email",
+     "password"
+    ],
+    "title": "SignIn",
+    "type": "object"
+   },
+   "SignUp": {
+    "properties": {
+     "email": {
+      "format": "email",
+      "title": "Email",
+      "type": "string"
+     },
+     "name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "password": {
+      "maxLength": 200,
+      "minLength": 8,
+      "title": "Password",
+      "type": "string"
+     },
+     "phone": {
+      "anyOf": [
+       {
+        "maxLength": 20,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Phone"
+     }
+    },
+    "required": [
+     "email",
+     "password",
+     "name"
+    ],
+    "title": "SignUp",
+    "type": "object"
+   },
+   "StatusEventOut": {
+    "properties": {
+     "at": {
+      "format": "date-time",
+      "title": "At",
+      "type": "string"
+     },
+     "order_id": {
+      "title": "Order Id",
+      "type": "string"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     },
+     "status": {
+      "enum": [
+       "pending_payment",
+       "placed",
+       "accepted",
+       "preparing",
+       "ready",
+       "picked_up",
+       "delivered",
+       "rejected",
+       "cancelled",
+       "expired"
+      ],
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "order_id",
+     "status",
+     "at"
+    ],
+    "title": "StatusEventOut",
+    "type": "object"
+   },
+   "Ticket": {
+    "properties": {
+     "age_s": {
+      "title": "Age S",
+      "type": "integer"
+     },
+     "customer_first_name": {
+      "title": "Customer First Name",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/TicketItem"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "number": {
+      "title": "Number",
+      "type": "string"
+     },
+     "payment": {
+      "enum": [
+       "cod",
+       "razorpay"
+      ],
+      "title": "Payment",
+      "type": "string"
+     },
+     "placed_at": {
+      "format": "date-time",
+      "title": "Placed At",
+      "type": "string"
+     },
+     "rider": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TicketRider"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "status": {
+      "enum": [
+       "pending_payment",
+       "placed",
+       "accepted",
+       "preparing",
+       "ready",
+       "picked_up",
+       "delivered",
+       "rejected",
+       "cancelled",
+       "expired"
+      ],
+      "title": "Status",
+      "type": "string"
+     },
+     "total_paise": {
+      "title": "Total Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "number",
+     "status",
+     "placed_at",
+     "age_s",
+     "customer_first_name",
+     "payment",
+     "note",
+     "items",
+     "total_paise",
+     "rider"
+    ],
+    "title": "Ticket",
+    "type": "object"
+   },
+   "TicketItem": {
+    "properties": {
+     "is_veg": {
+      "title": "Is Veg",
+      "type": "boolean"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "qty": {
+      "title": "Qty",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "name",
+     "qty",
+     "is_veg"
+    ],
+    "title": "TicketItem",
+    "type": "object"
+   },
+   "TicketRider": {
+    "properties": {
+     "distance_m": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Distance M"
+     },
+     "eta_s": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Eta S"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "phase": {
+      "enum": [
+       "to_restaurant",
+       "waiting",
+       "to_customer"
+      ],
+      "title": "Phase",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "distance_m",
+     "eta_s",
+     "phase"
+    ],
+    "title": "TicketRider",
+    "type": "object"
+   },
+   "Totals": {
+    "properties": {
+     "delivery_fee_paise": {
+      "title": "Delivery Fee Paise",
+      "type": "integer"
+     },
+     "distance_m": {
+      "title": "Distance M",
+      "type": "integer"
+     },
+     "platform_fee_paise": {
+      "title": "Platform Fee Paise",
+      "type": "integer"
+     },
+     "subtotal_paise": {
+      "title": "Subtotal Paise",
+      "type": "integer"
+     },
+     "total_paise": {
+      "title": "Total Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "subtotal_paise",
+     "delivery_fee_paise",
+     "platform_fee_paise",
+     "total_paise",
+     "distance_m"
+    ],
+    "title": "Totals",
+    "type": "object"
+   },
+   "ValidationError": {
+    "properties": {
+     "ctx": {
+      "title": "Context",
+      "type": "object"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "title": "Location",
+      "type": "array"
+     },
+     "msg": {
+      "title": "Message",
+      "type": "string"
+     },
+     "type": {
+      "title": "Error Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError",
+    "type": "object"
+   },
+   "VerifyIn": {
+    "properties": {
+     "razorpay_payment_id": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Razorpay Payment Id",
+      "type": "string"
+     },
+     "razorpay_signature": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Razorpay Signature",
+      "type": "string"
+     }
+    },
+    "required": [
+     "razorpay_payment_id",
+     "razorpay_signature"
+    ],
+    "title": "VerifyIn",
+    "type": "object"
+   }
+  }
+ },
+ "info": {
+  "description": "Food delivery with live tracking: customers, restaurants, riders and an admin on one order state machine. Postgres (PostGIS) is the bus: `order_events` is the durable log every stream reads by seq.",
+  "title": "Platter API",
+  "version": "1.0.0"
+ },
+ "openapi": "3.1.0",
+ "paths": {
+  "/addresses": {
+   "get": {
+    "operationId": "list_addresses_addresses_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AddressOut"
+         },
+         "title": "Response List Addresses Addresses Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Addresses",
+    "tags": [
+     "addresses"
+    ]
+   },
+   "post": {
+    "operationId": "add_address_addresses_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AddressIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AddressOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Add Address",
+    "tags": [
+     "addresses"
+    ]
+   }
+  },
+  "/addresses/{address_id}": {
+   "delete": {
+    "operationId": "delete_address_addresses__address_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "address_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Address Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Address",
+    "tags": [
+     "addresses"
+    ]
+   }
+  },
+  "/admin/events": {
+   "get": {
+    "operationId": "events_admin_events_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "since",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Events",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/map": {
+   "get": {
+    "operationId": "live_map_admin_map_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminMap"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Live Map",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/orders": {
+   "get": {
+    "operationId": "list_orders_admin_orders_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "status",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     },
+     {
+      "in": "query",
+      "name": "stuck",
+      "required": false,
+      "schema": {
+       "default": false,
+       "title": "Stuck",
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AdminOrder"
+         },
+         "title": "Response List Orders Admin Orders Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Orders",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/orders/{order_id}/reassign": {
+   "post": {
+    "operationId": "reassign_admin_orders__order_id__reassign_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "order_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Order Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ReassignIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminOrder"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Reassign",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/riders": {
+   "get": {
+    "operationId": "riders_admin_riders_get",
+    "parameters": [
+     {
+      "description": "lat,lng",
+      "in": "query",
+      "name": "near",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "lat,lng",
+       "title": "Near"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AdminRider"
+         },
+         "title": "Response Riders Admin Riders Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Riders",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/auth/demo": {
+   "post": {
+    "description": "Sign in as one of the four seeded demo accounts \u2014 and make sure there is something to see:\nan order on the way, tickets on the board, a job on the rider's phone, orders on the map.",
+    "operationId": "demo_login_auth_demo_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DemoIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Me"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Demo Login",
+    "tags": [
+     "auth"
+    ]
+   }
+  },
+  "/auth/me": {
+   "get": {
+    "operationId": "me_auth_me_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Me"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Me",
+    "tags": [
+     "auth"
+    ]
+   }
+  },
+  "/auth/sign-in": {
+   "post": {
+    "operationId": "sign_in_auth_sign_in_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SignIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Me"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Sign In",
+    "tags": [
+     "auth"
+    ]
+   }
+  },
+  "/auth/sign-out": {
+   "post": {
+    "operationId": "sign_out_auth_sign_out_post",
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Sign Out",
+    "tags": [
+     "auth"
+    ]
+   }
+  },
+  "/auth/sign-up": {
+   "post": {
+    "operationId": "sign_up_auth_sign_up_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SignUp"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Me"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Sign Up",
+    "tags": [
+     "auth"
+    ]
+   }
+  },
+  "/geo/reverse": {
+   "get": {
+    "operationId": "geo_reverse_geo_reverse_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "lat",
+      "required": true,
+      "schema": {
+       "maximum": 90,
+       "minimum": -90,
+       "title": "Lat",
+       "type": "number"
+      }
+     },
+     {
+      "in": "query",
+      "name": "lng",
+      "required": true,
+      "schema": {
+       "maximum": 180,
+       "minimum": -180,
+       "title": "Lng",
+       "type": "number"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Place"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Geo Reverse",
+    "tags": [
+     "discovery"
+    ]
+   }
+  },
+  "/geo/search": {
+   "get": {
+    "operationId": "geo_search_geo_search_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "q",
+      "required": true,
+      "schema": {
+       "maxLength": 120,
+       "minLength": 2,
+       "title": "Q",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "lat",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maximum": 90,
+         "minimum": -90,
+         "type": "number"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Lat"
+      }
+     },
+     {
+      "in": "query",
+      "name": "lng",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maximum": 180,
+         "minimum": -180,
+         "type": "number"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Lng"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Place"
+         },
+         "title": "Response Geo Search Geo Search Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Geo Search",
+    "tags": [
+     "discovery"
+    ]
+   }
+  },
+  "/health": {
+   "get": {
+    "operationId": "health_health_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": {
+          "type": "string"
+         },
+         "title": "Response Health Health Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Health",
+    "tags": [
+     "system"
+    ]
+   }
+  },
+  "/health/ready": {
+   "get": {
+    "operationId": "ready_health_ready_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": {
+          "type": "string"
+         },
+         "title": "Response Ready Health Ready Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Ready",
+    "tags": [
+     "system"
+    ]
+   }
+  },
+  "/orders": {
+   "get": {
+    "operationId": "list_orders_orders_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/OrderCard"
+         },
+         "title": "Response List Orders Orders Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Orders",
+    "tags": [
+     "orders"
+    ]
+   },
+   "post": {
+    "description": "Prices everything again server-side \u2014 client totals are never read.",
+    "operationId": "place_orders_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/OrderIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OrderStart"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Place",
+    "tags": [
+     "orders"
+    ]
+   }
+  },
+  "/orders/config": {
+   "get": {
+    "operationId": "payments_config_orders_config_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PaymentsConfig"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Payments Config",
+    "tags": [
+     "orders"
+    ]
+   }
+  },
+  "/orders/quote": {
+   "post": {
+    "operationId": "quote_orders_quote_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/QuoteIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/QuoteOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Quote",
+    "tags": [
+     "orders"
+    ]
+   }
+  },
+  "/orders/{order_id}": {
+   "get": {
+    "operationId": "read_orders__order_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "order_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Order Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OrderOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Read",
+    "tags": [
+     "orders"
+    ]
+   }
+  },
+  "/orders/{order_id}/cancel": {
+   "post": {
+    "operationId": "cancel_orders__order_id__cancel_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "order_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Order Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OrderOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Cancel",
+    "tags": [
+     "orders"
+    ]
+   }
+  },
+  "/orders/{order_id}/events": {
+   "get": {
+    "description": "SSE for one order \u2014 its owner only (authorised again on every reconnect).",
+    "operationId": "events_orders__order_id__events_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "order_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Order Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "since",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Events",
+    "tags": [
+     "orders"
+    ]
+   }
+  },
+  "/orders/{order_id}/verify": {
+   "post": {
+    "operationId": "verify_orders__order_id__verify_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "order_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Order Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/VerifyIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OrderOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Verify",
+    "tags": [
+     "orders"
+    ]
+   }
+  },
+  "/restaurant/board": {
+   "get": {
+    "operationId": "board_restaurant_board_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Board"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Board",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
+  "/restaurant/events": {
+   "get": {
+    "operationId": "events_restaurant_events_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "since",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Events",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
+  "/restaurant/items/{item_id}": {
+   "patch": {
+    "operationId": "set_availability_restaurant_items__item_id__patch",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "item_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Item Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AvailabilityIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MenuItemOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Set Availability",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
+  "/restaurant/menu": {
+   "get": {
+    "operationId": "menu_restaurant_menu_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MenuOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Menu",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
+  "/restaurant/orders/{order_id}/transition": {
+   "post": {
+    "operationId": "transition_restaurant_orders__order_id__transition_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "order_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Order Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RestaurantTransitionIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Ticket"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Transition",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
+  "/restaurants": {
+   "get": {
+    "operationId": "restaurants_restaurants_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "lat",
+      "required": false,
+      "schema": {
+       "default": 12.9352,
+       "maximum": 90,
+       "minimum": -90,
+       "title": "Lat",
+       "type": "number"
+      }
+     },
+     {
+      "in": "query",
+      "name": "lng",
+      "required": false,
+      "schema": {
+       "default": 77.6195,
+       "maximum": 180,
+       "minimum": -180,
+       "title": "Lng",
+       "type": "number"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/RestaurantCard"
+         },
+         "title": "Response Restaurants Restaurants Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Restaurants",
+    "tags": [
+     "discovery"
+    ]
+   }
+  },
+  "/restaurants/{slug}": {
+   "get": {
+    "operationId": "restaurant_restaurants__slug__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "slug",
+      "required": true,
+      "schema": {
+       "title": "Slug",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "lat",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maximum": 90,
+         "minimum": -90,
+         "type": "number"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Lat"
+      }
+     },
+     {
+      "in": "query",
+      "name": "lng",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maximum": 180,
+         "minimum": -180,
+         "type": "number"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Lng"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RestaurantOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Restaurant",
+    "tags": [
+     "discovery"
+    ]
+   }
+  },
+  "/rider/events": {
+   "get": {
+    "operationId": "events_rider_events_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "since",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Since"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Events",
+    "tags": [
+     "rider"
+    ]
+   }
+  },
+  "/rider/me": {
+   "get": {
+    "operationId": "me_rider_me_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RiderMe"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Me",
+    "tags": [
+     "rider"
+    ]
+   }
+  },
+  "/rider/orders/{order_id}/transition": {
+   "post": {
+    "description": "Picked up (only once the kitchen marked it ready) / Delivered. Returns the next job, if a\nwaiting order was handed to this rider on delivery.",
+    "operationId": "transition_rider_orders__order_id__transition_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "order_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Order Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RiderTransitionIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/Job"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Transition Rider Orders  Order Id  Transition Post"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Transition",
+    "tags": [
+     "rider"
+    ]
+   }
+  },
+  "/rider/position": {
+   "post": {
+    "description": "`recorded_at` is server time; the phone's `at` only orders fixes from the same phone. A fix\nmore than 200 m from the previous one within 3 s is a GPS jump and is dropped.",
+    "operationId": "position_rider_position_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PositionIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Position",
+    "tags": [
+     "rider"
+    ]
+   }
+  },
+  "/webhooks/razorpay": {
+   "post": {
+    "description": "`payment.captured` \u2192 the same idempotent `mark_paid` as verify; event ids are deduped, so\na replay is a no-op. `payment.failed` changes nothing (the order expires at 15 min).",
+    "operationId": "razorpay_webhook_webhooks_razorpay_post",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": {
+          "type": "string"
+         },
+         "title": "Response Razorpay Webhook Webhooks Razorpay Post",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Razorpay Webhook",
+    "tags": [
+     "system"
+    ]
+   }
+  }
+ }
+}

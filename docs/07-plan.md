@@ -39,6 +39,15 @@ Goal: both apps deployed, PostGIS answering, a seeded order moving with a simula
 
 **v1 total ≈ 16 h**
 
+**v1 as built (2026-11-26, branch `feat/v1`) — where it departs from the rows above, and why:**
+- **Dish photos** are 87 CC Commons thumbnails committed under `web/public/dishes/` (served from the web origin, credited in `CREDITS.md`) instead of Vercel Blob — no Blob account needed in v1; `fetch_photos.py` can still upload to Blob later.
+- **Dark rider map** uses OpenFreeMap's own `dark` style instead of a generated `map-dark.json`.
+- **Kitchen autopilot** (new, `services/sim.py`): while nobody has a restaurant's board open (`restaurants.board_seen_at`, the one v1 column beyond 06 §A), its orders are accepted after 45 s and cooked for its prep time, so an order from any kitchen completes with no human action. Opening the board hands the kitchen back to the human.
+- **Demo scenes** (`services/demo.py`): each demo login stages live orders through the real state machine (an order on the way for the customer, tickets on the board, a job for the demo rider, orders on the admin map); sim customers place an occasional order while the board or admin map is open. A catch-up after a quiet period stamps each step with when it really happened.
+- **Dispatch** only considers a real (non-sim) rider who sent a fix in the last 2 minutes; the rider PWA's **relay mode** replays the phone's steps in Koramangala when the phone is far from Bengaluru, so the two-phone demo works anywhere.
+- **Razorpay** is implemented against the REST API (no SDK) and switches itself off without keys (checkout offers COD only).
+
+
 ---
 
 ## v2 — Rush (≈ 11 h)
