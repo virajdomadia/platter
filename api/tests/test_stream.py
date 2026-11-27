@@ -1,5 +1,5 @@
 """04 §12 test_stream: a reconnect with `Last-Event-ID` replays exactly the missed events (from the
-durable log); a stranger gets 403; positions after the cursor only; the 280-s close (fake clock).
+durable log); a stranger gets 404; positions after the cursor only; the 280-s close (fake clock).
 The generator is driven directly with a fake sleep that moves the fake clock."""
 
 import datetime as dt
@@ -166,7 +166,7 @@ async def test_stream_routes_authorise(world, app):
     async with await make_client(app) as stranger:
         await login(stranger, db, "ravi.kumar@customers.platter.demo")
         r = await stranger.get(f"/orders/{order.id}/events")
-        assert r.status_code == 403
+        assert r.status_code == 404  # like every other order route: no existence oracle
     async with await make_client(app) as anon:
         assert (await anon.get(f"/orders/{order.id}/events")).status_code == 401
     app.state.settings.stream_lifetime_s = 0

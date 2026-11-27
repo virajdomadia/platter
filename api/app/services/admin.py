@@ -1,4 +1,6 @@
-"""The admin's live map: every active order and every rider, stuck flags, today's numbers (R9).
+"""The admin's live map: every active demo order and every rider, stuck flags, today's numbers (R9).
+The only admin login is the public demo, so a real customer's order (and a sim rider's position
+while it carries one, which would trace their door) never appears here.
 
 Stuck rules: `placed` unaccepted for 5 min · accepted for 3 min with no rider · `ready` for 10 min
 and not picked up. A real rider with no fix for 2 minutes and no job shows as offline (they are
@@ -20,7 +22,6 @@ from app.models import (
     Restaurant,
     Rider,
     RiderLeg,
-    RiderStatus,
 )
 from app.models.geo import latlng
 from app.services import dispatch, routing, views
@@ -59,19 +60,31 @@ async def riders(db: AsyncSession, near: tuple[float, float] | None = None) -> l
         for rid, number in (
             await db.execute(
                 select(Order.rider_id, Order.number).where(
-                    Order.rider_id.is_not(None), Order.status.in_(ACTIVE_STATUSES)
+                    Order.rider_id.is_not(None),
+                    Order.status.in_(ACTIVE_STATUSES),
+                    Order.is_demo.is_(True),
                 )
             )
         ).all()
     }
-    legs = {
-        leg.rider_id: leg
-        for leg in (await db.execute(select(RiderLeg).where(RiderLeg.ended_at.is_(None)))).scalars()
-    }
+    legs: dict[uuid.UUID, RiderLeg] = {}
+    on_real: set[uuid.UUID] = set()
+    for leg, demo in await db.execute(
+        select(RiderLeg, Order.is_demo)
+        .join(Order, Order.id == RiderLeg.order_id)
+        .where(RiderLeg.ended_at.is_(None))
+    ):
+        legs[leg.rider_id] = leg
+        if not demo:
+            on_real.add(leg.rider_id)
     out: list[s.AdminRider] = []
     for r in rows:
-        fix = await views.rider_fix(
-            db, r, legs.get(r.id), legs[r.id].order_id if r.id in legs else None
+        fix = (
+            None
+            if r.id in on_real
+            else await views.rider_fix(
+                db, r, legs.get(r.id), legs[r.id].order_id if r.id in legs else None
+            )
         )
         last = views.seconds_since(fix.at) if fix else None
         status = r.status.value
@@ -149,7 +162,7 @@ async def active_orders(
     q = (
         select(Order, Restaurant)
         .join(Restaurant, Restaurant.id == Order.restaurant_id)
-        .where(Order.status.in_(ACTIVE_STATUSES))
+        .where(Order.status.in_(ACTIVE_STATUSES), Order.is_demo.is_(True))
         .order_by(Order.placed_at.desc())
     )
     if status:
@@ -207,11 +220,3 @@ def parse_near(near: str | None) -> tuple[float, float] | None:
     except ValueError:
         return None
     return lat, lng
-
-
-async def available_rider_count(db: AsyncSession) -> int:
-    return sum(1 for r in await riders(db) if r.status == RiderStatus.available.value)
-
-
-def as_uuid(value: str) -> uuid.UUID:
-    return uuid.UUID(value)

@@ -26,8 +26,8 @@ async def health() -> dict[str, str]:
 
 @router.get("/health/ready")
 async def ready(db: AsyncSession = Depends(get_session)) -> dict[str, str]:
-    version = (await db.execute(text("select postgis_lib_version()"))).scalar_one()
-    return {"status": "ok", "postgis": str(version)}
+    await db.execute(text("select postgis_lib_version()"))
+    return {"status": "ok"}
 
 
 @router.post("/webhooks/razorpay")
@@ -44,7 +44,10 @@ async def razorpay_webhook(
     if not razorpay.verify_webhook(settings, body, request.headers.get("x-razorpay-signature", "")):
         raise ApiError(400, "bad_signature", "Signature mismatch")
     event_id = request.headers.get("x-razorpay-event-id") or ""
-    data = json.loads(body)
+    try:
+        data = json.loads(body)
+    except ValueError as exc:
+        raise ApiError(400, "bad_payload", "Not JSON") from exc
     kind = data.get("event", "")
     if event_id:
         db.add(WebhookEvent(id=event_id, event=kind, received_at=clock.now()))
@@ -59,7 +62,9 @@ async def razorpay_webhook(
         order = (
             await db.execute(select(Order).where(Order.razorpay_order_id == rp_order))
         ).scalar_one_or_none()
-        if order is not None:
+        if order is None or payment.get("amount") not in (None, order.total_paise):
+            log.warning("captured payment %s matches no order total", payment.get("id"))
+        else:
             await orders.mark_paid(db, order.id, payment.get("id", ""))
     await db.commit()
     return {"status": "ok"}

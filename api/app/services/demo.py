@@ -22,7 +22,6 @@ from app.models import (
     LegKind,
     MenuItem,
     Order,
-    OrderEvent,
     OrderStatus,
     PaymentKind,
     Restaurant,
@@ -31,7 +30,7 @@ from app.models import (
     RiderStatus,
     User,
 )
-from app.services import orders, sim
+from app.services import events, orders, sim
 from app.services.events import SYSTEM, Actor
 
 S = OrderStatus
@@ -59,7 +58,11 @@ NOTES = [
 
 async def sim_customers(db: AsyncSession) -> list[User]:
     return list(
-        (await db.execute(select(User).where(User.email.like(f"%{SIM_CUSTOMER_DOMAIN}"))))
+        (
+            await db.execute(
+                select(User).where(User.is_demo, User.email.like(f"%{SIM_CUSTOMER_DOMAIN}"))
+            )
+        )
         .scalars()
         .all()
     )
@@ -139,11 +142,9 @@ async def _shift(db: AsyncSession, order: Order, times: dict[str, dt.datetime]) 
     """Move an order's timeline into the past: status columns and their events."""
     for status, at in times.items():
         setattr(order, f"{status}_at", at)
-        await db.execute(
-            update(OrderEvent)
-            .where(OrderEvent.order_id == order.id, OrderEvent.kind == status)
-            .values(at=at)
-        )
+        for ev in events.pending(db):
+            if ev.order_id == order.id and ev.kind == status:
+                ev.at = at
     order.created_at = times.get("placed", order.created_at)
     await db.flush()
 
@@ -162,25 +163,14 @@ async def _set_leg(
     leg.started_at = started
     for k, v in extra.items():
         setattr(leg, k, v)
-    await db.execute(
-        update(OrderEvent)
-        .where(
-            OrderEvent.order_id == order.id,
-            OrderEvent.kind == "route",
-            OrderEvent.payload["leg_id"].astext == str(leg.id),
-        )
-        .values(
-            at=started,
-            payload=OrderEvent.payload.op("||")(
-                func.jsonb_build_object("started_at", started.isoformat())
-            ),
-        )
-    )
-    await db.execute(
-        update(OrderEvent)
-        .where(OrderEvent.order_id == order.id, OrderEvent.kind.in_(("rider_assigned",)))
-        .values(at=started)
-    )
+    for ev in events.pending(db):
+        if ev.order_id != order.id:
+            continue
+        if ev.kind == "route" and ev.payload.get("leg_id") == str(leg.id):
+            ev.at = started
+            ev.payload = {**ev.payload, "started_at": started.isoformat()}
+        elif ev.kind == "rider_assigned":
+            ev.at = started
     await db.flush()
 
 
@@ -327,6 +317,10 @@ async def ensure_customer_scene(db: AsyncSession, user: User) -> None:
 async def ensure_restaurant_scene(db: AsyncSession, restaurant: Restaurant) -> None:
     await sim.advance(db, restaurant_id=restaurant.id)
     restaurant.board_seen_at = clock.now()
+    # A visitor may have switched every dish off; the next visitor gets a working kitchen.
+    await db.execute(
+        update(MenuItem).where(MenuItem.restaurant_id == restaurant.id).values(is_available=True)
+    )
     active = await _active(db, Order.restaurant_id == restaurant.id)
     customers = await sim_customers(db)
     random.shuffle(customers)
@@ -380,8 +374,18 @@ async def ensure_rider_scene(db: AsyncSession, rider: Rider) -> None:
             {"r": rider.id},
         )
     ).first()
-    if pos is None:
-        return
+    if pos is None:  # the phone hasn't shared a live fix: start the job at the demo kitchen
+        pos = (
+            await db.execute(
+                text(
+                    "select ST_Y(loc::geometry), ST_X(loc::geometry) from restaurants"
+                    " where slug = :s"
+                ),
+                {"s": DEMO_RESTAURANT_SLUG},
+            )
+        ).first()
+        if pos is None:
+            return
     customers = await sim_customers(db)
     random.shuffle(customers)
     for restaurant in await open_restaurants_near(db, float(pos[0]), float(pos[1])):

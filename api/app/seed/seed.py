@@ -61,10 +61,11 @@ async def upsert_user(
     user_id = uid("user", email)
     await db.execute(
         text(
-            "insert into users (id, email, name, phone, role, created_at)"
-            " values (:id, :email, :name, :phone, :role, :now)"
+            "insert into users (id, email, name, phone, role, is_demo, created_at)"
+            " values (:id, :email, :name, :phone, :role, true, :now)"
             " on conflict (email) do update set name = excluded.name, role = excluded.role,"
-            " phone = excluded.phone"
+            # Someone who signed up with a seeded email first can't keep a password on that role.
+            " phone = excluded.phone, is_demo = true, password_hash = null"
         ),
         {
             "id": user_id,

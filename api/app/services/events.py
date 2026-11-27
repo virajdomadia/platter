@@ -1,9 +1,11 @@
 """`order_events` — the durable, append-only log that is also the bus (04 §3).
 
-Every insert first takes `pg_advisory_xact_lock(1)` (always after the row locks a transition
-already holds, so no lock cycle). That serialises event commits, so `seq` is commit-ordered: no
-event with a lower seq can become visible after a stream has read a higher one, and a cursor
-`seq > $last` never skips. Streams read this table; nothing else carries an event.
+`append` only buffers the event on the session; `before_commit` takes `pg_advisory_xact_lock(1)`
+and inserts the buffer (always after the row locks a transition already holds, so no lock cycle).
+That serialises event commits, so `seq` is commit-ordered: no event with a lower seq can become
+visible after a stream has read a higher one, and a cursor `seq > $last` never skips. Because the
+lock is taken only at commit, slow work earlier in a transaction (an OSRM call) never holds it.
+Streams read this table; nothing else carries an event.
 """
 
 import datetime as dt
@@ -11,8 +13,9 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from sqlalchemy import text
+from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session, SessionTransaction
 
 from app.core import clock
 from app.models import OrderEvent
@@ -57,8 +60,7 @@ async def append(
     payload: dict[str, Any] | None = None,
     at: dt.datetime | None = None,
 ) -> OrderEvent:
-    await db.execute(text("select pg_advisory_xact_lock(1)"))
-    event = OrderEvent(
+    ev = OrderEvent(
         order_id=order_id,
         kind=kind,
         actor_role=actor.role,
@@ -66,6 +68,27 @@ async def append(
         payload=payload or {},
         at=at or clock.now(),
     )
-    db.add(event)
-    await db.flush()
-    return event
+    pending(db).append(ev)
+    return ev
+
+
+def pending(db: AsyncSession) -> list[OrderEvent]:
+    """Events appended in this transaction, not yet written (demo staging re-stamps them)."""
+    return db.info.setdefault(PENDING, [])
+
+
+PENDING = "pending_order_events"
+
+
+@event.listens_for(Session, "before_commit")
+def _write_pending(session: Session) -> None:
+    evs = session.info.pop(PENDING, None)
+    if evs:
+        session.execute(text("select pg_advisory_xact_lock(1)"))
+        session.add_all(evs)
+
+
+@event.listens_for(Session, "after_transaction_end")
+def _drop_pending(session: Session, transaction: SessionTransaction) -> None:
+    if transaction.parent is None:  # rolled back (or already written)
+        session.info.pop(PENDING, None)

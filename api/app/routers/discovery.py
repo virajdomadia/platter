@@ -8,16 +8,11 @@ from app import schemas as s
 from app.core.db import get_session
 from app.core.errors import not_found
 from app.models import MenuCategory, MenuItem, Restaurant
-from app.services import geo, orders, views
+from app.services import geo, limits, orders, views
 
 router = APIRouter(tags=["discovery"])
 
 DEFAULT_PIN = (12.9352, 77.6195)  # Koramangala 5th Block
-
-
-def client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for", "")
-    return forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
 
 
 @router.get("/geo/search", response_model=list[s.Place])
@@ -26,8 +21,9 @@ async def geo_search(
     q: str = Query(min_length=2, max_length=120),
     lat: float | None = Query(default=None, ge=-90, le=90),
     lng: float | None = Query(default=None, ge=-180, le=180),
+    db: AsyncSession = Depends(get_session),
 ) -> list[s.Place]:
-    geo.rate_limit(client_ip(request))
+    await limits.hit(db, f"geo:{limits.client_ip(request)}", geo.LIMIT_PER_MIN)
     return await geo.search(q, lat, lng)
 
 
@@ -36,8 +32,9 @@ async def geo_reverse(
     request: Request,
     lat: float = Query(ge=-90, le=90),
     lng: float = Query(ge=-180, le=180),
+    db: AsyncSession = Depends(get_session),
 ) -> s.Place:
-    geo.rate_limit(client_ip(request))
+    await limits.hit(db, f"geo:{limits.client_ip(request)}", geo.LIMIT_PER_MIN)
     return await geo.reverse(lat, lng)
 
 

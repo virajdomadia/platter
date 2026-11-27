@@ -157,6 +157,8 @@ class OrderIn(QuoteIn):
     address_line: str = Field(min_length=3, max_length=200)
     payment: Literal["cod", "razorpay"] = "cod"
     note: str | None = Field(default=None, max_length=280)
+    # The total the checkout showed; a different server total is a 409 `price_changed`.
+    expected_total_paise: int | None = Field(default=None, ge=0)
 
 
 class QuoteItem(BaseModel):

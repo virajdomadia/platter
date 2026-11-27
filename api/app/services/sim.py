@@ -7,7 +7,8 @@ idempotent under row locks, so whoever looks first moves it and everyone else re
   there (`arrived_at`); at the drop the order is `delivered` and the rider takes the next one.
 * **Kitchen autopilot**: while nobody has the restaurant's board open (`board_seen_at` older than
   30 s), its tickets run themselves — accepted after 45 s, preparing 20 s later, ready when the
-  restaurant's prep time has passed since accepting. Open the board and the kitchen is yours.
+  restaurant's prep time has passed since accepting. Open the board and the kitchen is yours —
+  for demo orders: the public board never sees a real order, so real ones always run themselves.
 * **Unpaid orders** expire after 15 minutes; **waiting orders** get any rider that became free.
 
 Lock order is always order → leg → rider (the same as a transition's), so a stream advancing the
@@ -114,7 +115,9 @@ async def run_kitchens(
         .join(Restaurant, Restaurant.id == Order.restaurant_id)
         .where(
             Order.status.in_((S.placed, S.accepted, S.preparing)),
-            (Restaurant.board_seen_at.is_(None)) | (Restaurant.board_seen_at < now - BOARD_WATCHED),
+            (Restaurant.board_seen_at.is_(None))
+            | (Restaurant.board_seen_at < now - BOARD_WATCHED)
+            | Order.is_demo.is_(False),
         )
     )
     for oid, status, placed_at, accepted_at, prep_min in (

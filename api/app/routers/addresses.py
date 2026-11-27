@@ -68,6 +68,8 @@ async def delete_address(
     a = await db.get(Address, address_id)
     if a is None or a.user_id != user.id:
         raise not_found("No such address")
+    if user.is_demo:  # shared by every visitor: the demo always needs a home to deliver to
+        raise ApiError(409, "demo_account", "The demo account's addresses can't be deleted")
     await db.delete(a)
     await db.commit()
     return Response(status_code=204)

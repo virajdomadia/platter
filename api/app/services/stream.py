@@ -16,7 +16,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from sqlalchemy import select, update
+from sqlalchemy import Text, func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import clock
@@ -106,12 +106,18 @@ def _scope_filter(q, scope: Scope):  # type: ignore[no-untyped-def]
     if scope.kind == "order":
         return q.where(OrderEvent.order_id == scope.id)
     if scope.kind == "restaurant":
-        mine = select(Order.id).where(Order.restaurant_id == scope.id)
+        mine = select(Order.id).where(Order.restaurant_id == scope.id, Order.is_demo.is_(True))
         return q.where(OrderEvent.order_id.in_(mine))
     if scope.kind == "rider":
         mine = select(RiderLeg.order_id).where(RiderLeg.rider_id == scope.id)
-        return q.where(OrderEvent.order_id.in_(mine))
-    return q
+        legs = select(func.cast(RiderLeg.id, Text)).where(RiderLeg.rider_id == scope.id)
+        # After a reassign, the old rider still hears the status, never the new rider's route.
+        return q.where(
+            OrderEvent.order_id.in_(mine),
+            (OrderEvent.kind != "route") | OrderEvent.payload["leg_id"].astext.in_(legs),
+        )
+    # admin: the public demo console hears demo orders only
+    return q.where(OrderEvent.order_id.in_(select(Order.id).where(Order.is_demo.is_(True))))
 
 
 async def _advance(db: AsyncSession, scope: Scope) -> None:
@@ -134,7 +140,8 @@ async def _advance(db: AsyncSession, scope: Scope) -> None:
         )
         if ids:
             await sim.advance(db, order_ids=ids)
-    else:
+    elif (await db.execute(text("select pg_try_advisory_xact_lock(2)"))).scalar():
+        # Admin: one global advance at a time across every open console; the others just read.
         await sim.advance(db)
     await db.commit()
 
@@ -186,6 +193,7 @@ async def _restaurant_riders(
             .join(Order, Order.id == RiderLeg.order_id)
             .where(
                 Order.restaurant_id == restaurant_id,
+                Order.is_demo.is_(True),
                 RiderLeg.ended_at.is_(None),
                 RiderLeg.kind == LegKind.to_restaurant,
             )
@@ -247,7 +255,7 @@ async def stream(
             return
         status_changed = False
         async with factory() as db:
-            if tick > 0:
+            if tick > 0 and (scope.kind != "admin" or tick % ADMIN_RIDERS_EVERY == 0):
                 await _advance(db, scope)
             if on_tick is not None:
                 await on_tick(db, tick)
