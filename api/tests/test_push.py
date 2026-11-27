@@ -194,6 +194,8 @@ async def test_only_browser_push_services_can_be_subscribed(sent, world, app):
             "https://169.254.169.254/latest/meta-data",  # internal address (SSRF)
             "https://fcm.googleapis.com.evil.example/x",
             "https://fcm.googleapis.com:8443/x",
+            "https://fcm.googleapis.com:99999/x",  # malformed port: refused, not a 500
+            "https://[fcm.googleapis.com/x",
         ):
             body = {**sub(1), "endpoint": endpoint}
             r = await c.post("/push/subscribe", json=body)
@@ -204,3 +206,26 @@ async def test_only_browser_push_services_can_be_subscribed(sent, world, app):
 
 async def test_push_is_off_without_keys(world, client):
     assert (await client.get("/push/key")).json() == {"key": None}
+
+
+async def test_a_broken_push_lookup_never_rolls_back_the_order_action(
+    sent, world, app, monkeypatch
+):
+    """Review: staging runs inside the order's commit. A failing lookup is contained in a
+    savepoint, so the accept still lands (and nothing is sent)."""
+    db = world
+    await subscribe(app, db, DEMO_CUSTOMER, 1)
+    order = await place(db, slug="bandstand-kitchen")
+
+    def broken(session, ev):  # type: ignore[no-untyped-def]
+        session.execute(text("select 1/0"))
+        return []
+
+    monkeypatch.setattr(push, "_messages", broken)
+    async with await make_client(app) as board:
+        await login(board, db, BOARD)
+        r = await board.post(f"/restaurant/orders/{order.id}/transition", json={"to": "accepted"})
+    assert r.status_code == 200, r.text
+    status = await db.execute(text("select status from orders where id = :o"), {"o": order.id})
+    assert status.scalar_one() == "accepted"
+    assert sent == []

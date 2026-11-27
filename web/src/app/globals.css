@@ -955,3 +955,10 @@ textarea.input {
 .push-optin .btn {
   min-height: 44px;
 }
+.push-optin:focus {
+  outline: none; /* a status, not a control: focus parks here after the button goes */
+}
+.push-done {
+  margin: 0;
+  padding: 8px 12px;
+}

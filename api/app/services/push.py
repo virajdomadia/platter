@@ -32,6 +32,8 @@ log = logging.getLogger(__name__)
 
 STAGED, READY = "push_staged", "push_ready"
 SEND_TIMEOUT_S = 4.0
+MAX_PER_USER = 10  # a shared demo account collects visitors' browsers: ring only the newest few
+MAX_BATCH = 50
 # Endpoints are URLs we POST to: only the browsers' push services, never an arbitrary host (SSRF).
 PUSH_HOSTS = (
     "fcm.googleapis.com",
@@ -55,11 +57,15 @@ class Message:
 
 
 def allowed_endpoint(endpoint: str) -> bool:
-    u = urlsplit(endpoint)
-    host = (u.hostname or "").lower()
+    try:
+        u = urlsplit(endpoint)
+        host = (u.hostname or "").lower()
+        port = u.port  # raises on a malformed port
+    except ValueError:
+        return False
     return (
         u.scheme == "https"
-        and u.port is None
+        and port is None
         and not u.username
         and any(host == h or host.endswith("." + h) for h in PUSH_HOSTS)
     )
@@ -86,12 +92,12 @@ def stage(session: Session, evs: list[OrderEvent]) -> None:
     if not wanted:
         return
     try:
-        out: list[Message] = session.info.setdefault(STAGED, [])
-        for ev in wanted:
-            out.extend(_messages(session, ev))
+        # A savepoint: a failed lookup aborts only itself, never the order's own transaction.
+        with session.begin_nested():
+            found = [m for ev in wanted for m in _messages(session, ev)]
+        session.info.setdefault(STAGED, []).extend(found)
     except Exception:  # noqa: BLE001 - push must never break the commit it rides on
         log.exception("push: staging failed")
-        session.info.pop(STAGED, None)
 
 
 def _messages(session: Session, ev: OrderEvent) -> list[Message]:
@@ -110,12 +116,20 @@ def _messages(session: Session, ev: OrderEvent) -> list[Message]:
             from orders o
             join restaurants r on r.id = o.restaurant_id
             join users u on u.id = {who}
-            join push_subscriptions s on s.user_id = u.id
-            join sessions x on x.id = s.session_id and x.expires_at > :now
+            join lateral (
+              select s.* from push_subscriptions s
+              join sessions x on x.id = s.session_id and x.expires_at > :now
+              where s.user_id = u.id order by s.created_at desc limit :cap
+            ) s on true
             where o.id = :order and u.is_demo = o.is_demo
             """  # noqa: S608 - `who` is one of three fixed expressions above
         ),
-        {"order": ev.order_id, "rider": ev.payload.get("rider_id"), "now": clock.now()},
+        {
+            "order": ev.order_id,
+            "rider": ev.payload.get("rider_id"),
+            "now": clock.now(),
+            "cap": MAX_PER_USER,
+        },
     ).all()
     out = []
     for oid, number, restaurant, items, endpoint, p256dh, auth in rows:
@@ -160,7 +174,7 @@ async def deliver(m: Message) -> int:
 async def drain(db: AsyncSession) -> None:
     """Send what this session committed. Called after the order action's commit (the request's
     teardown, each stream tick). Never raises."""
-    ready: list[Message] = db.sync_session.info.pop(READY, None) or []
+    ready: list[Message] = (db.sync_session.info.pop(READY, None) or [])[:MAX_BATCH]
     if not ready or not get_settings().push_enabled:
         return
     try:
@@ -177,4 +191,7 @@ async def drain(db: AsyncSession) -> None:
             await db.commit()
     except Exception:  # noqa: BLE001 - a push problem is logged, never raised into an order action
         log.exception("push: drain failed")
-        await db.rollback()
+        try:
+            await db.rollback()
+        except Exception:  # noqa: BLE001 - e.g. the connection is already gone
+            log.warning("push: rollback after a failed drain also failed")
