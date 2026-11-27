@@ -1,5 +1,7 @@
 """Public discovery (06 §C): geocoding proxy, restaurants near a pin, one restaurant's menu."""
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,10 +49,17 @@ async def restaurants(
     response: Response,
     lat: float = Query(default=DEFAULT_PIN[0], ge=-90, le=90),
     lng: float = Query(default=DEFAULT_PIN[1], ge=-180, le=180),
+    q: str | None = Query(default=None, max_length=60),
+    cuisine: str | None = Query(default=None, max_length=40),
+    veg: bool = Query(default=False),
+    sort: Literal["distance", "rating", "eta"] = Query(default="distance"),
     db: AsyncSession = Depends(get_session),
 ) -> list[s.RestaurantCard]:
+    """`q` searches names, cuisines and dishes; `cuisine` is one exact cuisine; `veg` = pure veg."""
     response.headers["Cache-Control"] = "private, max-age=30"
-    return await geo.nearby(db, lat, lng)
+    return await geo.nearby(
+        db, lat, lng, q=(q or "").strip() or None, cuisine=cuisine, veg=veg, sort=sort
+    )
 
 
 @router.get("/restaurants/{slug}", response_model=s.RestaurantOut)

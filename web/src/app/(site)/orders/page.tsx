@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { OrderCard } from "@/lib/api";
 import { day, inr, STATUS_LABEL } from "@/lib/format";
 import { serverFetch } from "@/lib/server";
+import { ReorderButton } from "@/components/site/ReorderButton";
 import "@/components/site/site.css";
 
 export const metadata: Metadata = { title: "Your orders", robots: { index: false } };
@@ -40,7 +41,12 @@ export default async function OrdersPage() {
       </div>
       {past.length > 0 && <h2 className="label" style={{ margin: "16px 6px 8px" }}>Earlier</h2>}
       <div className="stack">
-        {past.map((o) => <Row key={o.id} o={o} />)}
+        {past.map((o) => (
+          <div key={o.id} className="order-past">
+            <Row o={o} />
+            <ReorderButton orderId={o.id} number={o.number} />
+          </div>
+        ))}
       </div>
     </main>
   );

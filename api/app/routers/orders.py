@@ -4,14 +4,26 @@ import uuid
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import schemas as s
+from app.core import clock
 from app.core.config import Settings, current_settings
 from app.core.db import get_session
 from app.core.errors import ApiError, not_found
-from app.models import ACTIVE_STATUSES, Order, OrderStatus, PaymentKind, User
+from app.models import (
+    ACTIVE_STATUSES,
+    MenuItem,
+    Order,
+    OrderItem,
+    OrderStatus,
+    PaymentKind,
+    Rating,
+    Restaurant,
+    User,
+)
 from app.routers import sse
 from app.services import auth, limits, orders, razorpay, sim, views
 from app.services import stream as stream_service
@@ -194,6 +206,88 @@ async def cancel(
     )
     await db.commit()
     return await views.order_out(db, order)
+
+
+@router.post("/{order_id}/rating", response_model=s.OrderOut, status_code=201)
+async def rate(
+    order_id: uuid.UUID,
+    body: s.RatingIn,
+    request: Request,
+    user: User = Depends(auth.require_user),
+    db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
+) -> s.OrderOut:
+    """Once per delivered order (a second → 409). Only a real customer's stars move the public
+    score; a demo visitor's rating is kept for them alone."""
+    await limits.hit(db, f"rate:{limits.client_ip(request, settings)}", 20)
+    order = await own_order(db, order_id, user)
+    if order.status != OrderStatus.delivered:
+        raise ApiError(409, "not_delivered", "You can rate an order once it's delivered")
+    done = await db.execute(
+        pg_insert(Rating)
+        .values(
+            id=uuid.uuid4(),
+            order_id=order.id,
+            restaurant_stars=body.restaurant_stars,
+            rider_stars=body.rider_stars if order.rider_id else None,
+            line=body.line or None,
+            is_demo=order.is_demo,
+            created_at=clock.now(),
+        )
+        .on_conflict_do_nothing(index_elements=["order_id"])
+        .returning(Rating.id)
+    )
+    if done.scalar_one_or_none() is None:
+        raise ApiError(409, "already_rated", "You've already rated this order")
+    if not order.is_demo:
+        await db.execute(
+            update(Restaurant)
+            .where(Restaurant.id == order.restaurant_id)
+            .values(
+                rating_sum=Restaurant.rating_sum + body.restaurant_stars,
+                rating_count=Restaurant.rating_count + 1,
+            )
+        )
+    await db.commit()
+    return await views.order_out(db, order)
+
+
+@router.post("/{order_id}/reorder", response_model=s.ReorderOut)
+async def reorder(
+    order_id: uuid.UUID,
+    user: User = Depends(auth.require_user),
+    db: AsyncSession = Depends(get_session),
+) -> s.ReorderOut:
+    """A cart from a past order at today's prices; dishes gone or switched off are named in
+    `dropped`. Nothing is placed: checkout quotes it again as usual."""
+    order = await own_order(db, order_id, user)
+    restaurant = await db.get(Restaurant, order.restaurant_id)
+    assert restaurant is not None  # noqa: S101 - FK
+    lines: list[s.ReorderLine] = []
+    dropped: list[str] = []
+    for line in (
+        await db.execute(select(OrderItem).where(OrderItem.order_id == order.id))
+    ).scalars():
+        item = await db.get(MenuItem, line.menu_item_id) if line.menu_item_id else None
+        gone = restaurant.is_sandbox  # a retired kitchen (0007) takes no orders
+        if gone or item is None or item.restaurant_id != restaurant.id or not item.is_available:
+            dropped.append(line.name)
+            continue
+        lines.append(
+            s.ReorderLine(
+                id=str(item.id),
+                name=item.name,
+                price_paise=item.price_paise,
+                qty=min(line.qty, orders.MAX_QTY),
+                is_veg=item.is_veg,
+                photo=item.photo_url,
+            )
+        )
+    return s.ReorderOut(
+        restaurant={"id": str(restaurant.id), "slug": restaurant.slug, "name": restaurant.name},
+        lines=lines,
+        dropped=dropped,
+    )
 
 
 @router.get("/{order_id}/events", response_class=StreamingResponse)

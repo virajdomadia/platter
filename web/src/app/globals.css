@@ -353,6 +353,11 @@ button:disabled {
   background: #fff;
   color: var(--ink);
 }
+/* v2: buttons that keep focus while unavailable say so with aria-disabled, and look it */
+.btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .btn.coral {
   background: var(--coral-deep);
 }

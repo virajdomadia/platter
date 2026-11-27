@@ -27,7 +27,24 @@ BBOX = "77.45,12.83,77.78,13.10"
 LIMIT_PER_MIN = 10
 
 
-async def nearby(db: AsyncSession, lat: float, lng: float) -> list[s.RestaurantCard]:
+def like(q: str) -> str:
+    """`q` as a literal ILIKE pattern (its own % and _ match themselves)."""
+    return "%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+
+
+async def nearby(
+    db: AsyncSession,
+    lat: float,
+    lng: float,
+    *,
+    q: str | None = None,
+    cuisine: str | None = None,
+    veg: bool = False,
+    sort: str = "distance",
+) -> list[s.RestaurantCard]:
+    """Kitchens within 8 km of the pin. `q` matches the name, a cuisine or any dish name, so
+    "dosa" finds a kitchen by its menu alone. shortcut: ILIKE over 12 kitchens (well under the
+    150 ms budget), not the tsvector + trigger of 06 §A; add it if the area grows past ~200."""
     rows = (
         await db.execute(
             text(
@@ -36,10 +53,26 @@ async def nearby(db: AsyncSession, lat: float, lng: float) -> list[s.RestaurantC
                 select r.id, ST_Distance(r.loc, pin.p) as distance_m
                 from restaurants r, pin
                 where ST_DWithin(r.loc, pin.p, :shown) and not r.is_sandbox
+                  and (cast(:pat as text) is null
+                       or r.name ilike :pat escape '\\'
+                       or array_to_string(r.cuisines, ' ') ilike :pat escape '\\'
+                       or exists (select 1 from menu_items i where i.restaurant_id = r.id
+                                  and i.name ilike :pat escape '\\'))
+                  and (cast(:cuisine as text) is null
+                       or exists (select 1 from unnest(r.cuisines) c
+                                  where lower(c) = lower(:cuisine)))
+                  and (not :veg or r.is_veg)
                 order by distance_m
                 """
             ),
-            {"lat": lat, "lng": lng, "shown": orders.SHOWN_RADIUS_M},
+            {
+                "lat": lat,
+                "lng": lng,
+                "shown": orders.SHOWN_RADIUS_M,
+                "pat": like(q) if q else None,
+                "cuisine": cuisine or None,
+                "veg": veg,
+            },
         )
     ).all()
     out = []
@@ -47,9 +80,13 @@ async def nearby(db: AsyncSession, lat: float, lng: float) -> list[s.RestaurantC
         r = await db.get(Restaurant, rid)
         assert r is not None  # noqa: S101
         out.append(views.restaurant_card(r, distance_m=round(distance)))
-    # Orderable first (by distance), then closed, then too far — each by distance.
+    # Orderable first, then closed, then too far; within each by the chosen sort.
     rank = {None: 0, "closed": 1, "too_far": 2}
-    out.sort(key=lambda c: (rank[c.reason], c.distance_m))
+    by = {
+        "rating": lambda c: (-(c.rating or 0), c.distance_m),
+        "eta": lambda c: (c.eta_s, c.distance_m),
+    }.get(sort, lambda c: (c.distance_m,))
+    out.sort(key=lambda c: (rank[c.reason], *by(c)))
     return out
 
 

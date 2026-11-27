@@ -17,7 +17,8 @@ alter table restaurants add column is_sandbox boolean not null default false
 """
 
 DOWNGRADE = """
-delete from restaurants where is_sandbox;
+delete from restaurants r where is_sandbox
+  and not exists (select 1 from orders o where o.restaurant_id = r.id);
 alter table restaurants drop column if exists is_sandbox
 """
 

@@ -390,6 +390,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orders/{order_id}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rate
+         * @description Once per delivered order (a second → 409). Only a real customer's stars move the public
+         *     score; a demo visitor's rating is kept for them alone.
+         */
+        post: operations["rate_orders__order_id__rating_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders/{order_id}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reorder
+         * @description A cart from a past order at today's prices; dishes gone or switched off are named in
+         *     `dropped`. Nothing is placed: checkout quotes it again as usual.
+         */
+        post: operations["reorder_orders__order_id__reorder_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orders/{order_id}/verify": {
         parameters: {
             query?: never;
@@ -660,7 +702,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Restaurants */
+        /**
+         * Restaurants
+         * @description `q` searches names, cuisines and dishes; `cuisine` is one exact cuisine; `veg` = pure veg.
+         */
         get: operations["restaurants_restaurants_get"];
         put?: never;
         post?: never;
@@ -1310,6 +1355,7 @@ export interface components {
              * @enum {string}
              */
             payment: "cod" | "razorpay";
+            rating?: components["schemas"]["RatingOut"] | null;
             /** Reject Reason */
             reject_reason: string | null;
             restaurant: components["schemas"]["OrderRestaurant"];
@@ -1469,6 +1515,24 @@ export interface components {
             /** Total Paise */
             total_paise: number;
         };
+        /** RatingIn */
+        RatingIn: {
+            /** Line */
+            line?: string | null;
+            /** Restaurant Stars */
+            restaurant_stars: number;
+            /** Rider Stars */
+            rider_stars?: number | null;
+        };
+        /** RatingOut */
+        RatingOut: {
+            /** Line */
+            line: string | null;
+            /** Restaurant Stars */
+            restaurant_stars: number;
+            /** Rider Stars */
+            rider_stars: number | null;
+        };
         /** RazorpayStart */
         RazorpayStart: {
             /** Amount Paise */
@@ -1490,6 +1554,32 @@ export interface components {
         ReassignIn: {
             /** Rider Id */
             rider_id: string;
+        };
+        /** ReorderLine */
+        ReorderLine: {
+            /** Id */
+            id: string;
+            /** Is Veg */
+            is_veg: boolean;
+            /** Name */
+            name: string;
+            /** Photo */
+            photo: string | null;
+            /** Price Paise */
+            price_paise: number;
+            /** Qty */
+            qty: number;
+        };
+        /** ReorderOut */
+        ReorderOut: {
+            /** Dropped */
+            dropped: string[];
+            /** Lines */
+            lines: components["schemas"]["ReorderLine"][];
+            /** Restaurant */
+            restaurant: {
+                [key: string]: string;
+            };
         };
         /** RestaurantCard */
         RestaurantCard: {
@@ -2530,6 +2620,72 @@ export interface operations {
             };
         };
     };
+    rate_orders__order_id__rating_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_orders__order_id__reorder_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReorderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     verify_orders__order_id__verify_post: {
         parameters: {
             query?: never;
@@ -3040,6 +3196,10 @@ export interface operations {
             query?: {
                 lat?: number;
                 lng?: number;
+                q?: string | null;
+                cuisine?: string | null;
+                veg?: boolean;
+                sort?: "distance" | "rating" | "eta";
             };
             header?: never;
             path?: never;
