@@ -89,3 +89,21 @@ async def test_old_brand_names_leave_and_real_orders_stay(world, client):
         await db.execute(text("select email from users where email like 'owner.pizza-bakery%'"))
     ).all()
     assert owners == []
+
+
+async def test_reorder_from_a_retired_kitchen_adds_nothing(world, app):
+    from tests.conftest import login, make_client
+
+    db = world
+    kept = await old_restaurant(db, "chai-point", "Chai Point")
+    order = await place(db)
+    await db.execute(
+        text("update orders set restaurant_id = :r, is_demo = false where id = :o"),
+        {"r": kept, "o": order.id},
+    )
+    await db.commit()
+    await run(db)
+    async with await make_client(app) as c:
+        await login(c, db, "ananya@platter.demo")
+        body = (await c.post(f"/orders/{order.id}/reorder")).json()
+    assert body["lines"] == [] and len(body["dropped"]) >= 1

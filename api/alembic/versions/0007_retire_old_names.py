@@ -32,7 +32,7 @@ update restaurants set name = 'Tapri Tales', is_sandbox = true where slug = 'cha
 delete from users u
   where u.email in ('owner.koramangala-social@platter.demo', 'owner.pizza-bakery@platter.demo',
                     'owner.chai-point@platter.demo')
-    and u.password_hash is null
+    and u.password_hash is null and u.is_demo
     and not exists (select 1 from restaurants r where r.owner_user_id = u.id)
 """
 

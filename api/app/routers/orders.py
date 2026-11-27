@@ -269,7 +269,8 @@ async def reorder(
         await db.execute(select(OrderItem).where(OrderItem.order_id == order.id))
     ).scalars():
         item = await db.get(MenuItem, line.menu_item_id) if line.menu_item_id else None
-        if item is None or item.restaurant_id != restaurant.id or not item.is_available:
+        gone = restaurant.is_sandbox  # a retired kitchen (0007) takes no orders
+        if gone or item is None or item.restaurant_id != restaurant.id or not item.is_available:
             dropped.append(line.name)
             continue
         lines.append(

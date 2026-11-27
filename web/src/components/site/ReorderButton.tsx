@@ -19,6 +19,7 @@ export function ReorderButton({ orderId, number }: { orderId: string; number: st
   const cart = useCart();
   const [busy, setBusy] = useState(false);
   const go = async () => {
+    if (busy) return; // aria-disabled keeps focus but doesn't stop a double tap
     setBusy(true);
     try {
       const r = await api<Reorder>(`/orders/${orderId}/reorder`, { method: "POST" });
