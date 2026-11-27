@@ -13,7 +13,7 @@ from app.core.db import get_session
 from app.core.errors import ApiError, not_found
 from app.models import ACTIVE_STATUSES, Order, OrderStatus, PaymentKind, User
 from app.routers import sse
-from app.services import auth, orders, razorpay, sim, views
+from app.services import auth, limits, orders, razorpay, sim, views
 from app.services import stream as stream_service
 from app.services.events import Actor
 
@@ -59,9 +59,11 @@ async def own_order(db: AsyncSession, order_id: uuid.UUID, user: User) -> Order:
 @router.post("/quote", response_model=s.QuoteOut)
 async def quote(
     body: s.QuoteIn,
-    _: User = Depends(auth.require_user),
+    user: User = Depends(auth.require_user),
     db: AsyncSession = Depends(get_session),
 ) -> s.QuoteOut:
+    # Each quote is an OSRM call under Platter's User-Agent (public server: ~1 req/s).
+    await limits.hit(db, f"quote:{user.id}", 30)
     return quote_out(await _quote(db, body))
 
 
@@ -79,13 +81,22 @@ async def place(
     db: AsyncSession = Depends(get_session),
     settings: Settings = Depends(current_settings),
 ) -> s.OrderStart:
-    """Prices everything again server-side — client totals are never read."""
+    """Prices everything again server-side; the client's total is only compared, never charged."""
+    await limits.hit(db, f"place:{user.id}", 10)
     payment = PaymentKind(body.payment)
     if payment == PaymentKind.razorpay and not settings.razorpay_enabled:
         raise ApiError(
             503, "payments_off", "Online payment is switched off — choose cash on delivery"
         )
     q = await _quote(db, body)
+    if body.expected_total_paise is not None and body.expected_total_paise != q.total_paise:
+        # The road distance (OSRM vs the straight-line fallback) moved the fee since checkout.
+        raise ApiError(
+            409,
+            "price_changed",
+            "The delivery fee changed since you opened checkout. Check the new total.",
+            {"quote": quote_out(q).model_dump()},
+        )
     order = await orders.create(
         db,
         user.id,
@@ -129,6 +140,12 @@ async def verify(
         raise ApiError(400, "bad_signature", "We couldn't confirm that payment")
     order = await orders.mark_paid(db, order.id, body.razorpay_payment_id) or order
     await db.commit()
+    if order.status == OrderStatus.expired:
+        raise ApiError(
+            409,
+            "payment_late",
+            "Your payment came after this order expired. It will be refunded; please order again.",
+        )
     return await views.order_out(db, order)
 
 
@@ -187,10 +204,5 @@ async def events(
     db: AsyncSession = Depends(get_session),
 ) -> StreamingResponse:
     """SSE for one order — its owner only (authorised again on every reconnect)."""
-    order = await db.get(Order, order_id)
-    if order is None:
-        raise not_found("No such order")
-    if order.user_id != user.id:
-        raise ApiError(403, "forbidden", "This isn't your order")
-    await db.close()
-    return sse.respond(request, stream_service.Scope("order", order_id), since)
+    await own_order(db, order_id, user)
+    return await sse.respond(request, db, stream_service.Scope("order", order_id), since)

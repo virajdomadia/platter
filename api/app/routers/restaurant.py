@@ -78,6 +78,7 @@ async def board(
                 select(Order)
                 .where(
                     Order.restaurant_id == r.id,
+                    Order.is_demo.is_(True),  # every board login is the public demo
                     Order.status.in_((S.placed, S.accepted, S.preparing, S.ready, S.picked_up)),
                 )
                 .order_by(Order.placed_at)
@@ -106,7 +107,7 @@ async def transition(
     db: AsyncSession = Depends(get_session),
 ) -> s.Ticket:
     order = await db.get(Order, order_id)
-    if order is None or order.restaurant_id != owner.restaurant.id:
+    if order is None or order.restaurant_id != owner.restaurant.id or not order.is_demo:
         raise not_found("No such order")
     actor = Actor("restaurant", user_id=owner.user.id, restaurant_id=owner.restaurant.id)
     owner.restaurant.board_seen_at = clock.now()
@@ -197,11 +198,12 @@ async def events(
 ) -> StreamingResponse:
     restaurant_id = owner.restaurant.id
     settings: Settings = request.app.state.settings
-    await db.close()
 
     async def ambient(tick_db: AsyncSession, tick: int) -> None:
         if settings.ambient_orders and tick % AMBIENT_EVERY == 5:
             r = await tick_db.get(Restaurant, restaurant_id)
             await demo.keep_alive(tick_db, prefer=r)
 
-    return sse.respond(request, stream_service.Scope("restaurant", restaurant_id), since, ambient)
+    return await sse.respond(
+        request, db, stream_service.Scope("restaurant", restaurant_id), since, ambient
+    )

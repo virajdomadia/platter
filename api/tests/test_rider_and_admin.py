@@ -163,3 +163,33 @@ async def test_menu_toggle_reaches_the_customer_menu(world, app):
         page = (await anon.get("/restaurants/bandstand-kitchen")).json()
         found = next(i for cat in page["categories"] for i in cat["items"] if i["id"] == item["id"])
         assert found["is_available"] is False
+
+
+async def test_a_kitchen_running_late_is_stuck_and_the_autopilot_takes_over(world):
+    from app.services import sim
+
+    db = world
+    watched = {"t": clock.now() + dt.timedelta(hours=3)}  # someone keeps the board open
+    await db.execute(text("update restaurants set board_seen_at = :t"), watched)
+    await db.commit()
+    order = await place(db)
+    kitchen = Actor("restaurant", restaurant_id=order.restaurant_id)
+    order = await orders.transition(db, order.id, S.accepted, kitchen)
+    order = await orders.transition(db, order.id, S.preparing, kitchen)
+    await db.commit()
+    prep = (
+        await db.execute(
+            text("select prep_min from restaurants where id = :r"), {"r": order.restaurant_id}
+        )
+    ).scalar_one()
+    clock.advance(prep * 60 + 5 * 60 + 1)
+    listed = await admin.active_orders(db, only_stuck=True)
+    assert [o.stuck for o in listed] == ["kitchen_late"]
+    await sim.advance(db)
+    await db.commit()
+    assert (await db.get(Order, order.id, populate_existing=True)).status == S.preparing
+    clock.advance(5 * 60)
+    await sim.advance(db)
+    await db.commit()
+    # ready (and a waiting sim rider may already have carried it on)
+    assert (await db.get(Order, order.id, populate_existing=True)).ready_at is not None

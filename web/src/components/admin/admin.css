@@ -65,6 +65,7 @@
 }
 .ad-table {
   width: 100%;
+  min-width: 480px; /* scroll sideways rather than clip the age or the Reassign button */
   border-collapse: collapse;
   table-layout: fixed;
   font-size: 13px;
@@ -98,6 +99,9 @@
 .ad-table tbody tr.on {
   background: var(--lav);
 }
+.ad-table tbody tr.stuck {
+  background: #fff1ec;
+}
 .ad-table .chip {
   font-size: 11px;
   padding: 3px 8px;
@@ -129,14 +133,14 @@
 .ad-legend {
   position: absolute;
   left: 12px;
-  bottom: 12px;
-  right: 120px;
+  top: 12px; /* clear of the map attribution at the bottom */
+  right: 160px;
   z-index: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 6px 12px;
   width: max-content;
-  max-width: calc(100% - 140px);
+  max-width: calc(100% - 180px);
   background: #fff;
   border-radius: 14px;
   padding: 8px 12px;
@@ -150,6 +154,9 @@
   height: 10px;
   border-radius: 50%;
   margin-right: 5px;
+}
+.ad-legend i.busy {
+  border-radius: 2px;
 }
 .ad-reset {
   position: absolute;

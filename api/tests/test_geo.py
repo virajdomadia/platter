@@ -78,7 +78,9 @@ def nearest_sim(point: tuple[float, float]) -> str:
 async def test_nearest_available_rider_is_a_knn(world):
     for slug in ("dosa-camp", "momo-junction", "burger-barn"):
         r = await restaurant(world, slug)
-        found = await dispatch.nearest_available_rider(world, r.id)
+        found = await dispatch.nearest_available_rider(
+            world, Order(restaurant_id=r.id, is_demo=True)
+        )
         lat, lng = await geo_point(world, r.id)
         # The demo rider is parked nearby too, but isn't sharing a location: never dispatched.
         assert found is not None and found.name == nearest_sim((lat, lng)), slug
@@ -101,8 +103,12 @@ async def test_a_real_rider_sharing_location_is_dispatched(world):
     divya = (await world.execute(select(Rider).where(Rider.name == "Divya S"))).scalar_one()
     await sim.upsert_position(world, divya.id, (12.9346, 77.6183), 0, 1.0)  # at Dosa Camp's door
     await world.commit()
-    found = await dispatch.nearest_available_rider(world, (await restaurant(world, "dosa-camp")).id)
+    dosa = (await restaurant(world, "dosa-camp")).id
+    found = await dispatch.nearest_available_rider(world, Order(restaurant_id=dosa, is_demo=True))
     assert found.name == "Divya S"
+    # The demo phone is public: a real customer's order never goes to it (review H1).
+    found = await dispatch.nearest_available_rider(world, Order(restaurant_id=dosa, is_demo=False))
+    assert found.name != "Divya S" and found.is_sim
 
 
 async def test_skip_locked_never_double_books(world, factory):

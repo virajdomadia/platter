@@ -35,6 +35,7 @@ IST = ZoneInfo("Asia/Kolkata")
 JUMP_M = 200
 JUMP_WINDOW = dt.timedelta(seconds=3)
 ARRIVED_M = 60
+CLOCK_SKEW = dt.timedelta(seconds=30)
 
 
 async def current_job(db: AsyncSession, rider: Rider) -> Order | None:
@@ -99,9 +100,11 @@ async def position(
     more than 200 m from the previous one within 3 s is a GPS jump and is dropped."""
     rider = who.rider
     now = clock.now()
+    # A phone clock set in the future can't freeze the shared demo phone's later fixes out.
+    at = min(body.at, now + CLOCK_SKEW)
     prev = await db.get(RiderPosition, rider.id)
     if prev is not None:
-        if prev.client_at is not None and body.at <= prev.client_at:
+        if prev.client_at is not None and at <= prev.client_at:
             return Response(status_code=204, headers={"X-Ignored": "stale"})
         moved = routing.haversine(latlng(prev.loc), (body.lat, body.lng))
         if now - prev.recorded_at < JUMP_WINDOW and moved > JUMP_M:
@@ -115,7 +118,7 @@ async def position(
         heading,
         body.speed_mps,
         order_id=job.id if job and job.status != S.placed else None,
-        client_at=body.at,
+        client_at=at,
     )
     if job is not None:
         # A real rider who reaches the kitchen is "at the door" on the board.
@@ -165,5 +168,4 @@ async def events(
     db: AsyncSession = Depends(get_session),
 ) -> StreamingResponse:
     rider_id = who.rider.id
-    await db.close()
-    return sse.respond(request, stream_service.Scope("rider", rider_id), since)
+    return await sse.respond(request, db, stream_service.Scope("rider", rider_id), since)

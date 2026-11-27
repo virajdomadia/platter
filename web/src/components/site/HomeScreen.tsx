@@ -4,7 +4,7 @@
 // restaurant that can reach it — PostGIS within 5 km by straight line, 5–8 km greyed "Too far".
 // Moving the pin re-sorts and re-prices the list without a reload.
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Map } from "@/components/map/Map";
 import { api, type Address, type Place, type RestaurantCard as Card } from "@/lib/api";
 import { DEFAULT_PIN, haversine, AREA_CENTRE } from "@/lib/geo";
@@ -32,6 +32,7 @@ export function HomeScreen() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [locating, setLocating] = useState(false);
   const [geoNote, setGeoNote] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false); // phone: the location card is one line until "Change"
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -58,7 +59,7 @@ export function HomeScreen() {
   const far = haversine([pin.lat, pin.lng], AREA_CENTRE) > 12_000;
 
   const locate = () => {
-    if (!navigator.geolocation) return setGeoNote("This browser can't share a location — drag the pin instead.");
+    if (!navigator.geolocation) return setGeoNote("This browser can't share a location. Drag the pin instead.");
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -68,7 +69,7 @@ export function HomeScreen() {
       },
       () => {
         setLocating(false);
-        setGeoNote("Location permission was refused — search or drag the pin instead.");
+        setGeoNote("Location permission was refused. Search or drag the pin instead.");
       },
       { enableHighAccuracy: true, timeout: 10_000 },
     );
@@ -77,15 +78,23 @@ export function HomeScreen() {
   return (
     <main id="main" className="page home">
       <section className="home-grid">
-        <div className="tile home-side spring">
-          <div>
-            <p className="label">Deliver to</p>
-            <h1 style={{ fontSize: 22 }}>📍 {pin.label}</h1>
-            <p className="muted" style={{ fontSize: 13 }}>{pin.line}</p>
+        <div className={`tile home-side spring ${editing ? "open" : ""}`}>
+          <div className="home-where">
+            <div style={{ minWidth: 0 }}>
+              <p className="label">Deliver to</p>
+              <h1 style={{ fontSize: 22 }}>
+                <span aria-hidden="true">📍 </span>
+                {pin.label}
+              </h1>
+              <p className="muted" style={{ fontSize: 13 }}>{pin.line}</p>
+            </div>
+            <button className="btn small ghost home-change" aria-expanded={editing} onClick={() => setEditing(!editing)}>
+              {editing ? "Done" : "Change"}
+            </button>
           </div>
           <div className="home-map">
             <Map
-              label="Delivery pin — drag to move"
+              label="Delivery pin, drag to move"
               center={[pin.lat, pin.lng]}
               zoom={14}
               draggable={{ lat: pin.lat, lng: pin.lng, onDragEnd: async (lat, lng) => setPin(await labelFor(lat, lng)) }}
@@ -97,7 +106,7 @@ export function HomeScreen() {
           <AddressSearch near={pin} onPick={(p) => setPin({ lat: p.lat, lng: p.lng, label: p.label, line: p.line })} />
           <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
             <button className="chip lav" onClick={locate} disabled={locating}>
-              {locating ? "Locating…" : "🎯 Use my location"}
+              {locating ? "Locating…" : <><span aria-hidden="true">🎯</span> Use my location</>}
             </button>
             {addresses.map((a) => (
               <button
@@ -121,10 +130,16 @@ export function HomeScreen() {
           <div className="tile ink spring home-hero">
             <p className="label">Bengaluru · Koramangala & HSR</p>
             <h2 style={{ fontSize: 26, color: "#fff" }}>Hot food, tracked to your door.</h2>
-            <p style={{ color: "#d9d3f0", fontSize: 14, maxWidth: "52ch" }}>
-              Order from kitchens that can actually reach your pin, then watch the rider move on a real map — the
-              ETA is measured along the route, not guessed.
+            <p className="home-blurb" style={{ color: "#d9d3f0", fontSize: 14, maxWidth: "52ch" }}>
+              Order from kitchens that can actually reach your pin, then watch the rider move on a real map. The ETA is
+              measured along the route, not guessed.
             </p>
+            {me === null && (
+              <div style={{ marginTop: 6 }}>
+                <p className="label" style={{ color: "#d9d3f0", marginBottom: 6 }}>Try the demo, no sign-up</p>
+                <DemoCards strip />
+              </div>
+            )}
           </div>
           <div className="tile peach spring stat">
             <b className="num">{cards ? orderable.length : "–"}</b>
@@ -132,7 +147,7 @@ export function HomeScreen() {
           </div>
           <div className="tile mint spring stat">
             <b className="num">{fastest ? `${minutes(fastest.eta_s)}′` : "–"}</b>
-            <small>{fastest ? `fastest right now — ${fastest.name}` : "fastest kitchen"}</small>
+            <small>{fastest ? `fastest right now: ${fastest.name}` : "fastest kitchen"}</small>
           </div>
 
           {failed && (
@@ -148,22 +163,29 @@ export function HomeScreen() {
           {cards && cards.length === 0 && (
             <div className="tile lemon span2">
               <h3>{far ? "We only deliver in Koramangala & HSR Layout for now" : "No kitchens near this pin"}</h3>
-              <p className="muted" style={{ marginTop: 4 }}>Move the pin closer to Koramangala, Bengaluru — every kitchen here is within a few kilometres.</p>
+              <p className="muted" style={{ marginTop: 4 }}>Move the pin closer to Koramangala, Bengaluru. Every kitchen here is within a few kilometres.</p>
               <button className="btn small" style={{ marginTop: 10 }} onClick={() => setPin(DEFAULT_PIN)}>
                 Jump to Koramangala 5th Block
               </button>
             </div>
           )}
-          {cards?.map((c, i) => <RestaurantCard key={c.id} r={c} big={i === 0 && c.orderable} />)}
+          {cards?.map((c, i) => (
+            <Fragment key={c.id}>
+              {!c.orderable && (i === 0 || cards[i - 1].orderable) && (
+                <h2 className="span-all" style={{ fontSize: 16, margin: "8px 4px 0" }}>Not available right now</h2>
+              )}
+              <RestaurantCard r={c} big={i === 0 && c.orderable} />
+            </Fragment>
+          ))}
         </div>
       </section>
 
       {me === null && (
-        <section className="tile lav spring" style={{ marginTop: 12 }} aria-labelledby="demo-h">
+        <section id="demo" className="tile lav spring" style={{ marginTop: 12 }} aria-labelledby="demo-h">
           <div className="between" style={{ marginBottom: 10, flexWrap: "wrap" }}>
             <div>
               <h2 id="demo-h">Try every side of Platter</h2>
-              <p className="muted" style={{ fontSize: 13 }}>One tap — no sign-up. Open two at once (a phone and a laptop) to see the live tracking.</p>
+              <p className="muted" style={{ fontSize: 13 }}>One tap, no sign-up. Open two at once (a phone and a laptop) to see the live tracking.</p>
             </div>
             <Link className="btn small white" href="/sign-up">
               Create an account

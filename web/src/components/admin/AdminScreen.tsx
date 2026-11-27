@@ -7,7 +7,7 @@ import { Map, type MapMarker, type MapRoute } from "@/components/map/Map";
 import { RoleBar } from "@/components/ui/RoleBar";
 import { api, errorMessage, type AdminMap, type AdminOrder, type AdminRider } from "@/lib/api";
 import { age, inr, minutes, STATUS_LABEL } from "@/lib/format";
-import { AREA_CENTRE, type LatLng } from "@/lib/geo";
+import { AREA_CENTRE, haversine, type LatLng } from "@/lib/geo";
 import { useEventStream } from "@/lib/stream";
 import { ReassignPicker } from "./ReassignPicker";
 import "./admin.css";
@@ -172,6 +172,7 @@ function Board({
         heading: r.heading,
         color: RIDER_COLOR[r.status],
         sim: r.is_sim,
+        busy: r.status === "busy",
         title: `${r.name} · ${r.is_sim ? "simulated" : "real (phone)"}${r.current_order ? ` · ${r.current_order}` : ""}`,
         onClick: () => onSelect("rider", r.id),
       });
@@ -208,7 +209,10 @@ function Board({
       const r = riders.find((x) => x.id === focus.id);
       if (r && r.lat !== null && r.lng !== null) return [[r.lat, r.lng]];
     }
-    return restaurants.map((r): LatLng => [r.lat, r.lng]);
+    // the service area (Koramangala & HSR) and what is moving in it, not every kitchen in town
+    const near = (p: LatLng) => haversine(p, AREA_CENTRE) < SERVICE_M;
+    const pts = [...restaurants.map((r): LatLng => [r.lat, r.lng]), ...orders.map((o): LatLng => [o.drop.lat, o.drop.lng])].filter(near);
+    return pts.length ? pts : [AREA_CENTRE];
   })();
   const fitKey = `${focus.kind}-${focus.id}-${focus.n}-${restaurants.length}`;
 
@@ -224,7 +228,7 @@ function Board({
       </section>
       <section className={`tile peach ad-stat spring ${stuck ? "ad-alert" : ""}`}>
         <b className="num">{stuck}</b>
-        <small>stuck ⚠</small>
+        <small>stuck: flagged in the list</small>
       </section>
       <section className="tile ink ad-stat ad-today spring">
         <span className="label">Today</span>
@@ -240,8 +244,8 @@ function Board({
         <Map label="Live map of restaurants, orders and riders" center={AREA_CENTRE} zoom={13} markers={markers} routes={routes} fit={fit} fitKey={fitKey}>
           <div className="ad-legend" aria-label="Map legend">
             <span>
-              <i style={{ background: RIDER_COLOR.busy }} />
-              busy
+              <i className="busy" style={{ background: RIDER_COLOR.busy }} />
+              busy (square badge)
             </span>
             <span>
               <i style={{ background: RIDER_COLOR.available }} />
@@ -262,10 +266,10 @@ function Board({
       </section>
 
       <section className="tile ad-ledger" aria-labelledby="ledger-h">
-        <h2 id="ledger-h">🗂️ Live orders</h2>
+        <h2 id="ledger-h">Live orders</h2>
         {orders.length === 0 ? (
           <p className="muted ad-empty">
-            No active orders right now — sim customers order while someone watches this map; or place one as the demo customer.
+            No active orders right now. Sim customers order while someone watches this map; or place one as the demo customer.
           </p>
         ) : (
           <div className="ad-scroll">
@@ -274,9 +278,9 @@ function Board({
                 <col style={{ width: 74 }} />
                 <col />
                 <col style={{ width: 90 }} />
-                <col style={{ width: 48 }} />
-                <col style={{ width: 92 }} />
-                <col style={{ width: 82 }} />
+                <col style={{ width: 64 }} />
+                <col style={{ width: 120 }} />
+                <col style={{ width: 96 }} />
               </colgroup>
               <thead>
                 <tr>
@@ -331,9 +335,11 @@ function Row({
         ? "no rider"
         : o.stuck === "not_picked_up"
           ? "not picked up"
-          : null;
+          : o.stuck === "kitchen_late"
+            ? "kitchen late"
+            : null;
   return (
-    <tr className={on ? "on" : undefined} onClick={onSelect}>
+    <tr className={`${on ? "on" : ""} ${stuck ? "stuck" : ""}`} onClick={onSelect}>
       <td>
         <button
           type="button"
@@ -352,9 +358,9 @@ function Row({
       <td>
         <span className={`chip ${tone}`}>{STATUS_LABEL[o.status] ?? o.status}</span>
       </td>
-      <td className="num">{age(o.age_s + elapsed)}</td>
+      <td className={`num ${stuck ? "ad-stuck" : ""}`}>{age(o.age_s + elapsed)}</td>
       <td title={stuck ?? o.rider_name ?? undefined}>
-        {stuck ? <span className="ad-stuck">⚠ {stuck}</span> : (o.rider_name ?? "—")}
+        {stuck ? <span className="ad-stuck"><span aria-hidden="true">⚠ </span>{stuck}</span> : (o.rider_name ?? "—")}
       </td>
       <td>
         {REASSIGNABLE.has(o.status) && (
@@ -373,6 +379,8 @@ function Row({
     </tr>
   );
 }
+
+const SERVICE_M = 4000;
 
 function useNow(every: number): number {
   const [now, setNow] = useState(() => Date.now());

@@ -118,7 +118,7 @@ export function useGeoUplink(enabled: boolean, anchor: LatLng | null): Uplink {
         setState((s) => ({
           ...s,
           status: "error",
-          error: e.code === e.TIMEOUT ? "No GPS signal yet — try near a window or outdoors" : "GPS is unavailable right now",
+          error: e.code === e.TIMEOUT ? "No GPS signal yet. Try near a window or outdoors" : "GPS is unavailable right now",
         }));
     };
 

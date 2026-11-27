@@ -5,12 +5,14 @@ index, `for update of r skip locked`, so two concurrent accepts never take the s
 rider free → the order waits with `rider_id null` ("Finding a rider"); `on_rider_available` gives
 a freed rider the oldest waiting order. A real (non-sim) rider is only dispatched while they are
 sharing their location (a fix in the last 2 minutes) — a phone that isn't sending GPS can't ride.
+The only real rider is the public demo phone, so it only ever carries demo orders (`is_demo`): a
+real customer's address never reaches a stranger's screen.
 """
 
 import datetime as dt
 import uuid
 
-from sqlalchemy import select, text, update
+from sqlalchemy import select, text, true, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import clock
@@ -30,6 +32,7 @@ from app.services import events, routing
 from app.services.events import Actor
 
 LIVE_FIX = dt.timedelta(minutes=2)
+TRAIL_DAYS = 7
 WAITING = (OrderStatus.accepted, OrderStatus.preparing, OrderStatus.ready)
 
 
@@ -58,19 +61,24 @@ async def restaurant_point(db: AsyncSession, restaurant_id: uuid.UUID) -> tuple[
     return latlng(r.loc)
 
 
-async def nearest_available_rider(db: AsyncSession, restaurant_id: uuid.UUID) -> Rider | None:
+async def nearest_available_rider(db: AsyncSession, order: Order) -> Rider | None:
     rider_id = (
         await db.execute(
             text(
                 """
                 select r.id from riders r join rider_positions p on p.rider_id = r.id
-                where r.status = 'available' and (r.is_sim or p.recorded_at > :fresh)
+                where r.status = 'available'
+                  and (r.is_sim or (:demo and p.recorded_at > :fresh))
                 order by p.loc <-> (select loc from restaurants where id = :restaurant)
                 limit 1
                 for update of r skip locked
                 """
             ),
-            {"restaurant": restaurant_id, "fresh": clock.now() - LIVE_FIX},
+            {
+                "restaurant": order.restaurant_id,
+                "demo": order.is_demo,
+                "fresh": clock.now() - LIVE_FIX,
+            },
         )
     ).scalar_one_or_none()
     return await db.get(Rider, rider_id) if rider_id else None
@@ -148,7 +156,7 @@ async def assign_rider(
     accept happened when the simulation is catching up (the rider set off then)."""
     if order.rider_id is not None:
         return None
-    rider = rider or await nearest_available_rider(db, order.restaurant_id)
+    rider = rider or await nearest_available_rider(db, order)
     if rider is None:
         return None
     await _attach(db, order, rider, "rider_assigned", started_at=started_at)
@@ -162,15 +170,60 @@ async def release_rider(db: AsyncSession, rider: Rider) -> None:
         .values(ended_at=clock.now())
     )
     rider.status = RiderStatus.available
+    await forget_rider(db, rider.user_id)
     await db.flush()
 
 
+async def forget_rider(db: AsyncSession, user_id: uuid.UUID) -> None:
+    """A real phone's last fix and its trail go when its job or its session ends (05 §7). Sims
+    have no GPS, so theirs stay."""
+    for table in ("rider_positions", "rider_track"):
+        await db.execute(
+            text(
+                f"delete from {table} where rider_id in"  # noqa: S608 - fixed table names
+                " (select id from riders where user_id = :u and not is_sim)"
+            ),
+            {"u": user_id},
+        )
+
+
+async def prune(db: AsyncSession, days: int = TRAIL_DAYS) -> int:
+    """Lazy retention, run on every demo login (nothing can read these rows without one) and by
+    `scripts/prune_track`: a real rider's fix once it is no longer live, trails of orders closed
+    more than `days` ago, spent rate-limit windows. Returns the trail points deleted."""
+    now = clock.now()
+    await db.execute(
+        text(
+            "delete from rider_positions p using riders r where r.id = p.rider_id"
+            " and not r.is_sim and p.recorded_at < :stale"
+        ),
+        {"stale": now - LIVE_FIX},
+    )
+    await db.execute(
+        text("delete from rate_limits where window_start < :old"),
+        {"old": now - dt.timedelta(hours=1)},
+    )
+    trail = await db.execute(
+        text(
+            "delete from rider_track t using orders o where o.id = t.order_id"
+            " and o.status in ('delivered', 'rejected', 'cancelled', 'expired')"
+            " and coalesce(o.delivered_at, o.rejected_at, o.cancelled_at, o.expired_at) < :cutoff"
+        ),
+        {"cutoff": now - dt.timedelta(days=days)},
+    )
+    return int(trail.rowcount or 0)  # type: ignore[attr-defined]
+
+
 async def on_rider_available(db: AsyncSession, rider: Rider) -> Order | None:
-    """A freed rider takes the oldest order still waiting for one."""
+    """A freed rider takes the oldest order still waiting for one (a real phone: a demo order)."""
     order = (
         await db.execute(
             select(Order)
-            .where(Order.rider_id.is_(None), Order.status.in_(WAITING))
+            .where(
+                Order.rider_id.is_(None),
+                Order.status.in_(WAITING),
+                Order.is_demo.is_(True) if not rider.is_sim else true(),
+            )
             .order_by(Order.accepted_at)
             .limit(1)
             .with_for_update(skip_locked=True)
@@ -189,7 +242,7 @@ async def reassign(
     order = (
         await db.execute(select(Order).where(Order.id == order_id).with_for_update())
     ).scalar_one_or_none()
-    if order is None:
+    if order is None or not order.is_demo:  # every admin login is the public demo
         raise ApiError(404, "not_found", "No such order")
     if order.status not in WAITING:
         raise ApiError(
@@ -205,8 +258,11 @@ async def reassign(
         raise ApiError(404, "not_found", "No such rider")
     if rider.status != RiderStatus.available or rider.id == order.rider_id:
         raise ApiError(409, "rider_busy", f"{rider.name} isn't free right now")
-    if await position_of(db, rider.id) is None:
-        raise ApiError(409, "rider_busy", f"{rider.name} has no location yet")
+    pos = await db.get(RiderPosition, rider.id)
+    live = pos is not None and (rider.is_sim or pos.recorded_at > clock.now() - LIVE_FIX)
+    # Demo staging (system) may hand the demo phone a job before its first fix arrives.
+    if not live and actor.role != "system":
+        raise ApiError(409, "rider_busy", f"{rider.name} isn't sharing a location right now")
 
     old: Rider | None = None
     if order.rider_id is not None:

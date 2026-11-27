@@ -7,10 +7,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { api, type MenuItem, type RestaurantCard, type RestaurantOut } from "@/lib/api";
+import { api, errorMessage, type Me, type MenuItem, type RestaurantCard, type RestaurantOut } from "@/lib/api";
 import { add, count, qtyOf, saveCart, setQty, subtotal, useCart, type Cart } from "@/lib/cart";
 import { etaLabel, inr, km } from "@/lib/format";
 import { usePin } from "@/lib/pin";
+import { setMe, useMe } from "@/lib/session";
+import { toast } from "@/lib/toast";
 
 const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -61,6 +63,9 @@ export function RestaurantScreen({ restaurant: r }: { restaurant: RestaurantOut 
 
   return (
     <main id="main" className="page menu-page">
+      <Link href="/" className="back-link">
+        <span aria-hidden="true">← </span>All kitchens
+      </Link>
       <section className="menu-hero">
         <div className="tile flush cover spring">
           {r.cover && <Image src={r.cover.url} alt="" width={r.cover.width} height={r.cover.height} priority sizes="(max-width: 760px) 50vw, 400px" />}
@@ -133,7 +138,7 @@ export function RestaurantScreen({ restaurant: r }: { restaurant: RestaurantOut 
           <div className="sheet-dim" onClick={() => setConflict(null)} />
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="switch-h">
             <div className="tile lemon">
-              <h2 id="switch-h" style={{ fontSize: 18 }}>🧺 Start a new cart?</h2>
+              <h2 id="switch-h" style={{ fontSize: 18 }}>Start a new cart?</h2>
               <p style={{ fontSize: 14, marginTop: 4 }}>
                 Your cart has {count(cart)} {count(cart) === 1 ? "item" : "items"} from {cart?.restaurant.name}. One restaurant per order.
               </p>
@@ -206,8 +211,34 @@ function DishRow({
   );
 }
 
+/** A guest skips the sign-in page: one tap signs in as the demo customer and goes to checkout. */
+function DemoCheckout() {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      className="btn ghost"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          setMe(await api<Me>("/auth/demo", { body: { as: "customer" } }));
+          router.push("/checkout");
+        } catch (err) {
+          toast("Couldn't sign in", errorMessage(err));
+          setBusy(false);
+        }
+      }}
+    >
+      {busy ? "Signing in…" : "Continue as the demo customer"}
+    </button>
+  );
+}
+
 function CartSheet({ cart, card, onClose, onCheckout }: { cart: Cart; card: RestaurantCard; onClose: () => void; onCheckout: () => void }) {
   const sub = subtotal(cart);
+  const me = useMe();
+  const [sure, setSure] = useState(false); // emptying takes two taps: one mis-tap can't lose the cart
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", esc);
@@ -224,7 +255,7 @@ function CartSheet({ cart, card, onClose, onCheckout }: { cart: Cart; card: Rest
         <div className="stack">
           {cart.lines.map((l) => (
             <div key={l.id} className="tile dish" style={{ padding: 8 }}>
-              {l.photo ? <Image src={l.photo} alt="" width={480} height={360} sizes="56px" style={{ width: 56, height: 56 }} /> : <span className="dish-ph">🍽️</span>}
+              {l.photo ? <Image src={l.photo} alt="" width={480} height={360} sizes="56px" style={{ width: 56, height: 56 }} /> : <span className="dish-ph" aria-hidden="true">🍽️</span>}
               <div>
                 <b>{l.name}</b>
                 <p>{inr(l.price_paise)} each</p>
@@ -237,7 +268,7 @@ function CartSheet({ cart, card, onClose, onCheckout }: { cart: Cart; card: Rest
             </div>
           ))}
           <label className="tile" style={{ display: "grid", gap: 6 }}>
-            <span className="label">📝 Note to the kitchen</span>
+            <span className="label">Note to the kitchen</span>
             <textarea
               className="input"
               maxLength={280}
@@ -254,9 +285,21 @@ function CartSheet({ cart, card, onClose, onCheckout }: { cart: Cart; card: Rest
             <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>Checkout prices the delivery on the road distance to your address.</p>
           </div>
           <div className="grid2">
-            <button className="btn ghost" onClick={() => { saveCart(null); onClose(); }}>Empty cart</button>
+            <button
+              className={`btn ${sure ? "" : "ghost"}`}
+              style={sure ? { background: "var(--coral-deep)" } : undefined}
+              onClick={() => {
+                if (!sure) return setSure(true);
+                saveCart(null);
+                onClose();
+              }}
+              onBlur={() => setSure(false)}
+            >
+              {sure ? "Tap again to empty" : "Empty cart"}
+            </button>
             <button className="btn" onClick={onCheckout} disabled={!card.orderable}>Checkout →</button>
           </div>
+          {me === null && card.orderable && <DemoCheckout />}
         </div>
       </div>
     </>

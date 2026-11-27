@@ -8,6 +8,7 @@ rider edges, and the kitchen autopilot on the restaurant edges while nobody is o
 """
 
 import datetime as dt
+import logging
 import math
 import uuid
 from collections.abc import Callable
@@ -29,12 +30,14 @@ from app.models import (
     Rider,
     RiderLeg,
     RouteMethod,
+    User,
 )
 from app.models.geo import latlng, make_point
 from app.services import dispatch, events, hours, routing
 from app.services.events import SYSTEM, Actor
 
 S = OrderStatus
+log = logging.getLogger(__name__)
 
 RADIUS_M = 5000
 SHOWN_RADIUS_M = 8000
@@ -105,7 +108,11 @@ async def quote(
         raise ApiError(404, "not_found", "No such restaurant")
     if not items:
         raise ApiError(422, "empty_cart", "Your cart is empty")
-    if any(q < 1 or q > MAX_QTY for _, q in items):
+    wanted: dict[uuid.UUID, int] = {}
+    for item_id, qty in items:
+        wanted[item_id] = wanted.get(item_id, 0) + qty
+    # After merging, so repeating a line can't get past the cap.
+    if any(q < 1 for _, q in items) or any(q > MAX_QTY for q in wanted.values()):
         raise ApiError(422, "validation", f"Quantities run from 1 to {MAX_QTY}")
     if not is_open(restaurant):
         raise ApiError(
@@ -123,9 +130,6 @@ async def quote(
             f"{restaurant.name} can't reach this address ({straight / 1000:.1f} km away)",
             {"distance_m": straight},
         )
-    wanted: dict[uuid.UUID, int] = {}
-    for item_id, qty in items:
-        wanted[item_id] = wanted.get(item_id, 0) + qty
     found = {
         m.id: m
         for m in (
@@ -190,10 +194,12 @@ async def create(
     at once; Razorpay waits in `pending_payment` for `mark_paid`. The caller commits."""
     number = (await db.execute(text("select nextval('order_number_seq')"))).scalar_one()
     now = clock.now()
+    customer = await db.get(User, user_id)
     order = Order(
         id=uuid.uuid4(),
         number=f"PL-{number}",
         user_id=user_id,
+        is_demo=bool(customer and customer.is_demo),
         restaurant_id=q.restaurant.id,
         status=S.placed if payment == PaymentKind.cod else S.pending_payment,
         payment=payment,
@@ -242,6 +248,11 @@ def _own_order(o: Order, a: Actor) -> bool:
     return a.user_id == o.user_id
 
 
+def _own_unpaid_order(o: Order, a: Actor) -> bool:
+    # shortcut: no refunds until v2, so an order paid online can't be cancelled by the customer.
+    return _own_order(o, a) and o.payment == PaymentKind.cod
+
+
 def _assigned_rider(o: Order, a: Actor) -> bool:
     return o.rider_id is not None and a.rider_id == o.rider_id
 
@@ -265,7 +276,7 @@ TRANSITIONS: dict[tuple[OrderStatus, OrderStatus], Rule] = {
     (S.pending_payment, S.expired): _rule("system"),
     (S.placed, S.accepted): _rule("restaurant", "system", guard=_own_restaurant),
     (S.placed, S.rejected): _rule("restaurant", guard=_own_restaurant),
-    (S.placed, S.cancelled): _rule("customer", guard=_own_order),
+    (S.placed, S.cancelled): _rule("customer", guard=_own_unpaid_order),
     (S.accepted, S.preparing): _rule("restaurant", "system", guard=_own_restaurant),
     (S.preparing, S.ready): _rule("restaurant", "system", guard=_own_restaurant),
     (S.ready, S.picked_up): _rule("rider", "system", guard=_assigned_rider),
@@ -383,6 +394,10 @@ async def mark_paid(db: AsyncSession, order_id: uuid.UUID, payment_id: str) -> O
     order = await lock(db, order_id)
     if order is None:
         return None
+    if order.status == S.expired and not order.razorpay_payment_id:
+        # Captured after the 15-minute window: keep the payment id so it can be refunded.
+        order.razorpay_payment_id = payment_id
+        log.warning("payment %s captured for expired order %s: refund it", payment_id, order.number)
     if order.status != S.pending_payment:
         return order
     order.razorpay_payment_id = payment_id

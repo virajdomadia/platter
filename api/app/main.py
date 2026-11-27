@@ -4,11 +4,11 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 
 from app.core.config import Settings, get_settings
 from app.core.db import dispose_engines
-from app.core.errors import install_error_handlers
+from app.core.errors import envelope, install_error_handlers
 from app.routers import addresses, admin, auth, discovery, orders, restaurant, rider, system
 
 logging.basicConfig(level=logging.INFO)
@@ -35,6 +35,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings or get_settings()
     install_error_handlers(app)
+
+    @app.middleware("http")
+    async def same_origin(request: Request, call_next) -> Response:  # type: ignore[no-untyped-def]
+        # CSRF beyond SameSite=Lax: sibling *.virajdomadia.com sites are same-site, not same-origin.
+        origin = request.headers.get("origin")
+        web = app.state.settings.web_url.rstrip("/")
+        if request.method not in ("GET", "HEAD", "OPTIONS") and origin and origin != web:
+            return envelope(403, "forbidden", "Cross-site request refused")
+        return await call_next(request)
+
     for r in (system, auth, discovery, addresses, orders, restaurant, rider, admin):
         app.include_router(r.router)
     return app

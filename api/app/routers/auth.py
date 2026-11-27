@@ -13,7 +13,7 @@ from app.core.config import Settings, current_settings
 from app.core.db import get_session
 from app.core.errors import ApiError
 from app.models import Restaurant, Rider, Role, User
-from app.services import auth, demo
+from app.services import auth, demo, dispatch, limits
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -51,10 +51,14 @@ async def _signed_in(db: AsyncSession, user: User, response: Response, settings:
 @router.post("/sign-up", response_model=s.Me, status_code=201)
 async def sign_up(
     body: s.SignUp,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_session),
     settings: Settings = Depends(current_settings),
 ) -> s.Me:
+    await limits.hit(db, f"sign-up:{limits.client_ip(request, settings)}", 10)
+    if body.email.lower().endswith("platter.demo"):  # the seeded demo and sim accounts' domain
+        raise ApiError(422, "validation", "Use your own email address", {"fields": {"email": ""}})
     password_hash = await asyncio.to_thread(auth.hash_password, body.password)
     user = User(
         id=auth.new_id(),
@@ -80,6 +84,7 @@ async def sign_in(
     db: AsyncSession = Depends(get_session),
     settings: Settings = Depends(current_settings),
 ) -> s.Me:
+    await limits.hit(db, f"sign-in:{body.email.strip().lower()}", 10)
     user = await auth.sign_in(db, body.email, body.password)
     if user is None:
         raise ApiError(401, "bad_credentials", "That email and password don't match")
@@ -95,6 +100,9 @@ async def sign_out(
 ) -> Response:
     token = request.cookies.get(auth.COOKIE)
     if token:
+        user = await auth.user_for_token(db, token)
+        if user is not None:
+            await dispatch.forget_rider(db, user.id)  # a real phone's fix goes with it
         await auth.close_session(db, token)
     auth.clear_cookie(response, settings)
     response.status_code = 204
@@ -111,12 +119,15 @@ async def me(
 @router.post("/demo", response_model=s.Me)
 async def demo_login(
     body: s.DemoIn,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_session),
     settings: Settings = Depends(current_settings),
 ) -> s.Me:
     """Sign in as one of the four seeded demo accounts — and make sure there is something to see:
     an order on the way, tickets on the board, a job on the rider's phone, orders on the map."""
+    await limits.hit(db, f"demo:{limits.client_ip(request, settings)}", 30)
+    await dispatch.prune(db)
     role = body.as_
     user = (
         await db.execute(select(User).where(User.email == DEMO_EMAILS[role]))

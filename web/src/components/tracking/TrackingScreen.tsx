@@ -86,21 +86,22 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
   const routes: MapRoute[] = leg && !ended ? [{ id: leg.leg_id, polyline: leg.polyline, color: "#7B5CFF" }] : [];
   const fitPoints: LatLng[] = [[o.restaurant.lat, o.restaurant.lng], [o.drop.lat, o.drop.lng]];
   if (live.fix && !delivered) fitPoints.push([live.fix.lat, live.fix.lng]);
+  if (leg && !ended) fitPoints.push(...decode(leg.polyline)); // the whole route, not just its ends
 
   const curIndex = ORDER.indexOf(status);
   const pill = ended
     ? STATUS_LABEL[status]
     : delivered
-      ? "🏠 Delivered"
+      ? "Delivered"
       : findingRider
-        ? "📡 Finding a rider…"
+        ? "Finding a rider…"
         : status === "picked_up"
-          ? `🛵 ${o.rider?.name.split(" ")[0]} is on the way`
+          ? `${o.rider?.name.split(" ")[0]} is on the way`
           : status === "placed"
-            ? "🧾 Waiting for the kitchen"
+            ? "Waiting for the kitchen"
             : o.rider
-              ? `🛵 ${o.rider.name.split(" ")[0]} is heading to the kitchen`
-              : "🍳 Cooking";
+              ? `${o.rider.name.split(" ")[0]} is heading to the kitchen`
+              : "Cooking";
 
   const cancel = async () => {
     setCancelling(true);
@@ -125,7 +126,7 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
         </div>
         <div className="row" style={{ marginLeft: "auto", flexWrap: "wrap", justifyContent: "flex-end" }}>
           {!ended && !delivered && (stream.connected && !stream.stale ? <span className="chip mint live">Live</span> : <span className="chip peach">{stream.lastFrameAt ? "Reconnecting…" : "Connecting…"}</span>)}
-          {status === "placed" && (
+          {status === "placed" && o.payment === "cod" && (
             <button className="btn small ghost" onClick={cancel} disabled={cancelling}>
               {cancelling ? "Cancelling…" : "Cancel order"}
             </button>
@@ -146,7 +147,7 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
           radarAt={findingRider ? [o.restaurant.lat, o.restaurant.lng] : null}
         >
           <span className="map-pill">{pill}</span>
-          {weak && <span className="map-pill" style={{ top: 56, background: "var(--peach)" }}>📶 Rider&apos;s signal is weak — the map will catch up</span>}
+          {weak && <span className="map-pill" style={{ top: 56, background: "var(--peach)" }}>Rider&apos;s signal is weak. The map will catch up.</span>}
         </Map>
       </div>
 
@@ -164,7 +165,7 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
         ) : status === "pending_payment" ? (
           <>
             <b style={{ fontSize: 22 }}>Awaiting payment</b>
-            <small>Finish paying in the Razorpay window — saved for 15 min.</small>
+            <small>Finish paying in the Razorpay window. It is saved for 15 min.</small>
           </>
         ) : eta ? (
           <>
@@ -193,7 +194,7 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
               <b>{o.rider.name}</b>
               <small>{o.rider.vehicle}</small>
             </div>
-            <button className="chip white" style={{ marginLeft: "auto" }} onClick={() => toast(`Call ${o.rider!.name.split(" ")[0]}`, `Numbers are masked (${o.rider!.phone_masked}) — calls are simulated in this demo.`, "ok")}>
+            <button className="chip white" style={{ marginLeft: "auto" }} onClick={() => toast(`Call ${o.rider!.name.split(" ")[0]}`, `Numbers are masked (${o.rider!.phone_masked}). Calls are simulated in this demo.`, "ok")}>
               ☎ Call
             </button>
           </>
@@ -211,6 +212,10 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
       </div>
 
       <div className={`tile rail-tile colour-swap ${delivered ? "mint" : ""}`}>
+        <p className="rail-now" aria-live="polite">
+          {STATUS_LABEL[status]}
+          {o.timestamps[status] ? `, ${clock(o.timestamps[status]!)}` : ""}
+        </p>
         <ol className="rail" aria-label="Order progress">
           {STEPS.map((s, i) => {
             const at = o.timestamps[s.status];
@@ -219,7 +224,7 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
               <li key={s.status} className={`step ${state}`} aria-current={state === "cur" ? "step" : undefined}>
                 <i className={s.status === "preparing" && status === "preparing" ? "steam" : undefined} aria-hidden="true">{s.icon}</i>
                 {s.label}
-                <small className="muted num" style={{ fontSize: 10 }}>{at ? clock(at) : ""}</small>
+                <small className="num">{at ? clock(at) : ""}</small>
               </li>
             );
           })}

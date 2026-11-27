@@ -22,7 +22,7 @@ Eight riders are simulated (no process: a sim's position is computed from its ro
 - **Live location over SSE with Postgres as the bus** — no WebSockets, no Pusher, ₹0 per order: MapLibre + OpenFreeMap, OSRM routes, Photon geocoding.
 
 ## How the bus works
-Every status change appends a row to `order_events` (commit-ordered `seq`: each insert takes `pg_advisory_xact_lock(1)` after its row locks). Riders POST GPS fixes into `rider_positions`. One stream loop in `api/app/services/stream.py` serves four scopes (order, restaurant, rider, admin): every second it advances the lazy simulation for its scope, reads `order_events where seq > $cursor` and positions newer than its position cursor, and yields SSE frames with `id: {seq}:{pos_ms}`. It closes itself at 280 s; the browser reconnects with `Last-Event-ID` and the loop replays exactly what was missed — `order_events` is the durable log, so a dropped connection loses nothing.
+Every status change appends a row to `order_events` (commit-ordered `seq`: events are buffered in the transaction and inserted at commit under `pg_advisory_xact_lock(1)`, after its row locks, so a slow OSRM call never holds the lock). Riders POST GPS fixes into `rider_positions`. One stream loop in `api/app/services/stream.py` serves four scopes (order, restaurant, rider, admin): every second it advances the lazy simulation for its scope, reads `order_events where seq > $cursor` and positions newer than its position cursor, and yields SSE frames with `id: {seq}:{pos_ms}`. It closes itself at 280 s; the browser reconnects with `Last-Event-ID` and the loop replays exactly what was missed — `order_events` is the durable log, so a dropped connection loses nothing.
 
 ```mermaid
 sequenceDiagram

@@ -1,5 +1,5 @@
-"""Delete rider trails (`rider_track`) of orders closed more than 7 days ago (05 §7: positions are
-kept only as long as they are useful to the customer and the case study).
+"""Run the retention prune by hand (`dispatch.prune`; it also runs lazily on every demo login):
+a real rider's stale fix, rider trails of orders closed more than 7 days ago, spent rate limits.
 
     PRUNE_DATABASE_URL=… uv run python -m scripts.prune_track [--days 7] [--dry-run]
 
@@ -11,32 +11,19 @@ import asyncio
 import os
 import sys
 
-from sqlalchemy import text
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.core.db import make_engine
-
-SQL = """
-{verb} rider_track t
-using orders o
-where o.id = t.order_id
-  and o.status in ('delivered', 'rejected', 'cancelled', 'expired')
-  and coalesce(o.delivered_at, o.rejected_at, o.cancelled_at, o.expired_at)
-      < now() - make_interval(days => :days)
-"""
+from app.services import dispatch
 
 
 async def run(url: str, days: int, dry_run: bool) -> int:
     engine = make_engine(url)
-    async with engine.begin() as conn:
-        if dry_run:
-            count_sql = SQL.format(verb="select count(*) from").replace(
-                "using orders o", ", orders o"
-            )
-            n = (await conn.execute(text(count_sql), {"days": days})).scalar_one()
-        else:
-            n = (await conn.execute(text(SQL.format(verb="delete from")), {"days": days})).rowcount
+    async with async_sessionmaker(engine)() as db:
+        n = await dispatch.prune(db, days)
+        await (db.rollback() if dry_run else db.commit())
     await engine.dispose()
-    return int(n or 0)
+    return n
 
 
 def main() -> int:
@@ -44,7 +31,7 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--database-url", default=os.environ.get("PRUNE_DATABASE_URL"))
-    parser.add_argument("--days", type=int, default=7)
+    parser.add_argument("--days", type=int, default=dispatch.TRAIL_DAYS)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if not args.database_url:

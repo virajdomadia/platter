@@ -82,10 +82,9 @@ async def events(
     db: AsyncSession = Depends(get_session),
 ) -> StreamingResponse:
     settings: Settings = request.app.state.settings
-    await db.close()
 
     async def ambient(tick_db: AsyncSession, tick: int) -> None:
         if settings.ambient_orders and tick % AMBIENT_EVERY == 10:
             await demo.keep_alive(tick_db)
 
-    return sse.respond(request, stream_service.Scope("admin"), since, ambient)
+    return await sse.respond(request, db, stream_service.Scope("admin"), since, ambient)

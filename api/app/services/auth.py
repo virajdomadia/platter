@@ -25,6 +25,7 @@ from app.models import Restaurant, Rider, Role, Session, User
 
 COOKIE = "pl_session"
 SESSION_TTL = dt.timedelta(days=30)
+DEMO_SESSION_TTL = dt.timedelta(days=1)
 
 _hasher = PasswordHasher()
 
@@ -47,7 +48,7 @@ def verify_password(stored: str | None, password: str) -> bool:
     return bool(stored)
 
 
-def _hash_token(token: str) -> str:
+def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
@@ -55,8 +56,9 @@ async def open_session(db: AsyncSession, user: User) -> tuple[str, dt.datetime]:
     now = clock.now()
     await db.execute(delete(Session).where(Session.expires_at <= now))
     token = secrets.token_urlsafe(32)
-    expires = now + SESSION_TTL
-    db.add(Session(id=_hash_token(token), user_id=user.id, expires_at=expires, created_at=now))
+    # Demo logins are one tap and shared: a short session keeps `sessions` from growing for a month.
+    expires = now + (DEMO_SESSION_TTL if user.is_demo else SESSION_TTL)
+    db.add(Session(id=hash_token(token), user_id=user.id, expires_at=expires, created_at=now))
     await db.commit()
     return token, expires
 
@@ -70,7 +72,7 @@ async def sign_in(db: AsyncSession, email: str, password: str) -> User | None:
 
 
 async def close_session(db: AsyncSession, token: str) -> None:
-    await db.execute(delete(Session).where(Session.id == _hash_token(token)))
+    await db.execute(delete(Session).where(Session.id == hash_token(token)))
     await db.commit()
 
 
@@ -99,7 +101,7 @@ async def user_for_token(db: AsyncSession, token: str | None) -> User | None:
         await db.execute(
             select(Session, User)
             .join(User, User.id == Session.user_id)
-            .where(Session.id == _hash_token(token))
+            .where(Session.id == hash_token(token))
         )
     ).first()
     if row is None:

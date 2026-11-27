@@ -71,7 +71,7 @@ export function CheckoutScreen() {
   const options: Where[] = useMemo(
     () => [
       ...(addresses ?? []).map((a) => ({ key: a.id, label: a.label, line: a.line, lat: a.lat, lng: a.lng })),
-      { key: "pin", label: `📍 ${pin.label}`, line: pinLine, lat: pin.lat, lng: pin.lng, editable: true },
+      { key: "pin", label: pin.label, line: pinLine, lat: pin.lat, lng: pin.lng, editable: true },
     ],
     [addresses, pin, pinLine],
   );
@@ -107,7 +107,7 @@ export function CheckoutScreen() {
     return (
       <main id="main" className="page narrow">
         <div className="tile lemon spring">
-          <h1 style={{ fontSize: 22 }}>🧺 Your cart is empty</h1>
+          <h1 style={{ fontSize: 22 }}>Your cart is empty</h1>
           <p className="muted" style={{ marginTop: 4 }}>Pick a kitchen near you and add a dish or two.</p>
           <Link className="btn" href="/" style={{ marginTop: 12 }}>Browse kitchens</Link>
         </div>
@@ -148,7 +148,7 @@ export function CheckoutScreen() {
       modal: {
         ondismiss: () => {
           setPending(start);
-          toast("Payment window closed", "Your order is saved for 15 minutes — try again or pay cash.");
+          toast("Payment window closed", "Your order is saved for 15 minutes. Try again or pay cash.");
         },
       },
     });
@@ -160,7 +160,7 @@ export function CheckoutScreen() {
     setPlacing(true);
     try {
       const start = await api<OrderStart>("/orders", {
-        body: { ...body, address_line: line, payment, note: cart.note || undefined },
+        body: { ...body, address_line: line, payment, note: cart.note || undefined, expected_total_paise: quote.total_paise },
       });
       if (payment === "cod") {
         saveCart(null);
@@ -169,21 +169,26 @@ export function CheckoutScreen() {
       }
       await payRazorpay(start);
     } catch (err) {
-      toast("Couldn't place the order", errorMessage(err));
-      void refreshQuote();
+      if (err instanceof ApiError && err.code === "price_changed") {
+        setQuote(err.details.quote as Quote);
+        toast("The total changed", "Delivery is priced on the road distance. Check the new total, then place the order again.");
+      } else {
+        toast("Couldn't place the order", errorMessage(err));
+        void refreshQuote();
+      }
     } finally {
       setPlacing(false);
     }
   };
 
   return (
-    <main id="main" className="page narrow">
+    <main id="main" className="page narrow checkout-page">
       <div className="checkout">
         <h1 className="span2" style={{ fontSize: 24, margin: "4px 4px 0" }}>Checkout</h1>
 
         {pending && (
           <div className="tile sky span2 spring">
-            <b>💳 Payment window closed</b>
+            <b>Payment window closed</b>
             <p style={{ fontSize: 13 }}>{pending.order.number} is saved for 15 minutes. Finish paying, or switch to cash on delivery.</p>
             <div className="row" style={{ marginTop: 8 }}>
               <button className="btn small" onClick={() => payRazorpay(pending)}>Pay now</button>
@@ -205,7 +210,7 @@ export function CheckoutScreen() {
           {chosen.editable && (
             <label className="field" style={{ marginTop: 10 }}>
               <span className="label">Flat, street, landmark</span>
-              <input className="input" value={pinLine} onChange={(e) => setPinLine(e.target.value)} placeholder="e.g. 3rd floor, 17th Cross, near BDA park" />
+              <input className="input" value={pinLine} onChange={(e) => setPinLine(e.target.value)} placeholder="e.g. 3rd floor, 17th Cross" />
             </label>
           )}
           <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
@@ -250,7 +255,7 @@ export function CheckoutScreen() {
             <div key={l.id} style={{ color: unavailableIds.includes(l.id) ? "var(--coral-deep)" : undefined }}>
               <span>
                 {l.qty} × {l.name}
-                {unavailableIds.includes(l.id) && " — sold out"}
+                {unavailableIds.includes(l.id) && " (sold out)"}
               </span>
               <span className="num">{inr(l.qty * l.price_paise)}</span>
             </div>
@@ -282,7 +287,7 @@ export function CheckoutScreen() {
         </section>
 
         <label className="tile span2" style={{ display: "grid", gap: 6 }}>
-          <span className="label">📝 Note to the kitchen</span>
+          <span className="label">Note to the kitchen</span>
           <textarea className="input" maxLength={280} placeholder="Extra chutney, less spicy…" value={cart.note} onChange={(e) => saveCart({ ...cart, note: e.target.value })} />
         </label>
       </div>

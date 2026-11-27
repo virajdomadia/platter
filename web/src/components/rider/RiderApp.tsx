@@ -64,7 +64,7 @@ export function RiderApp() {
       const next = await api<Job | null>(`/rider/orders/${job.order_id}/transition`, { body: { to } });
       setMe((m) => (m ? { ...m, job: next ?? null } : m));
       if (to === "delivered") {
-        toast("Delivered 🎉", next ? `Next up: ${next.restaurant.name}` : "Nice ride — that's one more for today.", "ok");
+        toast("Delivered", next ? `Next up: ${next.restaurant.name}` : "Nice ride, that's one more for today.", "ok");
       }
       void load();
     } catch (err) {
@@ -143,7 +143,7 @@ function MapTile({ job, uplink }: { job: Job | null; uplink: Uplink }) {
   }, [job, self]);
 
   const routes = useMemo<MapRoute[]>(
-    () => (job?.leg ? [{ id: `${job.order_id}-${job.leg.kind}`, polyline: job.leg.polyline, color: "#FFF1B8" }] : []),
+    () => (job?.leg ? [{ id: `${job.order_id}-${job.leg.kind}`, polyline: job.leg.polyline, color: "#7B5CFF" }] : []),
     [job],
   );
 
@@ -200,20 +200,20 @@ function JobTile({ job }: { job: Job }) {
           For {job.customer_first_name} · {items}
           {ride}
         </p>
-        {job.note && <p className="rd-note">📝 {job.note}</p>}
+        {job.note && <p className="rd-note">Note: {job.note}</p>}
         <ItemList job={job} />
       </section>
     );
   }
 
   const heading =
-    job.phase === "waiting" ? "At the counter — waiting for the kitchen" : `Pickup · ${job.number} · then ${dropKm} to the drop`;
+    job.phase === "waiting" ? "At the counter, waiting for the kitchen" : `Pickup · ${job.number} · then ${dropKm} to the drop`;
   return (
     <section className="tile sky rd-wide rd-job spring" key={`${job.order_id}-pickup`} aria-live="polite">
       <small>{heading}</small>
       <b>{job.restaurant.name}</b>
       <p>
-        {job.restaurant.line} · {items} · {ready ? "ready — go!" : "kitchen is cooking"}
+        {job.restaurant.line} · {items} · {ready ? "ready, go!" : "kitchen is cooking"}
         {job.phase === "to_restaurant" ? ride : ""} · you earn {inr(job.pay_preview_paise)}
       </p>
       <ItemList job={job} />
@@ -264,19 +264,19 @@ function IdleTiles({ me }: { me: RiderMe }) {
 
 function ShareTile({ on, onChange, uplink }: { on: boolean; onChange: (on: boolean) => void; uplink: Uplink }) {
   const text: Record<Uplink["status"], string> = {
-    off: "Off — switch it on and the customer watches you ride. Dispatch only sends new jobs to riders sharing their location.",
+    off: "Off. Switch it on and the customer watches you ride. Dispatch only sends new jobs to riders sharing their location.",
     asking: "Asking your phone for GPS… allow location when it asks.",
     on: `On · sent ${uplink.sent} fix${uplink.sent === 1 ? "" : "es"}`,
     denied:
       "Location is blocked for this site. Tap the 🔒 next to the address, allow Location, then switch this off and on again.",
-    unavailable: "This browser can't share GPS — try Chrome or Safari on a phone.",
-    error: uplink.error ?? "GPS hiccup — still trying…",
+    unavailable: "This browser can't share GPS. Try Chrome or Safari on a phone.",
+    error: uplink.error ?? "GPS hiccup, still trying…",
   };
   return (
     <section className="tile rd-wide rd-share">
       <div className="between">
         <span id="share-label" className="rd-share-title">
-          📡 Share my location
+          Share my location
         </span>
         <button
           type="button"
@@ -304,10 +304,11 @@ function ShareTile({ on, onChange, uplink }: { on: boolean; onChange: (on: boole
 function Actions({ job, busy, onStep }: { job: Job; busy: Step | null; onStep: (s: Step) => void }) {
   const canPick = job.status === "ready";
   const canDrop = job.status === "picked_up";
-  const pickWhy = canPick ? "Food is ready" : job.status === "picked_up" ? "Already picked up ✓" : "Kitchen is still cooking";
+  const pickWhy = canPick ? "Food is ready" : job.status === "picked_up" ? "Already picked up" : "Kitchen is still cooking";
   const dropWhy = canDrop ? `Hand it to ${job.customer_first_name}` : "After pickup";
+  // One bar pinned to the bottom of the screen: the next step is always under the thumb.
   return (
-    <>
+    <div className="rd-wide rd-actions">
       <button
         type="button"
         className={`tile rd-big ${canPick ? "go respring" : "off"}`}
@@ -325,9 +326,9 @@ function Actions({ job, busy, onStep }: { job: Job; busy: Step | null; onStep: (
         onClick={() => onStep("delivered")}
         aria-describedby="drop-why"
       >
-        <span>{busy === "delivered" ? "Saving…" : "Delivered 🎉"}</span>
+        <span>{busy === "delivered" ? "Saving…" : "Delivered"}</span>
         <small id="drop-why">{dropWhy}</small>
       </button>
-    </>
+    </div>
   );
 }

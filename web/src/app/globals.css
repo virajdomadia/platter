@@ -701,6 +701,20 @@ textarea.input {
   height: 40px;
   will-change: transform;
 }
+.marker-rider.busy {
+  position: relative;
+}
+.marker-rider.busy::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--ink);
+  border: 2px solid #fff;
+}
 .marker-rider .rot {
   transition: transform 0.4s linear;
 }
@@ -768,13 +782,18 @@ textarea.input {
   justify-content: space-between;
   gap: 4px;
 }
+.rail-now {
+  font-weight: 900;
+  font-size: 16px;
+  margin: 0 0 10px;
+}
 .rail .step {
   display: grid;
   justify-items: center;
   gap: 4px;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 800;
-  opacity: 0.45;
+  color: var(--ink2); /* future steps: muted, still AA */
   text-align: center;
   flex: 1;
   transition: opacity 0.3s ease;
@@ -791,6 +810,20 @@ textarea.input {
   transition:
     background-color 0.3s ease,
     transform 0.4s var(--spring);
+}
+.rail .step i {
+  opacity: 0.55;
+}
+.rail .step.on,
+.rail .step.cur {
+  color: var(--ink);
+}
+.rail .step.on i,
+.rail .step.cur i {
+  opacity: 1;
+}
+.rail .step small {
+  font-size: 12px;
 }
 .rail .step.on {
   opacity: 1;

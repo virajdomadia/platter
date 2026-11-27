@@ -106,6 +106,8 @@ class User(Base):
     name: Mapped[str] = mapped_column(Text)
     phone: Mapped[str | None] = mapped_column(Text)
     role: Mapped[Role] = mapped_column(_enum(Role, "user_role"), default=Role.customer)
+    # Seeded demo/sim account (0002). Operator screens are public demos: they only see demo orders.
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[dt.datetime] = _ts(False)
 
 
@@ -235,6 +237,7 @@ class Order(Base):
     razorpay_order_id: Mapped[str | None] = mapped_column(Text, unique=True)
     razorpay_payment_id: Mapped[str | None] = mapped_column(Text)
     reject_reason: Mapped[str | None] = mapped_column(Text)
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False)  # the customer's is_demo
     created_at: Mapped[dt.datetime] = _ts(False)
     placed_at: Mapped[dt.datetime | None] = _ts()
     accepted_at: Mapped[dt.datetime | None] = _ts()
@@ -291,3 +294,10 @@ class WebhookEvent(Base):
     id: Mapped[str] = mapped_column(Text, primary_key=True)
     event: Mapped[str] = mapped_column(Text)
     received_at: Mapped[dt.datetime] = _ts(False)
+
+
+class RateLimit(Base):
+    __tablename__ = "rate_limits"
+    key: Mapped[str] = mapped_column(Text, primary_key=True)
+    window_start: Mapped[dt.datetime] = _ts(False)
+    hits: Mapped[int] = mapped_column(Integer)

@@ -293,7 +293,7 @@ export interface paths {
         put?: never;
         /**
          * Place
-         * @description Prices everything again server-side — client totals are never read.
+         * @description Prices everything again server-side; the client's total is only compared, never charged.
          */
         post: operations["place_orders_post"];
         delete?: never;
@@ -689,7 +689,7 @@ export interface components {
             /** Status Age S */
             status_age_s: number;
             /** Stuck */
-            stuck: ("unaccepted" | "no_rider" | "not_picked_up") | null;
+            stuck: ("unaccepted" | "no_rider" | "not_picked_up" | "kitchen_late") | null;
             /** Total Paise */
             total_paise: number;
         };
@@ -966,6 +966,8 @@ export interface components {
             address: components["schemas"]["Point"];
             /** Address Line */
             address_line: string;
+            /** Expected Total Paise */
+            expected_total_paise?: number | null;
             /** Items */
             items: components["schemas"]["CartLine"][];
             /** Note */

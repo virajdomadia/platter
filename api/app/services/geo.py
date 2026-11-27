@@ -3,13 +3,12 @@
 * Nearby restaurants: one PostGIS query — `ST_DWithin(loc, pin, 8000)` ordered by `ST_Distance`
   over the GIST index; ≤ 5 km is orderable, 5–8 km is shown greyed as "Too far".
 * Photon geocoding, proxied so the browser never calls it directly: a Bengaluru bounding box,
-  the API's User-Agent, and a 10-per-minute-per-IP limit. Photon down → the caller tells the user
-  to drop the pin instead; reverse falls back to "lat, lng".
+  the API's User-Agent, and a 10-per-minute-per-IP limit (`limits.hit`, shared by every instance).
+  Photon down → the caller tells the user to drop the pin instead; reverse falls back to
+  "lat, lng".
 """
 
 import logging
-import time
-from collections import defaultdict, deque
 
 import httpx
 from sqlalchemy import text
@@ -26,7 +25,6 @@ log = logging.getLogger(__name__)
 # Bengaluru (minLon, minLat, maxLon, maxLat)
 BBOX = "77.45,12.83,77.78,13.10"
 LIMIT_PER_MIN = 10
-_hits: dict[str, deque[float]] = defaultdict(deque)
 
 
 async def nearby(db: AsyncSession, lat: float, lng: float) -> list[s.RestaurantCard]:
@@ -53,16 +51,6 @@ async def nearby(db: AsyncSession, lat: float, lng: float) -> list[s.RestaurantC
     rank = {None: 0, "closed": 1, "too_far": 2}
     out.sort(key=lambda c: (rank[c.reason], c.distance_m))
     return out
-
-
-def rate_limit(ip: str) -> None:
-    now = time.monotonic()
-    hits = _hits[ip]
-    while hits and now - hits[0] > 60:
-        hits.popleft()
-    if len(hits) >= LIMIT_PER_MIN:
-        raise ApiError(429, "rate_limited", "Too many searches — try again in a minute")
-    hits.append(now)
 
 
 def _place(feature: dict) -> s.Place:

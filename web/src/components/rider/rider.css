@@ -18,9 +18,9 @@
 }
 .rd-map {
   position: relative;
-  height: 55vh;
-  height: 55dvh;
-  min-height: 300px;
+  height: 40vh;
+  height: 40dvh;
+  min-height: 240px;
 }
 .rd-map.skeleton {
   background: linear-gradient(90deg, var(--ink-tile-2) 0%, #3a3552 50%, var(--ink-tile-2) 100%);
@@ -173,9 +173,26 @@
 .rd-big.go:active {
   transform: scale(0.97);
 }
-.rd .rd-big.off {
-  background: #3a3552;
-  color: #a7a1bd;
+.rd .tile.rd-big.off {
+  background: #4a4466;
+  color: #ece9f7; /* readable while disabled: the reason is the point */
+}
+.rd .rd-big.off small {
+  opacity: 1;
+}
+.rd-actions {
+  position: sticky;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+/* the pickup card in the dark palette, not a pastel block */
+.rd .tile.rd-job.sky {
+  background: var(--ink-tile-2);
+  color: #fff;
+  box-shadow: inset 5px 0 0 var(--sky);
 }
 .rd-touch {
   min-height: 48px;

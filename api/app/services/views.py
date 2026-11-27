@@ -83,7 +83,8 @@ async def rider_fix(
             at=now,
         )
     pos = await db.get(RiderPosition, rider.id)
-    if pos is None:
+    # A real phone's fix is shown only while it is live: never where someone *was*.
+    if pos is None or (not rider.is_sim and pos.recorded_at <= now - dispatch.LIVE_FIX):
         return None
     lat, lng = latlng(pos.loc)
     return s.RiderFix(
