@@ -1,4 +1,4 @@
-﻿"""v2 L1 (06 Â§C v2, 07 L1): rider offers. The nearest free rider gets 30 s to accept; decline or
+"""v2 L1 (06 Â§C v2, 07 L1): rider offers. The nearest free rider gets 30 s to accept; decline or
 timeout â†’ the next nearest, up to 5; sims accept on their own after 3â€“8 s. Every offer state change
 is one conditional `update â€¦ where state = 'sent'`, so an accept racing the expiry of the same
 offer â€” or two phones accepting it â€” has exactly one winner, and the loser does nothing at all."""
