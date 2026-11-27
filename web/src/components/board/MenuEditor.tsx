@@ -187,6 +187,7 @@ export function MenuEditor() {
               {cats.map((c, i) => (
                 <CategoryRow
                   key={c.id}
+                  id={c.id}
                   name={c.name}
                   count={`${c.items.filter((x) => x.is_available).length}/${c.items.length}`}
                   current={active === c.id}
@@ -202,7 +203,11 @@ export function MenuEditor() {
                     void save("reorder", () => api<MenuOut>("/restaurant/categories/order", { method: "PUT", body: { ids } }));
                   }}
                   onRename={(name) => save("rename the category", () => api<MenuOut>(`/restaurant/categories/${c.id}`, { method: "PATCH", body: { name } }))}
-                  onDelete={() => void save("delete the category", () => api<MenuOut>(`/restaurant/categories/${c.id}`, { method: "DELETE" }))}
+                  onDelete={() =>
+                    void save("delete the category", () => api<MenuOut>(`/restaurant/categories/${c.id}`, { method: "DELETE" })).then(
+                      (ok) => ok && document.querySelector<HTMLButtonElement>(".me-arrange")?.focus(),
+                    )
+                  }
                 />
               ))}
             </ul>
@@ -217,8 +222,10 @@ export function MenuEditor() {
             {cats.map((c) => (
               <section key={c.id} className="av-section" aria-labelledby={`cat-${c.id}`}>
                 <div className="me-head">
-                  <h2 id={`cat-${c.id}`}>{c.name}</h2>
-                  <button type="button" className="btn small" onClick={() => openDish(c.id)} disabled={busy}>
+                  <h2 id={`cat-${c.id}`} tabIndex={-1}>
+                    {c.name}
+                  </h2>
+                  <button type="button" className="btn small" onClick={() => !busy && openDish(c.id)} aria-disabled={busy}>
                     Add dish<span className="sr-only"> to {c.name}</span>
                   </button>
                 </div>
@@ -243,7 +250,7 @@ export function MenuEditor() {
                           <span className="num">{inr(it.price_paise)}</span> · {it.is_available ? "available" : "sold out today"}
                         </small>
                       </div>
-                      <button type="button" className="btn small ghost me-edit" onClick={() => openDish(c.id, it)} disabled={busy}>
+                      <button type="button" className="btn small ghost me-edit" onClick={() => !busy && openDish(c.id, it)} aria-disabled={busy}>
                         Edit<span className="sr-only"> {it.name}</span>
                       </button>
                       <button
@@ -252,7 +259,7 @@ export function MenuEditor() {
                         role="switch"
                         aria-checked={it.is_available}
                         aria-label={`${it.name} available`}
-                        disabled={pending.has(it.id)}
+                        aria-disabled={pending.has(it.id)}
                         onClick={() => void toggle(it)}
                       />
                     </li>
@@ -282,18 +289,32 @@ export function MenuEditor() {
               photo_url: draft.photo_url,
               is_available: draft.is_available,
             };
-            const ok = draft.id
-              ? await save("save the dish", async () => {
-                  await api(`/restaurant/items/${draft.id}`, { method: "PATCH", body });
-                  return api<MenuOut>("/restaurant/menu");
-                })
-              : await save("add the dish", () => api<MenuOut>("/restaurant/items", { body }));
+            let ok: boolean;
+            if (draft.id) {
+              setBusy(true);
+              try {
+                await api(`/restaurant/items/${draft.id}`, { method: "PATCH", body });
+                ok = true;
+              } catch (err) {
+                toast("Couldn't save the dish", errorMessage(err));
+                ok = false;
+              } finally {
+                setBusy(false);
+              }
+              if (ok) void load(); // the save landed; a failed refresh only shows the retry tile
+            } else {
+              ok = await save("add the dish", () => api<MenuOut>("/restaurant/items", { body }));
+            }
             if (ok) toast(draft.id ? "Dish saved" : "Dish added", body.name, "ok");
             return ok;
           }}
           onDelete={
             draft.id
-              ? () => save("delete the dish", () => api<MenuOut>(`/restaurant/items/${draft.id}`, { method: "DELETE" }))
+              ? async () => {
+                  const ok = await save("delete the dish", () => api<MenuOut>(`/restaurant/items/${draft.id}`, { method: "DELETE" }));
+                  if (ok) window.setTimeout(() => document.getElementById(`cat-${draft.category_id}`)?.focus(), 0);
+                  return ok;
+                }
               : undefined
           }
         />
@@ -305,6 +326,7 @@ export function MenuEditor() {
 // ── categories ──────────────────────────────────────────────────────────────────────────────
 
 function CategoryRow(p: {
+  id: string;
   name: string;
   count: string;
   current: boolean;
@@ -330,10 +352,10 @@ function CategoryRow(p: {
             if (await p.onRename(name.trim())) setRenaming(false);
           }}
         >
-          <label className="sr-only" htmlFor={`rn-${p.name}`}>
+          <label className="sr-only" htmlFor={`rn-${p.id}`}>
             New name for {p.name}
           </label>
-          <input id={`rn-${p.name}`} className="input" required maxLength={60} value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          <input id={`rn-${p.id}`} className="input" required maxLength={60} value={name} onChange={(e) => setName(e.target.value)} autoFocus />
           <button className="btn small" disabled={p.busy}>
             Save
           </button>
@@ -352,19 +374,19 @@ function CategoryRow(p: {
       </button>
       {p.arranging && (
         <div className="me-tools" role="group" aria-label={`${p.name} tools`}>
-          <button type="button" disabled={p.first || p.busy} onClick={() => p.onMove(-1)} aria-label={`Move ${p.name} up`}>
+          <button type="button" aria-disabled={p.first || p.busy} onClick={() => !p.first && !p.busy && p.onMove(-1)} aria-label={`Move ${p.name} up`}>
             ↑
           </button>
-          <button type="button" disabled={p.last || p.busy} onClick={() => p.onMove(1)} aria-label={`Move ${p.name} down`}>
+          <button type="button" aria-disabled={p.last || p.busy} onClick={() => !p.last && !p.busy && p.onMove(1)} aria-label={`Move ${p.name} down`}>
             ↓
           </button>
-          <button type="button" disabled={p.busy} onClick={() => setRenaming(true)} aria-label={`Rename ${p.name}`}>
+          <button type="button" aria-disabled={p.busy} onClick={() => !p.busy && setRenaming(true)} aria-label={`Rename ${p.name}`}>
             Rename
           </button>
           <button
             type="button"
-            disabled={!p.empty || p.busy}
-            onClick={() => window.confirm(`Delete the empty category ${p.name}?`) && p.onDelete()}
+            aria-disabled={!p.empty || p.busy}
+            onClick={() => p.empty && !p.busy && window.confirm(`Delete the empty category ${p.name}?`) && p.onDelete()}
             aria-label={p.empty ? `Delete ${p.name}` : `Delete ${p.name} (move or delete its dishes first)`}
             title={p.empty ? undefined : "Move or delete its dishes first"}
           >

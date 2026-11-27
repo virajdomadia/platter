@@ -2,9 +2,9 @@
 distances integer metres, times seconds; points are `{ lat, lng }`."""
 
 import datetime as dt
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, StringConstraints
 
 OrderStatusT = Literal[
     "pending_payment",
@@ -373,12 +373,18 @@ class RestaurantTransitionIn(BaseModel):
     reason: str | None = Field(default=None, max_length=200)
 
 
+# Stripped before the length check, so "   " is refused rather than saved as an empty name.
+Name80 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
+Name60 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
+Text280 = Annotated[str, StringConstraints(strip_whitespace=True, max_length=280)]
+
+
 class AvailabilityIn(BaseModel):
     """PATCH /restaurant/items/{id}: any subset (v1 sent only `is_available`)."""
 
     is_available: bool | None = None
-    name: str | None = Field(default=None, min_length=1, max_length=80)
-    description: str | None = Field(default=None, max_length=280)
+    name: Name80 | None = None
+    description: Text280 | None = None
     price_paise: int | None = Field(default=None, ge=100, le=1_000_000)
     is_veg: bool | None = None
     photo_url: str | None = Field(default=None, max_length=300)
@@ -387,8 +393,8 @@ class AvailabilityIn(BaseModel):
 
 class ItemIn(BaseModel):
     category_id: str
-    name: str = Field(min_length=1, max_length=80)
-    description: str | None = Field(default=None, max_length=280)
+    name: Name80
+    description: Text280 | None = None
     price_paise: int = Field(ge=100, le=1_000_000)  # ₹1 to ₹10,000
     is_veg: bool
     photo_url: str | None = Field(default=None, max_length=300)
@@ -396,7 +402,7 @@ class ItemIn(BaseModel):
 
 
 class CategoryIn(BaseModel):
-    name: str = Field(min_length=1, max_length=60)
+    name: Name60
 
 
 class CategoryOrderIn(BaseModel):

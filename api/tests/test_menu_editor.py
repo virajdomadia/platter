@@ -251,3 +251,38 @@ async def test_deleting_a_dish_keeps_past_orders_intact(world, app):
     ).one()
     assert kept[0] == line[1] and kept[1] is None
     await c.aclose()
+
+
+async def test_blank_names_are_refused(world, app):
+    c = await real_owner(app, world)
+    menu = (await c.get("/restaurant/menu")).json()
+    cat = menu["categories"][0]
+    body = {"category_id": cat["id"], "name": "   ", "price_paise": 5000, "is_veg": True}
+    assert (await c.post("/restaurant/items", json=body)).status_code == 422
+    assert (await c.post("/restaurant/categories", json={"name": "  "})).status_code == 422
+    item = cat["items"][0]["id"]
+    assert (await c.patch(f"/restaurant/items/{item}", json={"name": " "})).status_code == 422
+    await c.aclose()
+
+
+async def test_overlapping_demo_sign_ins_build_one_sandbox_menu(world, app):
+    import asyncio
+
+    async def sign_in() -> int:
+        async with await make_client(app) as c:
+            return (await c.post("/auth/demo", json={"as": "restaurant"})).status_code
+
+    assert await asyncio.gather(*(sign_in() for _ in range(4))) == [200] * 4
+    live, sandbox = (
+        await world.execute(
+            text(
+                "select count(*) filter (where not r.is_sandbox),"
+                " count(*) filter (where r.is_sandbox)"
+                " from menu_items i join restaurants r on r.id = i.restaurant_id"
+                " where r.slug like 'bandstand-kitchen%'"
+            )
+        )
+    ).one()
+    assert sandbox == live
+    n = (await world.execute(text("select count(*) from restaurants where is_sandbox"))).scalar()
+    assert n == 1

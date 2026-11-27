@@ -512,8 +512,14 @@
   font-size: 12px;
   background: var(--bg);
 }
-.av-cats .me-tools button:disabled {
+.av-cats .me-tools button[aria-disabled="true"],
+.btn[aria-disabled="true"],
+.av-item .switch[aria-disabled="true"] {
   opacity: 0.45;
+  cursor: not-allowed;
+}
+.av-section h2:focus {
+  outline: none;
 }
 .me-rename,
 .me-add {

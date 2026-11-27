@@ -60,8 +60,11 @@ async def sandbox_of(db: AsyncSession, live: Restaurant) -> Restaurant:
 
 
 async def reset_sandbox(db: AsyncSession, live: Restaurant) -> Restaurant:
-    """(Re)build the demo kitchen's sandbox from the live restaurant: details, categories, items."""
+    """(Re)build the demo kitchen's sandbox from the live restaurant: details, categories, items.
+    One at a time per kitchen (overlapping demo sign-ins would otherwise both create it, or both
+    re-copy the menu into it)."""
     slug = f"{live.slug}{SANDBOX_SUFFIX}"
+    await db.execute(text("select pg_advisory_xact_lock(hashtext(:k))"), {"k": slug})
     sb = (await db.execute(select(Restaurant).where(Restaurant.slug == slug))).scalar_one_or_none()
     if sb is None:
         owner = User(
