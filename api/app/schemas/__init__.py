@@ -20,6 +20,11 @@ OrderStatusT = Literal[
 ]
 RoleT = Literal["customer", "restaurant", "rider", "admin"]
 
+# Stripped before the length check, so "   " is refused rather than saved as an empty name.
+Name80 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
+Name60 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
+Text280 = Annotated[str, StringConstraints(strip_whitespace=True, max_length=280)]
+
 
 class Point(BaseModel):
     lat: float = Field(ge=-90, le=90)
@@ -255,6 +260,12 @@ class RiderFix(BaseModel):
     distance_m: int | None = None
 
 
+class RatingOut(BaseModel):
+    restaurant_stars: int
+    rider_stars: int | None
+    line: str | None
+
+
 class OrderOut(BaseModel):
     id: str
     number: str
@@ -276,6 +287,28 @@ class OrderOut(BaseModel):
     created_at: dt.datetime
     seq: int
     offer_attempts: int = 0  # riders asked so far ("Finding a rider", v2)
+    rating: RatingOut | None = None  # the customer's own rating, once delivered (v2)
+
+
+class RatingIn(BaseModel):
+    restaurant_stars: int = Field(ge=1, le=5)
+    rider_stars: int | None = Field(default=None, ge=1, le=5)
+    line: Text280 | None = None
+
+
+class ReorderLine(BaseModel):
+    id: str
+    name: str
+    price_paise: int
+    qty: int
+    is_veg: bool
+    photo: str | None
+
+
+class ReorderOut(BaseModel):
+    restaurant: dict[str, str]  # { id, slug, name }: the cart's restaurant
+    lines: list[ReorderLine]
+    dropped: list[str]  # dishes no longer on the menu or switched off
 
 
 class RazorpayStart(BaseModel):
@@ -371,12 +404,6 @@ class Board(BaseModel):
 class RestaurantTransitionIn(BaseModel):
     to: Literal["accepted", "rejected", "preparing", "ready"]
     reason: str | None = Field(default=None, max_length=200)
-
-
-# Stripped before the length check, so "   " is refused rather than saved as an empty name.
-Name80 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
-Name60 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
-Text280 = Annotated[str, StringConstraints(strip_whitespace=True, max_length=280)]
 
 
 class AvailabilityIn(BaseModel):

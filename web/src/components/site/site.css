@@ -486,3 +486,107 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* v2 · search and filters above the list: one input, a sort, then chips that wrap */
+.home-search {
+  display: grid;
+  gap: 10px;
+}
+.home-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 8px;
+}
+.home-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.home-chips .chip {
+  min-height: 36px;
+  cursor: pointer;
+}
+/* phone: one row that scrolls sideways, so twenty cuisines don't push the food off screen */
+@media (max-width: 760px) {
+  .home-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: -4px;
+    padding: 2px 4px 4px;
+  }
+  .home-chips .chip {
+    flex: none;
+  }
+  .home-search-row {
+    grid-template-columns: minmax(0, 1fr) 120px;
+  }
+}
+.home-chips .chip .veg {
+  margin-right: 2px;
+}
+
+/* v2 · reorder beside a past order; the rating block inside the delivered summary */
+.order-past {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.order-past > .btn {
+  min-height: 44px;
+}
+@media (max-width: 560px) {
+  .order-past {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .order-past > .btn {
+    justify-self: end;
+  }
+}
+.rate-tile {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--lemon);
+}
+.stars {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.stars-row {
+  display: flex;
+  gap: 2px;
+}
+.stars-row label {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  font-size: 28px;
+  line-height: 1;
+  color: #8a8270; /* an empty star still reads at 3:1 on lemon */
+  cursor: pointer;
+}
+.stars-row label.on {
+  color: var(--ink);
+}
+.stars-row input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.stars-row input:focus-visible + span {
+  outline: 3px solid var(--violet);
+  outline-offset: 2px;
+  border-radius: 6px;
+}

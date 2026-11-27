@@ -1457,6 +1457,16 @@
       "title": "Payment",
       "type": "string"
      },
+     "rating": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RatingOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
      "reject_reason": {
       "anyOf": [
        {
@@ -1983,6 +1993,83 @@
     "title": "QuoteOut",
     "type": "object"
    },
+   "RatingIn": {
+    "properties": {
+     "line": {
+      "anyOf": [
+       {
+        "maxLength": 280,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Line"
+     },
+     "restaurant_stars": {
+      "maximum": 5.0,
+      "minimum": 1.0,
+      "title": "Restaurant Stars",
+      "type": "integer"
+     },
+     "rider_stars": {
+      "anyOf": [
+       {
+        "maximum": 5.0,
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rider Stars"
+     }
+    },
+    "required": [
+     "restaurant_stars"
+    ],
+    "title": "RatingIn",
+    "type": "object"
+   },
+   "RatingOut": {
+    "properties": {
+     "line": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Line"
+     },
+     "restaurant_stars": {
+      "title": "Restaurant Stars",
+      "type": "integer"
+     },
+     "rider_stars": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rider Stars"
+     }
+    },
+    "required": [
+     "restaurant_stars",
+     "rider_stars",
+     "line"
+    ],
+    "title": "RatingOut",
+    "type": "object"
+   },
    "RazorpayStart": {
     "properties": {
      "amount_paise": {
@@ -2035,6 +2122,83 @@
      "rider_id"
     ],
     "title": "ReassignIn",
+    "type": "object"
+   },
+   "ReorderLine": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "is_veg": {
+      "title": "Is Veg",
+      "type": "boolean"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "photo": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Photo"
+     },
+     "price_paise": {
+      "title": "Price Paise",
+      "type": "integer"
+     },
+     "qty": {
+      "title": "Qty",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "price_paise",
+     "qty",
+     "is_veg",
+     "photo"
+    ],
+    "title": "ReorderLine",
+    "type": "object"
+   },
+   "ReorderOut": {
+    "properties": {
+     "dropped": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Dropped",
+      "type": "array"
+     },
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/ReorderLine"
+      },
+      "title": "Lines",
+      "type": "array"
+     },
+     "restaurant": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Restaurant",
+      "type": "object"
+     }
+    },
+    "required": [
+     "restaurant",
+     "lines",
+     "dropped"
+    ],
+    "title": "ReorderOut",
     "type": "object"
    },
    "RestaurantCard": {
@@ -4046,6 +4210,104 @@
     ]
    }
   },
+  "/orders/{order_id}/rating": {
+   "post": {
+    "description": "Once per delivered order (a second \u2192 409). Only a real customer's stars move the public\nscore; a demo visitor's rating is kept for them alone.",
+    "operationId": "rate_orders__order_id__rating_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "order_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Order Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RatingIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OrderOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Rate",
+    "tags": [
+     "orders"
+    ]
+   }
+  },
+  "/orders/{order_id}/reorder": {
+   "post": {
+    "description": "A cart from a past order at today's prices; dishes gone or switched off are named in\n`dropped`. Nothing is placed: checkout quotes it again as usual.",
+    "operationId": "reorder_orders__order_id__reorder_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "order_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Order Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ReorderOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Reorder",
+    "tags": [
+     "orders"
+    ]
+   }
+  },
   "/orders/{order_id}/verify": {
    "post": {
     "operationId": "verify_orders__order_id__verify_post",
@@ -4709,6 +4971,7 @@
   },
   "/restaurants": {
    "get": {
+    "description": "`q` searches names, cuisines and dishes; `cuisine` is one exact cuisine; `veg` = pure veg.",
     "operationId": "restaurants_restaurants_get",
     "parameters": [
      {
@@ -4733,6 +4996,65 @@
        "minimum": -180,
        "title": "Lng",
        "type": "number"
+      }
+     },
+     {
+      "in": "query",
+      "name": "q",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 60,
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Q"
+      }
+     },
+     {
+      "in": "query",
+      "name": "cuisine",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 40,
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Cuisine"
+      }
+     },
+     {
+      "in": "query",
+      "name": "veg",
+      "required": false,
+      "schema": {
+       "default": false,
+       "title": "Veg",
+       "type": "boolean"
+      }
+     },
+     {
+      "in": "query",
+      "name": "sort",
+      "required": false,
+      "schema": {
+       "default": "distance",
+       "enum": [
+        "distance",
+        "rating",
+        "eta"
+       ],
+       "title": "Sort",
+       "type": "string"
       }
      }
     ],

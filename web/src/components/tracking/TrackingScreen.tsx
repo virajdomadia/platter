@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Map, type MapMarker, type MapRoute } from "@/components/map/Map";
 import { PushOptIn } from "@/components/ui/PushOptIn";
+import { RatingCard } from "./RatingCard";
 import { api, errorMessage, type OrderOut } from "@/lib/api";
 import { clock, etaLabel, inr, km, minutes, STATUS_LABEL } from "@/lib/format";
 import { cumulative, decode, project, type LatLng } from "@/lib/geo";
@@ -36,7 +37,8 @@ function askedLabel(asked: number): string {
 
 export function TrackingScreen({ initial }: { initial: OrderOut }) {
   const { live, stream } = useOrderStream(initial);
-  const o = live.order;
+  const [rated, setRated] = useState<OrderOut["rating"]>(null);
+  const o = rated ? { ...live.order, rating: rated } : live.order;
   const [now, setNow] = useState(() => Date.now());
   const [cancelling, setCancelling] = useState(false);
   const [trail, setTrail] = useState<LatLng[]>(() => initial.trail.map((p) => [p[0], p[1]] as LatLng));
@@ -261,6 +263,7 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
         <div><span>Platform fee</span><span className="num">{inr(o.totals.platform_fee_paise)}</span></div>
         <div className="t"><span>{o.payment === "cod" ? "Cash on delivery" : "Paid"}</span><span className="num">{inr(o.totals.total_paise)}</span></div>
         {o.note && <p className="chip lemon" style={{ marginTop: 8, whiteSpace: "normal" }}>“{o.note}”</p>}
+        {delivered && <RatingCard order={o} onRated={(next) => setRated(next.rating ?? null)} />}
         {(delivered || ended) && (
           <div className="row" style={{ marginTop: 10 }}>
             <Link className="btn small" href={`/r/${o.restaurant.slug}`}>Order again</Link>

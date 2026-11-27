@@ -150,6 +150,9 @@ class Restaurant(Base):
     board_seen_at: Mapped[dt.datetime | None] = _ts()
     # v2: the demo kitchen's private menu-editor copy (services/menu.py): never public.
     is_sandbox: Mapped[bool] = mapped_column(Boolean, default=False)
+    # v2: real customers' ratings only (a demo visitor's never moves the public score).
+    rating_sum: Mapped[int] = mapped_column(Integer, default=0)
+    rating_count: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[dt.datetime] = _ts(False)
 
 
@@ -314,6 +317,19 @@ class PushSubscription(Base):
     endpoint: Mapped[str] = mapped_column(Text, unique=True)
     p256dh: Mapped[str] = mapped_column(Text)
     auth: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[dt.datetime] = _ts(False)
+
+
+class Rating(Base):
+    __tablename__ = "ratings"
+    id: Mapped[uuid.UUID] = _uuid()
+    order_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("orders.id", ondelete="CASCADE"), unique=True
+    )
+    restaurant_stars: Mapped[int] = mapped_column(SmallInteger)
+    rider_stars: Mapped[int | None] = mapped_column(SmallInteger)
+    line: Mapped[str | None] = mapped_column(Text)
+    is_demo: Mapped[bool] = mapped_column(Boolean)
     created_at: Mapped[dt.datetime] = _ts(False)
 
 

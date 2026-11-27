@@ -16,6 +16,7 @@ from app.models import (
     OrderEvent,
     OrderItem,
     OrderStatus,
+    Rating,
     Restaurant,
     Rider,
     RiderLeg,
@@ -125,6 +126,18 @@ async def eta_for(
     return s.EtaOut(**found.as_event(str(order.id)))  # type: ignore[arg-type]
 
 
+RATING_PRIOR = 10  # the seeded score counts as ten ratings, so one review can't swing it
+
+
+def public_rating(r: Restaurant) -> float | None:
+    """The seeded score blended with real customers' ratings (demo ratings are never counted)."""
+    if r.rating is None and not r.rating_count:
+        return None
+    prior = RATING_PRIOR if r.rating is not None else 0
+    base = float(r.rating or 0) * prior
+    return round((base + (r.rating_sum or 0)) / (prior + (r.rating_count or 0)), 1)
+
+
 def restaurant_card(
     r: Restaurant, *, distance_m: int, drop: tuple[float, float] | None = None
 ) -> s.RestaurantCard:
@@ -142,7 +155,7 @@ def restaurant_card(
         cuisines=list(r.cuisines),
         is_veg=r.is_veg,
         cover=photo(r.cover_url),
-        rating=float(r.rating) if r.rating is not None else None,
+        rating=public_rating(r),
         prep_min=r.prep_min,
         lat=lat,
         lng=lng,
@@ -271,7 +284,15 @@ async def order_out(db: AsyncSession, order: Order) -> s.OrderOut:
         created_at=order.created_at,
         seq=int(seq),
         offer_attempts=await offer_attempts(db, order.id),
+        rating=await rating_of(db, order.id),
     )
+
+
+async def rating_of(db: AsyncSession, order_id: uuid.UUID) -> s.RatingOut | None:
+    r = (await db.execute(select(Rating).where(Rating.order_id == order_id))).scalar_one_or_none()
+    if r is None:
+        return None
+    return s.RatingOut(restaurant_stars=r.restaurant_stars, rider_stars=r.rider_stars, line=r.line)
 
 
 async def order_card(db: AsyncSession, order: Order) -> s.OrderCard:
