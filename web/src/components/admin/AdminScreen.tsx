@@ -4,6 +4,7 @@
 // (riders glide on the 2 s `riders` frames), and the live-orders ledger with reassign.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Map, type MapMarker, type MapRoute } from "@/components/map/Map";
+import Link from "next/link";
 import { RoleBar } from "@/components/ui/RoleBar";
 import { api, errorMessage, type AdminMap, type AdminOrder, type AdminRider } from "@/lib/api";
 import { age, inr, minutes, STATUS_LABEL } from "@/lib/format";
@@ -68,6 +69,9 @@ export function AdminScreen() {
     <div className="ad">
       <div className="ad-top">
         <RoleBar title="Live operations" subtitle="Koramangala · HSR Layout" who="👑 Admin">
+          <Link className="btn small ghost" href="/admin/payouts" style={{ minHeight: 44 }}>
+            Payouts
+          </Link>
           <span className={`chip ${live ? "live" : "peach"}`} role="status">
             {live ? "Live" : "Reconnecting…"}
           </span>

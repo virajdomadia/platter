@@ -73,7 +73,17 @@ async def test_a_late_payment_is_refused_and_kept_for_refund(world, client):
     assert order.status == S.expired and order.razorpay_payment_id == "pay_late"
 
 
-async def test_a_paid_order_cannot_be_cancelled(world, client):
+async def test_cancelling_a_paid_order_refunds_it(world, client, monkeypatch):
+    """v1 refused this (no refunds yet); v2 refunds it in full, once (test_ledger has the rest)."""
+    from app.services import razorpay as rzp
+
+    sent: list[int] = []
+
+    async def refund(settings, payment_id, amount_paise, *, receipt):  # type: ignore[no-untyped-def]
+        sent.append(amount_paise)
+        return "rfnd_1"
+
+    monkeypatch.setattr(rzp, "refund", refund)
     data = await start(world, client)
     oid, rp = data["order"]["id"], data["razorpay"]["order_id"]
     await client.post(
@@ -81,7 +91,8 @@ async def test_a_paid_order_cannot_be_cancelled(world, client):
         json={"razorpay_payment_id": "pay_9", "razorpay_signature": signature(rp, "pay_9")},
     )
     r = await client.post(f"/orders/{oid}/cancel")
-    assert r.status_code == 409
+    assert r.status_code == 200 and r.json()["refund"]["status"] == "processed"
+    assert sent == [data["order"]["totals"]["total_paise"]]
 
 
 async def test_a_malformed_signed_webhook_is_a_400(world, client):

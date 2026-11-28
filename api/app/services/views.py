@@ -17,6 +17,7 @@ from app.models import (
     OrderItem,
     OrderStatus,
     Rating,
+    Refund,
     Restaurant,
     Rider,
     RiderLeg,
@@ -24,7 +25,7 @@ from app.models import (
     User,
 )
 from app.models.geo import latlng
-from app.services import dispatch, eta, hours, orders, routing, sim
+from app.services import dispatch, eta, hours, ledger, orders, routing, sim
 from app.services.events import STATUS_KINDS
 
 S = OrderStatus
@@ -39,9 +40,7 @@ def first_name(name: str) -> str:
     return name.split(" ")[0] if name else "Customer"
 
 
-def rider_pay_preview(distance_m: int) -> int:
-    """What the rider will earn: ₹30 + ₹8 per km of the drop (v2 writes it to the ledger)."""
-    return 3000 + 800 * round(distance_m / 1000)
+rider_pay_preview = ledger.rider_pay  # what the job card promises is what the ledger pays
 
 
 def route_out(leg: RiderLeg) -> s.RouteOut:
@@ -285,7 +284,19 @@ async def order_out(db: AsyncSession, order: Order) -> s.OrderOut:
         seq=int(seq),
         offer_attempts=await offer_attempts(db, order.id),
         rating=await rating_of(db, order.id),
+        refund=await refund_of(db, order.id),
     )
+
+
+async def refund_of(db: AsyncSession, order_id: uuid.UUID) -> s.RefundOut | None:
+    r = (
+        await db.execute(
+            select(Refund)
+            .where(Refund.order_id == order_id)
+            .execution_options(populate_existing=True)
+        )
+    ).scalar_one_or_none()
+    return s.RefundOut(status=r.status, amount_paise=r.amount_paise) if r else None  # type: ignore[arg-type]
 
 
 async def rating_of(db: AsyncSession, order_id: uuid.UUID) -> s.RatingOut | None:

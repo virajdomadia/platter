@@ -33,7 +33,7 @@ from app.models import (
     User,
 )
 from app.models.geo import latlng, make_point
-from app.services import dispatch, events, hours, routing
+from app.services import dispatch, events, hours, ledger, refunds, routing
 from app.services.events import SYSTEM, Actor
 
 S = OrderStatus
@@ -248,11 +248,6 @@ def _own_order(o: Order, a: Actor) -> bool:
     return a.user_id == o.user_id
 
 
-def _own_unpaid_order(o: Order, a: Actor) -> bool:
-    # shortcut: no refunds until v2, so an order paid online can't be cancelled by the customer.
-    return _own_order(o, a) and o.payment == PaymentKind.cod
-
-
 def _assigned_rider(o: Order, a: Actor) -> bool:
     return o.rider_id is not None and a.rider_id == o.rider_id
 
@@ -276,7 +271,7 @@ TRANSITIONS: dict[tuple[OrderStatus, OrderStatus], Rule] = {
     (S.pending_payment, S.expired): _rule("system"),
     (S.placed, S.accepted): _rule("restaurant", "system", guard=_own_restaurant),
     (S.placed, S.rejected): _rule("restaurant", guard=_own_restaurant),
-    (S.placed, S.cancelled): _rule("customer", guard=_own_unpaid_order),
+    (S.placed, S.cancelled): _rule("customer", guard=_own_order),  # paid online → refunded (v2)
     (S.accepted, S.preparing): _rule("restaurant", "system", guard=_own_restaurant),
     (S.preparing, S.ready): _rule("restaurant", "system", guard=_own_restaurant),
     (S.ready, S.picked_up): _rule("rider", "system", guard=_assigned_rider),
@@ -384,8 +379,11 @@ async def _side_effects(
     elif to == S.delivered:
         rider = await db.get(Rider, order.rider_id)
         assert rider is not None  # noqa: S101 - guarded
+        await ledger.on_delivered(db, order)  # the money moves in the delivery's transaction
         await dispatch.release_rider(db, rider)
         await dispatch.on_rider_available(db, rider)
+    elif to in (S.rejected, S.cancelled):
+        await refunds.request(db, order, str(to))  # paid online: refunded once, after commit
 
 
 # --- payments ---------------------------------------------------------------------------------
@@ -398,9 +396,10 @@ async def mark_paid(db: AsyncSession, order_id: uuid.UUID, payment_id: str) -> O
     if order is None:
         return None
     if order.status == S.expired and not order.razorpay_payment_id:
-        # Captured after the 15-minute window: keep the payment id so it can be refunded.
+        # Captured after the 15-minute window: nothing to deliver, so it goes straight back.
         order.razorpay_payment_id = payment_id
-        log.warning("payment %s captured for expired order %s: refund it", payment_id, order.number)
+        log.warning("payment %s captured for expired order %s: refunding", payment_id, order.number)
+        await refunds.request(db, order, "late_payment")
     if order.status != S.pending_payment:
         return order
     order.razorpay_payment_id = payment_id

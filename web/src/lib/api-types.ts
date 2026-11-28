@@ -107,6 +107,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/orders/{order_id}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refund
+         * @description Refund a closed, paid-online order in full (once; a repeat re-sends a failed refund).
+         */
+        post: operations["refund_admin_orders__order_id__refund_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Payouts
+         * @description Balances by account, the platform's take, and paid-online orders that can be refunded.
+         *     The admin login is the public demo: it sees the demo's money only.
+         */
+        get: operations["payouts_admin_payouts_get"];
+        put?: never;
+        /**
+         * Pay
+         * @description Mark money paid to a restaurant or rider. 422 above the balance; 409 on a reused ref.
+         */
+        post: operations["pay_admin_payouts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/riders": {
         parameters: {
             query?: never;
@@ -362,7 +407,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancel */
+        /**
+         * Cancel
+         * @description While `placed`. Paid online → refunded in full (once).
+         */
         post: operations["cancel_orders__order_id__cancel_post"];
         delete?: never;
         options?: never;
@@ -583,6 +631,26 @@ export interface paths {
         patch: operations["rename_category_restaurant_categories__category_id__patch"];
         trace?: never;
     };
+    "/restaurant/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Earnings
+         * @description 80% of each delivered order's food; the demo kitchen sees the demo's money only.
+         */
+        get: operations["earnings_restaurant_earnings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/restaurant/events": {
         parameters: {
             query?: never;
@@ -724,6 +792,26 @@ export interface paths {
         };
         /** Restaurant */
         get: operations["restaurant_restaurants__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rider/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Earnings
+         * @description ₹30 + ₹8 per km for every drop, and what has been paid out.
+         */
+        get: operations["earnings_rider_earnings_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -890,6 +978,22 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountBalance */
+        AccountBalance: {
+            /** Account */
+            account: string;
+            /** Balance Paise */
+            balance_paise: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "restaurant" | "rider";
+            /** Name */
+            name: string;
+            /** Paid Paise */
+            paid_paise: number;
+        };
         /** AddressIn */
         AddressIn: {
             /** Label */
@@ -1115,6 +1219,17 @@ export interface components {
             /** Lng */
             lng: number;
         };
+        /** Earnings */
+        Earnings: {
+            /** Balance Paise */
+            balance_paise: number;
+            /** Earned Paise */
+            earned_paise: number;
+            /** Entries */
+            entries: components["schemas"]["LedgerLine"][];
+            /** Paid Paise */
+            paid_paise: number;
+        };
         /** EtaOut */
         EtaOut: {
             /** Eta S */
@@ -1204,6 +1319,23 @@ export interface components {
             lng: number;
             /** Name */
             name: string;
+        };
+        /** LedgerLine */
+        LedgerLine: {
+            /** Amount Paise */
+            amount_paise: number;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "sale" | "fee" | "delivery" | "delivery_margin" | "refund" | "payout";
+            /** Order Number */
+            order_number: string | null;
         };
         /** Me */
         Me: {
@@ -1356,6 +1488,7 @@ export interface components {
              */
             payment: "cod" | "razorpay";
             rating?: components["schemas"]["RatingOut"] | null;
+            refund?: components["schemas"]["RefundOut"] | null;
             /** Reject Reason */
             reject_reason: string | null;
             restaurant: components["schemas"]["OrderRestaurant"];
@@ -1403,6 +1536,24 @@ export interface components {
         PaymentsConfig: {
             /** Razorpay Key Id */
             razorpay_key_id: string | null;
+        };
+        /** PayoutIn */
+        PayoutIn: {
+            /** Account */
+            account: string;
+            /** Amount Paise */
+            amount_paise: number;
+            /** Reference */
+            reference: string;
+        };
+        /** PayoutsOut */
+        PayoutsOut: {
+            /** Accounts */
+            accounts: components["schemas"]["AccountBalance"][];
+            /** Platform Paise */
+            platform_paise: number;
+            /** Refundable */
+            refundable: components["schemas"]["RefundableOrder"][];
         };
         /** Photo */
         Photo: {
@@ -1554,6 +1705,31 @@ export interface components {
         ReassignIn: {
             /** Rider Id */
             rider_id: string;
+        };
+        /** RefundOut */
+        RefundOut: {
+            /** Amount Paise */
+            amount_paise: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "sending" | "processed" | "failed";
+        };
+        /** RefundableOrder */
+        RefundableOrder: {
+            /** Id */
+            id: string;
+            /** Number */
+            number: string;
+            refund: components["schemas"]["RefundOut"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending_payment" | "placed" | "accepted" | "preparing" | "ready" | "picked_up" | "delivered" | "rejected" | "cancelled" | "expired";
+            /** Total Paise */
+            total_paise: number;
         };
         /** ReorderLine */
         ReorderLine: {
@@ -2130,6 +2306,90 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminOrder"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refund_admin_orders__order_id__refund_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundableOrder"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    payouts_admin_payouts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutsOut"];
+                };
+            };
+        };
+    };
+    pay_admin_payouts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayoutIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutsOut"];
                 };
             };
             /** @description Validation Error */
@@ -2988,6 +3248,26 @@ export interface operations {
             };
         };
     };
+    earnings_restaurant_earnings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Earnings"];
+                };
+            };
+        };
+    };
     events_restaurant_events_get: {
         parameters: {
             query?: {
@@ -3257,6 +3537,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    earnings_rider_earnings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Earnings"];
                 };
             };
         };

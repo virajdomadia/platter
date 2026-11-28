@@ -266,6 +266,11 @@ class RatingOut(BaseModel):
     line: str | None
 
 
+class RefundOut(BaseModel):
+    status: Literal["pending", "sending", "processed", "failed"]
+    amount_paise: int
+
+
 class OrderOut(BaseModel):
     id: str
     number: str
@@ -288,6 +293,7 @@ class OrderOut(BaseModel):
     seq: int
     offer_attempts: int = 0  # riders asked so far ("Finding a rider", v2)
     rating: RatingOut | None = None  # the customer's own rating, once delivered (v2)
+    refund: RefundOut | None = None  # money going back for a paid order that won't arrive (v2)
 
 
 class RatingIn(BaseModel):
@@ -602,3 +608,48 @@ class AdminMap(BaseModel):
 
 class ReassignIn(BaseModel):
     rider_id: str
+
+
+# --- money (v2 L5) ------------------------------------------------------------------------------
+
+
+class LedgerLine(BaseModel):
+    kind: Literal["sale", "fee", "delivery", "delivery_margin", "refund", "payout"]
+    amount_paise: int
+    order_number: str | None
+    at: dt.datetime
+
+
+class Earnings(BaseModel):
+    balance_paise: int  # earned, not yet paid out
+    earned_paise: int
+    paid_paise: int
+    entries: list[LedgerLine]  # the latest 50
+
+
+class AccountBalance(BaseModel):
+    account: str
+    name: str
+    kind: Literal["restaurant", "rider"]
+    balance_paise: int
+    paid_paise: int
+
+
+class RefundableOrder(BaseModel):
+    id: str
+    number: str
+    status: OrderStatusT
+    total_paise: int
+    refund: RefundOut | None
+
+
+class PayoutsOut(BaseModel):
+    accounts: list[AccountBalance]
+    platform_paise: int
+    refundable: list[RefundableOrder]
+
+
+class PayoutIn(BaseModel):
+    account: str = Field(max_length=60)
+    amount_paise: int = Field(gt=0, le=100_000_000)
+    reference: Name60  # the bank / UPI reference the admin paid with

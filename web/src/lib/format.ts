@@ -2,7 +2,8 @@
 
 export function inr(paise: number): string {
   const rupees = paise / 100;
-  return `₹${rupees.toLocaleString("en-IN", { maximumFractionDigits: rupees % 1 ? 2 : 0 })}`;
+  const digits = rupees % 1 ? 2 : 0; // ₹414, ₹2,773.60: never ₹2,773.6
+  return `₹${rupees.toLocaleString("en-IN", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 }
 
 export function km(metres: number): string {

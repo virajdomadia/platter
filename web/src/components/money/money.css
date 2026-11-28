@@ -1,0 +1,110 @@
+/* v2 · money screens (S13): three stat tiles, then a plain table. */
+.mn-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+@media (max-width: 640px) {
+  .mn-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.mn-stat {
+  display: grid;
+  gap: 4px;
+}
+.mn-stat b {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.mn-stat small {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink2);
+}
+.mn-list {
+  margin-top: 10px;
+  color: var(--ink);
+}
+.mn-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 14px;
+}
+.mn-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--muted);
+  padding: 6px 8px;
+}
+.mn-table td {
+  padding: 8px;
+  border-top: 2px solid var(--bg);
+}
+.mn-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+.mn-table td:nth-child(2),
+.mn-table th:nth-child(2) {
+  text-align: left;
+}
+.mn-neg {
+  color: var(--coral-deep);
+}
+.mn-pay {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+.mn-pay .input {
+  min-height: 40px;
+  padding-block: 6px;
+}
+.mn-pay .btn {
+  min-height: 40px;
+}
+.mn-scroll {
+  overflow-x: auto;
+}
+.mn-cap {
+  display: none;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* phone: each account is a block (name, owed, paid), its pay form full width beneath */
+@media (max-width: 640px) {
+  .mn-accounts thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .mn-accounts tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 2px 12px;
+    padding: 10px 0;
+    border-top: 2px solid var(--bg);
+  }
+  .mn-accounts td {
+    border-top: 0;
+    padding: 2px 0;
+  }
+  .mn-accounts td:last-child {
+    grid-column: 1 / -1;
+  }
+  .mn-pay {
+    grid-template-columns: 96px minmax(0, 1fr) auto;
+  }
+  .mn-cap {
+    display: inline;
+  }
+}

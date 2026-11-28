@@ -28,7 +28,7 @@ from app.models import (
 )
 from app.models.geo import latlng
 from app.routers import sse
-from app.services import auth, dispatch, limits, orders, routing, sim, views
+from app.services import auth, dispatch, ledger, limits, orders, routing, sim, views
 from app.services import stream as stream_service
 from app.services.events import Actor
 
@@ -226,6 +226,14 @@ async def transition(
     await db.commit()
     nxt = await current_job(db, who.rider)
     return await views.job(db, nxt) if nxt else None
+
+
+@router.get("/earnings", response_model=s.Earnings)
+async def earnings(
+    who: auth.RiderUser = Depends(auth.require_rider), db: AsyncSession = Depends(get_session)
+) -> s.Earnings:
+    """₹30 + ₹8 per km for every drop, and what has been paid out."""
+    return await ledger.earnings(db, ledger.rider_account(who.rider.id), who.user.is_demo)
 
 
 @router.get("/events", response_class=StreamingResponse)
