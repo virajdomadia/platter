@@ -2,24 +2,29 @@
 
 **Hot food, tracked to your door.** A four-sided food-delivery platform for one Bengaluru neighbourhood (Koramangala + HSR Layout): customers order from kitchens that can actually reach them, restaurants run a live order board, riders get dispatched and share their GPS from a phone, and an admin sees every order and rider on one map — and the rider moves on the customer's map in real time.
 
-> Status: **v1 Kitchen built** (milestones 1.0–1.2). One of six portfolio projects by [Viraj Domadia](https://virajdomadia.com). Live: https://platter.virajdomadia.com
+> Status: **v1 Kitchen and v2 Rush built** (milestones 1.0–1.2, 2.0–2.1). One of six portfolio projects by [Viraj Domadia](https://virajdomadia.com). Live: https://platter.virajdomadia.com (Web Push needs the VAPID keys set on the API; without them it stays off).
 
 ## Try it
 Every side has a one-tap demo login on the home page and `/sign-in`:
 
 | Demo | What you land on |
 |---|---|
-| 🙂 **Customer** (Ananya) | Three saved addresses and an order already on the way — the route draws itself and the rider glides along real streets |
-| 🍳 **Restaurant** (Bandstand Kitchen) | The kitchen board on a tablet: tickets print with a chime; Accept dispatches the nearest rider |
-| 🛵 **Rider** (Divya) | A phone PWA with a job assigned. Switch on *Share my location* and walk — the customer's map walks with you (outside Bengaluru, *relay mode* replays your steps in Koramangala) |
-| 🗺️ **Admin** | Every active order and rider on one map, stuck flags, reassign |
+| 🙂 **Customer** (Ananya) | Three saved addresses and an order already on the way — the route draws itself and the rider glides along real streets. Search by dish ("dosa"), filter by cuisine or pure veg, reorder a past order, rate a delivered one, and turn on notifications for when the tab is closed |
+| 🍳 **Restaurant** (Bandstand Kitchen) | The kitchen board on a tablet: tickets print with a chime; Accept offers the order to the nearest rider. The **menu editor** (dishes, categories, hours, open/closed, cover) works on a private copy that resets at the next demo sign-in, so customers keep seeing the live menu. **Earnings**: 80% of each delivered order's food |
+| 🛵 **Rider** (Divya) | A phone PWA. Jobs arrive as **offers** with a 30-second ring (accept or decline); a *Taking jobs* switch takes you offline. Switch on *Share my location* and walk — the customer's map walks with you (outside Bengaluru, *relay mode* replays your steps in Koramangala). **Earnings**: ₹30 + ₹8/km per drop |
+| 🗺️ **Admin** | Every active order and rider on one map, stuck flags (including "no rider, 5 asked"), reassign; **Payouts**: balances by kitchen and rider, mark paid, refund an order paid online |
 
-Eight riders are simulated (no process: a sim's position is computed from its route and the clock whenever anyone looks), and while nobody is on a restaurant's board a *kitchen autopilot* accepts and cooks its orders — so an order placed from any kitchen is delivered with no human action. The demo rider is real.
+Eight riders are simulated (no process: a sim's position is computed from its route and the clock whenever anyone looks; a sim accepts an offer 3 to 8 seconds after it arrives), and while nobody is on a restaurant's board a *kitchen autopilot* accepts and cooks its orders, so an order placed from any kitchen is delivered with no human action. The demo rider is real.
+
+The one-tap demo logins are public, so they are a **partition**, not just accounts: they only ever see and act on demo orders, demo money and the demo kitchen's private menu copy. A real customer's order never reaches the demo board, rider or admin; a demo visitor can't notify, refund or publicly rate anything real.
 
 ## What it proves
 - **PostGIS**: restaurants within 5 km of a pin (`ST_DWithin`, GIST), nearest available rider by KNN with `skip locked`.
 - **A role-guarded state machine**: `placed → accepted → preparing → ready → picked_up → delivered` (+ rejected, cancelled, expired), one `transition()` under a row lock, 409 for anything else.
 - **Live location over SSE with Postgres as the bus** — no WebSockets, no Pusher, ₹0 per order: MapLibre + OpenFreeMap, OSRM routes, Photon geocoding.
+- **Humans in the dispatch loop (v2)**: a 30-second offer per rider, up to five riders; every outcome (accept, decline, timeout) is one conditional `update … where state = 'sent'` after the order's row lock, so an accept racing its own timeout, or two phones accepting, has exactly one winner (tested concurrently).
+- **Money to three parties (v2)**: a delivered order writes ledger entries (kitchen 80% of the food, platform the rest, rider ₹30 + ₹8/km, platform the delivery margin) that always sum to what the customer paid; a paid order that won't arrive is refunded once (a unique row before Razorpay is called); payouts can't exceed a balance, even when two land at once.
+- **Web Push (v2)** from the same event log, sent after commit with fixed templates (no visitor-typed text on a lock screen), each subscription tied to its browser session.
 
 ## How the bus works
 Every status change appends a row to `order_events` (commit-ordered `seq`: events are buffered in the transaction and inserted at commit under `pg_advisory_xact_lock(1)`, after its row locks, so a slow OSRM call never holds the lock). Riders POST GPS fixes into `rider_positions`. One stream loop in `api/app/services/stream.py` serves four scopes (order, restaurant, rider, admin): every second it advances the lazy simulation for its scope, reads `order_events where seq > $cursor` and positions newer than its position cursor, and yields SSE frames with `id: {seq}:{pos_ms}`. It closes itself at 280 s; the browser reconnects with `Last-Event-ID` and the loop replays exactly what was missed — `order_events` is the durable log, so a dropped connection loses nothing.
@@ -50,7 +55,7 @@ Next.js 15 (App Router) · TypeScript · Tailwind 4 · MapLibre GL + OpenFreeMap
 
 ## Repo
 ```
-api/   FastAPI — app/{core,models,schemas,routers,services,seed}, alembic/, tests/ (62 tests, PostGIS), scripts/
+api/   FastAPI — app/{core,models,schemas,routers,services,seed}, alembic/, tests/ (134 tests, PostGIS), scripts/
 web/   Next.js — app/(site) customer · (restaurant) board · (rider) PWA · (admin) map; components/; lib/; tests/
 docs/  03 requirements + flows · 04 technical design + UI · 05 architecture · 06 data + API · 07 plan · 12 security + performance
 ```
@@ -81,4 +86,6 @@ Both apps deploy from GitHub Actions only (`.github/workflows/vercel.yml`, after
 ## Planning
 [PRD](PRD.md) · [Plan](docs/07-plan.md) · [Tracker](https://claude.ai/artifact/HEHpyrigHuZpBMoECDs4qG) · [Screens](https://claude.ai/artifact/GGchE2CjZ7DN5t83pzs9Cu) · Dish photos: Wikimedia Commons, credited in `web/public/dishes/CREDITS.md`.
 
-Roadmap: v1 Kitchen → v2 Rush (rider offers, Web Push, menu editor, ledgers) → v3 Fleet (batching, measured ETA, LISTEN/NOTIFY, native Expo rider app) → v4 Order together.
+Roadmap: v1 Kitchen ✓ → v2 Rush ✓ (rider offers, Web Push, menu editor, search + ratings, refunds + ledgers + payouts) → v3 Fleet (batching, measured ETA, LISTEN/NOTIFY, native Expo rider app) → v4 Order together.
+
+Web Push keys: `cd api && uv run python -m scripts.gen_vapid` writes a VAPID pair to `api/.env.local` (gitignored); set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` on the API.

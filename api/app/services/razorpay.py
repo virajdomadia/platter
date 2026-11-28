@@ -41,6 +41,28 @@ async def create_order(settings: Settings, *, amount_paise: int, receipt: str) -
         ) from exc
 
 
+async def refund(settings: Settings, payment_id: str, amount_paise: int, *, receipt: str) -> str:
+    """A full refund of a captured payment; returns Razorpay's refund id. Razorpay refuses to
+    refund more than was captured, so a repeat of a full refund can't pay out twice."""
+    if not settings.razorpay_enabled:
+        raise ApiError(503, "payments_off", "Online payment is switched off")
+    assert settings.razorpay_key_secret is not None  # noqa: S101
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.post(
+                f"{API}/payments/{payment_id}/refund",
+                auth=(
+                    settings.razorpay_key_id or "",
+                    settings.razorpay_key_secret.get_secret_value(),
+                ),
+                json={"amount": amount_paise, "receipt": receipt, "speed": "normal"},
+            )
+        r.raise_for_status()
+        return str(r.json()["id"])
+    except (httpx.HTTPError, KeyError, ValueError) as exc:
+        raise ApiError(502, "refund_failed", "Razorpay didn't take the refund") from exc
+
+
 def _hmac(secret: str, message: bytes) -> str:
     return hmac.new(secret.encode(), message, hashlib.sha256).hexdigest()
 

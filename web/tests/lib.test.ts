@@ -68,6 +68,7 @@ describe("format", () => {
   test("money, distance, eta", () => {
     expect(inr(41400)).toBe("₹414");
     expect(inr(12345)).toBe("₹123.45");
+    expect(inr(277360)).toBe("₹2,773.60");
     expect(km(640)).toBe("640 m");
     expect(km(2140)).toBe("2.1 km");
     expect(etaLabel(1320, "line")).toBe("≈ 22 min");

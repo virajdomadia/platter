@@ -25,7 +25,7 @@ from app.models import (
     User,
 )
 from app.routers import sse
-from app.services import auth, limits, orders, razorpay, sim, views
+from app.services import auth, limits, orders, razorpay, refunds, sim, views
 from app.services import stream as stream_service
 from app.services.events import Actor
 
@@ -154,6 +154,7 @@ async def verify(
     order = await orders.mark_paid(db, order.id, body.razorpay_payment_id) or order
     await db.commit()
     if order.status == OrderStatus.expired:
+        await refunds.send(db, settings, order.id)
         raise ApiError(
             409,
             "payment_late",
@@ -199,12 +200,15 @@ async def cancel(
     order_id: uuid.UUID,
     user: User = Depends(auth.require_user),
     db: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(current_settings),
 ) -> s.OrderOut:
+    """While `placed`. Paid online → refunded in full (once)."""
     await own_order(db, order_id, user)
     order = await orders.transition(
         db, order_id, OrderStatus.cancelled, Actor("customer", user_id=user.id)
     )
     await db.commit()
+    await refunds.send(db, settings, order_id)
     return await views.order_out(db, order)
 
 

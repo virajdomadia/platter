@@ -138,7 +138,7 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
           {!ended && !delivered && (
             <PushOptIn compact>get a notification when it is accepted, on the way and delivered, even with this tab closed</PushOptIn>
           )}
-          {status === "placed" && o.payment === "cod" && (
+          {status === "placed" && (
             <button className="btn small ghost" onClick={cancel} disabled={cancelling}>
               {cancelling ? "Cancelling…" : "Cancel order"}
             </button>
@@ -173,6 +173,15 @@ export function TrackingScreen({ initial }: { initial: OrderOut }) {
           <>
             <b style={{ fontSize: 26 }}>{STATUS_LABEL[status]}</b>
             <small>{o.reject_reason ?? (status === "expired" ? "Payment wasn't completed in 15 minutes." : "This order won't be made.")}</small>
+            {o.refund && (
+              <small role="status">
+                {o.refund.status === "processed"
+                  ? `${inr(o.refund.amount_paise)} refunded to your payment method (3 to 5 working days).`
+                  : o.refund.status === "failed"
+                    ? `Your refund of ${inr(o.refund.amount_paise)} hit a snag. We'll retry it.`
+                    : `Refunding ${inr(o.refund.amount_paise)} to your payment method.`}
+              </small>
+            )}
           </>
         ) : status === "pending_payment" ? (
           <>

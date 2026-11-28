@@ -67,6 +67,15 @@ Goal: both apps deployed, PostGIS answering, a seeded order moving with a simula
 
 **v2 total ≈ 11 h**
 
+**v2 as built (2026-11-28, PRs #10–#14, stacked on `main`):** L1 ✓ · L2 ✓ (live push on a real phone still to check after deploy) · L3 ✓ · L4 ✓ · L5 ✓. Where it departs from the rows above, and why:
+- **The demo partition holds everywhere.** Every owner, rider and admin login in production is the public one-tap demo, so: the demo phone is only ever offered demo orders; a push goes only to a user on the order's own side (`users.is_demo = orders.is_demo`), with fixed templates (no visitor-typed reject reason on a lock screen); the demo kitchen's **menu editor writes to a private sandbox copy** (`restaurants.is_sandbox`: never listed, no public page, no orders, rebuilt from the live menu on every demo sign-in); a demo rating is kept for its author but never moves a public score (`restaurants.rating_sum / rating_count` count real customers only; the seeded score is weighted as ten ratings); the demo admin sees, pays and refunds demo money only.
+- **L1** offers are lazy like the rest of the sim: expiry and the sims' 3–8 s answers run in the tick; a partial unique index keeps one open offer per rider and per order. No `riders.online_since` (nothing read it).
+- **L2** uses `pywebpush` 2.5 (`webpush_async`). Subscriptions carry `session_id` (06 §A had none): sign-out or a demo session's one-day expiry drops them. Endpoints must be a browser push service (SSRF). The VAPID public key is served by `GET /push/key`, so the web needs no env var.
+- **L3** photos come from the CC dish library the web already serves; **no Blob upload**, since every owner is an anonymous demo visitor (`shortcut:` add the Blob client token when real owners exist). Dish reordering within a category was skipped (categories reorder).
+- **L4** search is `ILIKE` over name, cuisines and dish names (12 kitchens, well inside 150 ms), not the `tsvector` + trigger of 06 §A (`shortcut:` add it past ~200 kitchens). No stars on board tickets (tickets are live orders; ratings come after delivery); rider stars are stored, not shown.
+- **L5** refunds: one row per order (unique) written before Razorpay is called, `pending → sending → processed | failed`, admin retry; Razorpay refuses a second full refund as a backstop. A customer may now cancel a paid order while `placed` (it is refunded); a payment captured after expiry is refunded automatically. The ledger starts with v2: historical seeded orders have no entries.
+- **Also:** migration 0007 retires the three pre-#8 restaurants that kept real brands' names in any database seeded before #8 (demo history deleted; a real order is never deleted).
+
 ---
 
 ## v3 — Fleet (≈ 16 h)

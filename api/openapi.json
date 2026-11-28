@@ -1,6 +1,43 @@
 {
  "components": {
   "schemas": {
+   "AccountBalance": {
+    "properties": {
+     "account": {
+      "title": "Account",
+      "type": "string"
+     },
+     "balance_paise": {
+      "title": "Balance Paise",
+      "type": "integer"
+     },
+     "kind": {
+      "enum": [
+       "restaurant",
+       "rider"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "paid_paise": {
+      "title": "Paid Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "account",
+     "name",
+     "kind",
+     "balance_paise",
+     "paid_paise"
+    ],
+    "title": "AccountBalance",
+    "type": "object"
+   },
    "AddressIn": {
     "properties": {
      "label": {
@@ -774,6 +811,37 @@
     "title": "Drop",
     "type": "object"
    },
+   "Earnings": {
+    "properties": {
+     "balance_paise": {
+      "title": "Balance Paise",
+      "type": "integer"
+     },
+     "earned_paise": {
+      "title": "Earned Paise",
+      "type": "integer"
+     },
+     "entries": {
+      "items": {
+       "$ref": "#/components/schemas/LedgerLine"
+      },
+      "title": "Entries",
+      "type": "array"
+     },
+     "paid_paise": {
+      "title": "Paid Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "balance_paise",
+     "earned_paise",
+     "paid_paise",
+     "entries"
+    ],
+    "title": "Earnings",
+    "type": "object"
+   },
    "EtaOut": {
     "properties": {
      "eta_s": {
@@ -1024,6 +1092,50 @@
      "lng"
     ],
     "title": "JobPlace",
+    "type": "object"
+   },
+   "LedgerLine": {
+    "properties": {
+     "amount_paise": {
+      "title": "Amount Paise",
+      "type": "integer"
+     },
+     "at": {
+      "format": "date-time",
+      "title": "At",
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "sale",
+       "fee",
+       "delivery",
+       "delivery_margin",
+       "refund",
+       "payout"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "order_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Order Number"
+     }
+    },
+    "required": [
+     "kind",
+     "amount_paise",
+     "order_number",
+     "at"
+    ],
+    "title": "LedgerLine",
     "type": "object"
    },
    "Me": {
@@ -1467,6 +1579,16 @@
        }
       ]
      },
+     "refund": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RefundOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
      "reject_reason": {
       "anyOf": [
        {
@@ -1661,6 +1783,63 @@
      "razorpay_key_id"
     ],
     "title": "PaymentsConfig",
+    "type": "object"
+   },
+   "PayoutIn": {
+    "properties": {
+     "account": {
+      "maxLength": 60,
+      "title": "Account",
+      "type": "string"
+     },
+     "amount_paise": {
+      "exclusiveMinimum": 0.0,
+      "maximum": 100000000.0,
+      "title": "Amount Paise",
+      "type": "integer"
+     },
+     "reference": {
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Reference",
+      "type": "string"
+     }
+    },
+    "required": [
+     "account",
+     "amount_paise",
+     "reference"
+    ],
+    "title": "PayoutIn",
+    "type": "object"
+   },
+   "PayoutsOut": {
+    "properties": {
+     "accounts": {
+      "items": {
+       "$ref": "#/components/schemas/AccountBalance"
+      },
+      "title": "Accounts",
+      "type": "array"
+     },
+     "platform_paise": {
+      "title": "Platform Paise",
+      "type": "integer"
+     },
+     "refundable": {
+      "items": {
+       "$ref": "#/components/schemas/RefundableOrder"
+      },
+      "title": "Refundable",
+      "type": "array"
+     }
+    },
+    "required": [
+     "accounts",
+     "platform_paise",
+     "refundable"
+    ],
+    "title": "PayoutsOut",
     "type": "object"
    },
    "Photo": {
@@ -2122,6 +2301,81 @@
      "rider_id"
     ],
     "title": "ReassignIn",
+    "type": "object"
+   },
+   "RefundOut": {
+    "properties": {
+     "amount_paise": {
+      "title": "Amount Paise",
+      "type": "integer"
+     },
+     "status": {
+      "enum": [
+       "pending",
+       "sending",
+       "processed",
+       "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "status",
+     "amount_paise"
+    ],
+    "title": "RefundOut",
+    "type": "object"
+   },
+   "RefundableOrder": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "number": {
+      "title": "Number",
+      "type": "string"
+     },
+     "refund": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RefundOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "status": {
+      "enum": [
+       "pending_payment",
+       "placed",
+       "accepted",
+       "preparing",
+       "ready",
+       "picked_up",
+       "delivered",
+       "rejected",
+       "cancelled",
+       "expired"
+      ],
+      "title": "Status",
+      "type": "string"
+     },
+     "total_paise": {
+      "title": "Total Paise",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "number",
+     "status",
+     "total_paise",
+     "refund"
+    ],
+    "title": "RefundableOrder",
     "type": "object"
    },
    "ReorderLine": {
@@ -3541,6 +3795,112 @@
     ]
    }
   },
+  "/admin/orders/{order_id}/refund": {
+   "post": {
+    "description": "Refund a closed, paid-online order in full (once; a repeat re-sends a failed refund).",
+    "operationId": "refund_admin_orders__order_id__refund_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "order_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Order Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RefundableOrder"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Refund",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/payouts": {
+   "get": {
+    "description": "Balances by account, the platform's take, and paid-online orders that can be refunded.\nThe admin login is the public demo: it sees the demo's money only.",
+    "operationId": "payouts_admin_payouts_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PayoutsOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Payouts",
+    "tags": [
+     "admin"
+    ]
+   },
+   "post": {
+    "description": "Mark money paid to a restaurant or rider. 422 above the balance; 409 on a reused ref.",
+    "operationId": "pay_admin_payouts_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PayoutIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PayoutsOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Pay",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
   "/admin/riders": {
    "get": {
     "operationId": "riders_admin_riders_get",
@@ -4116,6 +4476,7 @@
   },
   "/orders/{order_id}/cancel": {
    "post": {
+    "description": "While `placed`. Paid online \u2192 refunded in full (once).",
     "operationId": "cancel_orders__order_id__cancel_post",
     "parameters": [
      {
@@ -4690,6 +5051,28 @@
     ]
    }
   },
+  "/restaurant/earnings": {
+   "get": {
+    "description": "80% of each delivered order's food; the demo kitchen sees the demo's money only.",
+    "operationId": "earnings_restaurant_earnings_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Earnings"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Earnings",
+    "tags": [
+     "restaurant"
+    ]
+   }
+  },
   "/restaurant/events": {
    "get": {
     "operationId": "events_restaurant_events_get",
@@ -5165,6 +5548,28 @@
     "summary": "Restaurant",
     "tags": [
      "discovery"
+    ]
+   }
+  },
+  "/rider/earnings": {
+   "get": {
+    "description": "\u20b930 + \u20b98 per km for every drop, and what has been paid out.",
+    "operationId": "earnings_rider_earnings_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Earnings"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Earnings",
+    "tags": [
+     "rider"
     ]
    }
   },

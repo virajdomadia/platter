@@ -19,7 +19,7 @@ from app.core.errors import ApiError, not_found
 from app.models import MenuCategory, MenuItem, Order, OrderStatus, Restaurant
 from app.routers import sse
 from app.routers.discovery import menu_item
-from app.services import auth, demo, hours, limits, orders, sim, views
+from app.services import auth, demo, hours, ledger, limits, orders, refunds, sim, views
 from app.services import menu as menu_service
 from app.services import stream as stream_service
 from app.services.events import Actor
@@ -104,6 +104,7 @@ async def board(
 async def transition(
     order_id: uuid.UUID,
     body: s.RestaurantTransitionIn,
+    request: Request,
     owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
     db: AsyncSession = Depends(get_session),
 ) -> s.Ticket:
@@ -114,6 +115,8 @@ async def transition(
     owner.restaurant.board_seen_at = clock.now()
     order = await orders.transition(db, order_id, OrderStatus(body.to), actor, reason=body.reason)
     await db.commit()
+    if order.status == S.rejected:
+        await refunds.send(db, request.app.state.settings, order.id)
     return await views.ticket(db, order)
 
 
@@ -390,6 +393,16 @@ async def update_details(
     if body.prep_min is not None:
         r.prep_min = body.prep_min
     return await _saved(db, settings, r)
+
+
+@router.get("/earnings", response_model=s.Earnings)
+async def earnings(
+    owner: auth.RestaurantOwner = Depends(auth.require_restaurant),
+    db: AsyncSession = Depends(get_session),
+) -> s.Earnings:
+    """80% of each delivered order's food; the demo kitchen sees the demo's money only."""
+    account = ledger.restaurant_account(owner.restaurant.id)
+    return await ledger.earnings(db, account, owner.user.is_demo)
 
 
 @router.get("/events", response_class=StreamingResponse)

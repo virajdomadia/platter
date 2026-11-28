@@ -333,6 +333,45 @@ class Rating(Base):
     created_at: Mapped[dt.datetime] = _ts(False)
 
 
+class Refund(Base):
+    __tablename__ = "refunds"
+    id: Mapped[uuid.UUID] = _uuid()
+    order_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("orders.id", ondelete="CASCADE"), unique=True
+    )
+    amount_paise: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, default="pending")
+    razorpay_refund_id: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[dt.datetime] = _ts(False)
+    updated_at: Mapped[dt.datetime] = _ts(False)
+
+
+class Payout(Base):
+    __tablename__ = "payouts"
+    id: Mapped[uuid.UUID] = _uuid()
+    account: Mapped[str] = mapped_column(Text)
+    amount_paise: Mapped[int] = mapped_column(Integer)
+    reference: Mapped[str] = mapped_column(Text)
+    paid_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    is_demo: Mapped[bool] = mapped_column(Boolean)
+    paid_at: Mapped[dt.datetime] = _ts(False)
+
+
+class LedgerEntry(Base):
+    __tablename__ = "ledger_entries"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    account: Mapped[str] = mapped_column(Text)
+    kind: Mapped[str] = mapped_column(Text)
+    amount_paise: Mapped[int] = mapped_column(Integer)  # signed
+    order_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"))
+    payout_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("payouts.id", ondelete="CASCADE")
+    )
+    is_demo: Mapped[bool] = mapped_column(Boolean)
+    created_at: Mapped[dt.datetime] = _ts(False)
+
+
 class WebhookEvent(Base):
     __tablename__ = "webhook_events"
     id: Mapped[str] = mapped_column(Text, primary_key=True)

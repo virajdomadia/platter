@@ -12,8 +12,8 @@ from app.core import clock
 from app.core.config import Settings, current_settings
 from app.core.db import get_session
 from app.core.errors import ApiError
-from app.models import Order, WebhookEvent
-from app.services import orders, razorpay
+from app.models import Order, OrderStatus, WebhookEvent
+from app.services import orders, razorpay, refunds
 
 router = APIRouter(tags=["system"])
 log = logging.getLogger(__name__)
@@ -65,6 +65,9 @@ async def razorpay_webhook(
         if order is None or payment.get("amount") not in (None, order.total_paise):
             log.warning("captured payment %s matches no order total", payment.get("id"))
         else:
-            await orders.mark_paid(db, order.id, payment.get("id", ""))
+            paid = await orders.mark_paid(db, order.id, payment.get("id", ""))
+            await db.commit()
+            if paid is not None and paid.status == OrderStatus.expired:
+                await refunds.send(db, settings, paid.id)
     await db.commit()
     return {"status": "ok"}

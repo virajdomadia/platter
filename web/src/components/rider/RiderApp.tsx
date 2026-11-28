@@ -283,7 +283,9 @@ function IdleTiles({ me, offered }: { me: RiderMe; offered: boolean }) {
       <section className="tile peach rd-stat spring">
         <span className="label">Earned today</span>
         <b className="num">{inr(me.today.pay_paise)}</b>
-        <span>paid per drop</span>
+        <span>
+          paid per drop · <a href="/rider/earnings">All earnings</a>
+        </span>
       </section>
     </>
   );
